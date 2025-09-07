@@ -42,7 +42,7 @@ add_library(flutter_lua_bridge SHARED
 )
 
 set_target_properties(flutter_lua_bridge PROPERTIES
-  PUBLIC_HEADER "lua/src/lapi.h;lua/src/lauxlib.h;lua/src/lbaselib.h;lua/src/lcode.h;lua/src/lcorolib.h;lua/src/lctype.h;lua/src/ldblib.h;lua/src/ldebug.h;lua/src/ldo.h;lua/src/ldump.h;lua/src/lfunc.h;lua/src/lgc.h;lua/src/linit.h;lua/src/liolib.h;lua/src/llex.h;lua/src/lmathlib.h;lua/src/lmem.h;lua/src/loadlib.h;lua/src/lobject.h;lua/src/lopcodes.h;lua/src/loslib.h;lua/src/lparser.h;lua/src/lprefix.h;lua/src/lstate.h;lua/src/lstring.h;lua/src/lstrlib.h;lua/src/ltable.h;lua/src/ltablib.h;lua/src/ltm.h;lua/src/lua.h;lua/src/lua.hpp;lua/src/luaconf.h;lua/src/lualib.h;lua/src/lundump.h;lua/src/lutf8lib.h;lua/src/lvm.h;lua/src/lzio.h"
+  PUBLIC_HEADER "lua/src/lapi.h;lua/src/lauxlib.h;lua/src/lbaselib.h;lua/src/lcode.h;lua/src/lcorolib.h;lua/src/lctype.h;lua/src/ldblib.h;lua/src/ldebug.h;lua/src/ldo.h;lua/src/ldump.h;lua/src/lfunc.h;lua/src/lgc.h;lua/src/linit.h;lua/src/liolib.h;lua/src/llex.h;lua/src/lmathlib.h;lua/src/lmem.h;lua/src/loadlib.h;lua/src/lobject.h;lua/src/lopcodes.h;lua/src/loslib.h;lua/src/lparser.h;lua/src/lprefix.h;lua/src/lstate.h;lua/src/lstring.h;lua/src/lstrlib.h;lua/src/ltable.h;lua/src/ltablib.h;lua/src/ltm.h;lua/src/lua.h;lua/src/luaconf.h;lua/src/lualib.h;lua/src/lundump.h;lua/src/lutf8lib.h;lua/src/lvm.h;lua/src/lzio.h"
   OUTPUT_NAME "flutter_lua_bridge"
 )
 
