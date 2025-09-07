@@ -7,9 +7,14 @@ description: |
 output: 'lib/flutter_lua_bridge_bindings_generated.dart'
 headers:
   entry-points:
-    - 'src/flutter_lua_bridge.h'
+    - 'src/lua/src/lua.h'
+    - 'src/lua/src/lualib.h'
+    - 'src/lua/src/lauxlib.c'
+
   include-directives:
-    - 'src/flutter_lua_bridge.h'
+    - 'src/lua/src/lua.h'
+    - 'src/lua/src/lualib.h'
+    - 'src/lua/src/lauxlib.c'
 preamble: |
   // ignore_for_file: always_specify_types
   // ignore_for_file: camel_case_types

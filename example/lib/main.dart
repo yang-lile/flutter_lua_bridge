@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
-import 'dart:async';
+import 'dart:ffi';
 
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart' as flutter_lua_bridge;
+import 'package:flutter/material.dart';
+
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart'
+    as flutter_lua_bridge;
+import 'package:flutter_lua_bridge/flutter_lua_bridge_bindings_generated.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,14 +18,14 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late int sumResult;
-  late Future<int> sumAsyncResult;
+  late Pointer<lua_State> lNewstate;
+  late double luaVersion;
 
   @override
   void initState() {
     super.initState();
-    sumResult = flutter_lua_bridge.sum(1, 2);
-    sumAsyncResult = flutter_lua_bridge.sumAsync(3, 4);
+    lNewstate = flutter_lua_bridge.bindings.luaL_newstate();
+    luaVersion = flutter_lua_bridge.bindings.lua_version(lNewstate);
   }
 
   @override
@@ -31,9 +34,7 @@ class _MyAppState extends State<MyApp> {
     const spacerSmall = SizedBox(height: 10);
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Native Packages'),
-        ),
+        appBar: AppBar(title: const Text('Native Packages')),
         body: SingleChildScrollView(
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -47,23 +48,11 @@ class _MyAppState extends State<MyApp> {
                 ),
                 spacerSmall,
                 Text(
-                  'sum(1, 2) = $sumResult',
+                  'lua version = $luaVersion',
                   style: textStyle,
                   textAlign: TextAlign.center,
                 ),
                 spacerSmall,
-                FutureBuilder<int>(
-                  future: sumAsyncResult,
-                  builder: (BuildContext context, AsyncSnapshot<int> value) {
-                    final displayValue =
-                        (value.hasData) ? value.data : 'loading';
-                    return Text(
-                      'await sumAsync(3, 4) = $displayValue',
-                      style: textStyle,
-                      textAlign: TextAlign.center,
-                    );
-                  },
-                ),
               ],
             ),
           ),

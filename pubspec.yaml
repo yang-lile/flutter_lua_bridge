@@ -43,7 +43,7 @@ flutter:
     # then add platforms following the instruction here:
     # https://flutter.dev/to/pubspec-plugin-platforms
     # -------------------
-      some_platform:
+      android:
         ffiPlugin: true
     # -------------------
 
