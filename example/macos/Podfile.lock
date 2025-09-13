@@ -1,0 +1,22 @@
+PODS:
+  - flutter_lua_bridge (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+
+DEPENDENCIES:
+  - flutter_lua_bridge (from `Flutter/ephemeral/.symlinks/plugins/flutter_lua_bridge/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+
+EXTERNAL SOURCES:
+  flutter_lua_bridge:
+    :path: Flutter/ephemeral/.symlinks/plugins/flutter_lua_bridge/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+
+SPEC CHECKSUMS:
+  flutter_lua_bridge: 82db79a4d3954f3b7fa874b1013722d4042abcab
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+
+PODFILE CHECKSUM: 7eb978b976557c8c1cd717d8185ec483fd090a82
+
+COCOAPODS: 1.16.2

@@ -1763,96 +1763,92 @@ class FlutterLuaBridgeBindings {
   late final _luaL_openlibs = _luaL_openlibsPtr
       .asFunction<void Function(ffi.Pointer<lua_State>)>();
 
-  /// Search for 'objidx' in table at index -1. ('objidx' must be an
-  /// absolute index.) Return 1 + string at top if it found a good name.
-  int findfield(ffi.Pointer<lua_State> L, int objidx, int level) {
-    return _findfield(L, objidx, level);
+  void luaL_checkversion_(ffi.Pointer<lua_State> L, double ver, int sz) {
+    return _luaL_checkversion_(L, ver, sz);
   }
 
-  late final _findfieldPtr =
+  late final _luaL_checkversion_Ptr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
+          ffi.Void Function(ffi.Pointer<lua_State>, lua_Number, ffi.Size)
         >
-      >('findfield');
-  late final _findfield = _findfieldPtr
-      .asFunction<int Function(ffi.Pointer<lua_State>, int, int)>();
+      >('luaL_checkversion_');
+  late final _luaL_checkversion_ = _luaL_checkversion_Ptr
+      .asFunction<void Function(ffi.Pointer<lua_State>, double, int)>();
 
-  /// Search for a name for a function in all loaded modules
-  int pushglobalfuncname(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar) {
-    return _pushglobalfuncname(L, ar);
-  }
-
-  late final _pushglobalfuncnamePtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_Debug>)
-        >
-      >('pushglobalfuncname');
-  late final _pushglobalfuncname = _pushglobalfuncnamePtr
-      .asFunction<
-        int Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_Debug>)
-      >();
-
-  void pushfuncname(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar) {
-    return _pushfuncname(L, ar);
-  }
-
-  late final _pushfuncnamePtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_Debug>)
-        >
-      >('pushfuncname');
-  late final _pushfuncname = _pushfuncnamePtr
-      .asFunction<
-        void Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_Debug>)
-      >();
-
-  int lastlevel(ffi.Pointer<lua_State> L) {
-    return _lastlevel(L);
-  }
-
-  late final _lastlevelPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<lua_State>)>>(
-        'lastlevel',
-      );
-  late final _lastlevel = _lastlevelPtr
-      .asFunction<int Function(ffi.Pointer<lua_State>)>();
-
-  void luaL_traceback(
+  int luaL_getmetafield(
     ffi.Pointer<lua_State> L,
-    ffi.Pointer<lua_State> L1,
-    ffi.Pointer<ffi.Char> msg,
-    int level,
+    int obj,
+    ffi.Pointer<ffi.Char> e,
   ) {
-    return _luaL_traceback(L, L1, msg, level);
+    return _luaL_getmetafield(L, obj, e);
   }
 
-  late final _luaL_tracebackPtr =
+  late final _luaL_getmetafieldPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Void Function(
+          ffi.Int Function(
             ffi.Pointer<lua_State>,
-            ffi.Pointer<lua_State>,
-            ffi.Pointer<ffi.Char>,
             ffi.Int,
+            ffi.Pointer<ffi.Char>,
           )
         >
-      >('luaL_traceback');
-  late final _luaL_traceback = _luaL_tracebackPtr
+      >('luaL_getmetafield');
+  late final _luaL_getmetafield = _luaL_getmetafieldPtr
       .asFunction<
-        void Function(
+        int Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
+      >();
+
+  int luaL_callmeta(
+    ffi.Pointer<lua_State> L,
+    int obj,
+    ffi.Pointer<ffi.Char> e,
+  ) {
+    return _luaL_callmeta(L, obj, e);
+  }
+
+  late final _luaL_callmetaPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<lua_State>,
+            ffi.Int,
+            ffi.Pointer<ffi.Char>,
+          )
+        >
+      >('luaL_callmeta');
+  late final _luaL_callmeta = _luaL_callmetaPtr
+      .asFunction<
+        int Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
+      >();
+
+  ffi.Pointer<ffi.Char> luaL_tolstring(
+    ffi.Pointer<lua_State> L,
+    int idx,
+    ffi.Pointer<ffi.Size> len,
+  ) {
+    return _luaL_tolstring(L, idx, len);
+  }
+
+  late final _luaL_tolstringPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<lua_State>,
+            ffi.Int,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('luaL_tolstring');
+  late final _luaL_tolstring = _luaL_tolstringPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
           ffi.Pointer<lua_State>,
-          ffi.Pointer<lua_State>,
-          ffi.Pointer<ffi.Char>,
           int,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
-  /// {======================================================
-  /// Error-report functions
-  /// =======================================================
   int luaL_argerror(
     ffi.Pointer<lua_State> L,
     int arg,
@@ -1899,87 +1895,160 @@ class FlutterLuaBridgeBindings {
         int Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
       >();
 
-  void tag_error(ffi.Pointer<lua_State> L, int arg, int tag) {
-    return _tag_error(L, arg, tag);
+  ffi.Pointer<ffi.Char> luaL_checklstring(
+    ffi.Pointer<lua_State> L,
+    int arg,
+    ffi.Pointer<ffi.Size> l,
+  ) {
+    return _luaL_checklstring(L, arg, l);
   }
 
-  late final _tag_errorPtr =
+  late final _luaL_checklstringPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<lua_State>,
+            ffi.Int,
+            ffi.Pointer<ffi.Size>,
+          )
         >
-      >('tag_error');
-  late final _tag_error = _tag_errorPtr
-      .asFunction<void Function(ffi.Pointer<lua_State>, int, int)>();
-
-  /// The use of 'lua_pushfstring' ensures this function does not
-  /// need reserved stack space when called.
-  void luaL_where(ffi.Pointer<lua_State> L, int level) {
-    return _luaL_where(L, level);
-  }
-
-  late final _luaL_wherePtr =
-      _lookup<
-        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>
-      >('luaL_where');
-  late final _luaL_where = _luaL_wherePtr
-      .asFunction<void Function(ffi.Pointer<lua_State>, int)>();
-
-  /// Again, the use of 'lua_pushvfstring' ensures this function does
-  /// not need reserved stack space when called. (At worst, it generates
-  /// an error with "stack overflow" instead of the given message.)
-  int luaL_error(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt) {
-    return _luaL_error(L, fmt);
-  }
-
-  late final _luaL_errorPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
-        >
-      >('luaL_error');
-  late final _luaL_error = _luaL_errorPtr
+      >('luaL_checklstring');
+  late final _luaL_checklstring = _luaL_checklstringPtr
       .asFunction<
-        int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<lua_State>,
+          int,
+          ffi.Pointer<ffi.Size>,
+        )
       >();
 
-  int luaL_fileresult(
+  ffi.Pointer<ffi.Char> luaL_optlstring(
     ffi.Pointer<lua_State> L,
-    int stat,
-    ffi.Pointer<ffi.Char> fname,
+    int arg,
+    ffi.Pointer<ffi.Char> def,
+    ffi.Pointer<ffi.Size> l,
   ) {
-    return _luaL_fileresult(L, stat, fname);
+    return _luaL_optlstring(L, arg, def, l);
   }
 
-  late final _luaL_fileresultPtr =
+  late final _luaL_optlstringPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Int Function(
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<lua_State>,
+            ffi.Int,
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('luaL_optlstring');
+  late final _luaL_optlstring = _luaL_optlstringPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<lua_State>,
+          int,
+          ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  double luaL_checknumber(ffi.Pointer<lua_State> L, int arg) {
+    return _luaL_checknumber(L, arg);
+  }
+
+  late final _luaL_checknumberPtr =
+      _lookup<
+        ffi.NativeFunction<lua_Number Function(ffi.Pointer<lua_State>, ffi.Int)>
+      >('luaL_checknumber');
+  late final _luaL_checknumber = _luaL_checknumberPtr
+      .asFunction<double Function(ffi.Pointer<lua_State>, int)>();
+
+  double luaL_optnumber(ffi.Pointer<lua_State> L, int arg, double def) {
+    return _luaL_optnumber(L, arg, def);
+  }
+
+  late final _luaL_optnumberPtr =
+      _lookup<
+        ffi.NativeFunction<
+          lua_Number Function(ffi.Pointer<lua_State>, ffi.Int, lua_Number)
+        >
+      >('luaL_optnumber');
+  late final _luaL_optnumber = _luaL_optnumberPtr
+      .asFunction<double Function(ffi.Pointer<lua_State>, int, double)>();
+
+  int luaL_checkinteger(ffi.Pointer<lua_State> L, int arg) {
+    return _luaL_checkinteger(L, arg);
+  }
+
+  late final _luaL_checkintegerPtr =
+      _lookup<
+        ffi.NativeFunction<
+          lua_Integer Function(ffi.Pointer<lua_State>, ffi.Int)
+        >
+      >('luaL_checkinteger');
+  late final _luaL_checkinteger = _luaL_checkintegerPtr
+      .asFunction<int Function(ffi.Pointer<lua_State>, int)>();
+
+  int luaL_optinteger(ffi.Pointer<lua_State> L, int arg, int def) {
+    return _luaL_optinteger(L, arg, def);
+  }
+
+  late final _luaL_optintegerPtr =
+      _lookup<
+        ffi.NativeFunction<
+          lua_Integer Function(ffi.Pointer<lua_State>, ffi.Int, lua_Integer)
+        >
+      >('luaL_optinteger');
+  late final _luaL_optinteger = _luaL_optintegerPtr
+      .asFunction<int Function(ffi.Pointer<lua_State>, int, int)>();
+
+  void luaL_checkstack(
+    ffi.Pointer<lua_State> L,
+    int sz,
+    ffi.Pointer<ffi.Char> msg,
+  ) {
+    return _luaL_checkstack(L, sz, msg);
+  }
+
+  late final _luaL_checkstackPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
             ffi.Pointer<lua_State>,
             ffi.Int,
             ffi.Pointer<ffi.Char>,
           )
         >
-      >('luaL_fileresult');
-  late final _luaL_fileresult = _luaL_fileresultPtr
+      >('luaL_checkstack');
+  late final _luaL_checkstack = _luaL_checkstackPtr
       .asFunction<
-        int Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
+        void Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
       >();
 
-  int luaL_execresult(ffi.Pointer<lua_State> L, int stat) {
-    return _luaL_execresult(L, stat);
+  void luaL_checktype(ffi.Pointer<lua_State> L, int arg, int t) {
+    return _luaL_checktype(L, arg, t);
   }
 
-  late final _luaL_execresultPtr =
+  late final _luaL_checktypePtr =
       _lookup<
-        ffi.NativeFunction<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>
-      >('luaL_execresult');
-  late final _luaL_execresult = _luaL_execresultPtr
-      .asFunction<int Function(ffi.Pointer<lua_State>, int)>();
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
+        >
+      >('luaL_checktype');
+  late final _luaL_checktype = _luaL_checktypePtr
+      .asFunction<void Function(ffi.Pointer<lua_State>, int, int)>();
 
-  /// {======================================================
-  /// Userdata's metatable manipulation
-  /// =======================================================
+  void luaL_checkany(ffi.Pointer<lua_State> L, int arg) {
+    return _luaL_checkany(L, arg);
+  }
+
+  late final _luaL_checkanyPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>
+      >('luaL_checkany');
+  late final _luaL_checkany = _luaL_checkanyPtr
+      .asFunction<void Function(ffi.Pointer<lua_State>, int)>();
+
   int luaL_newmetatable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> tname) {
     return _luaL_newmetatable(L, tname);
   }
@@ -2067,9 +2136,32 @@ class FlutterLuaBridgeBindings {
         )
       >();
 
-  /// {======================================================
-  /// Argument check functions
-  /// =======================================================
+  void luaL_where(ffi.Pointer<lua_State> L, int lvl) {
+    return _luaL_where(L, lvl);
+  }
+
+  late final _luaL_wherePtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>
+      >('luaL_where');
+  late final _luaL_where = _luaL_wherePtr
+      .asFunction<void Function(ffi.Pointer<lua_State>, int)>();
+
+  int luaL_error(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt) {
+    return _luaL_error(L, fmt);
+  }
+
+  late final _luaL_errorPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+        >
+      >('luaL_error');
+  late final _luaL_error = _luaL_errorPtr
+      .asFunction<
+        int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+      >();
+
   int luaL_checkoption(
     ffi.Pointer<lua_State> L,
     int arg,
@@ -2100,412 +2192,40 @@ class FlutterLuaBridgeBindings {
         )
       >();
 
-  /// Ensures the stack has at least 'space' extra slots, raising an error
-  /// if it cannot fulfill the request. (The error handling needs a few
-  /// extra slots to format the error message. In case of an error without
-  /// this extra space, Lua will generate the same 'stack overflow' error,
-  /// but without 'msg'.)
-  void luaL_checkstack(
+  int luaL_fileresult(
     ffi.Pointer<lua_State> L,
-    int space,
-    ffi.Pointer<ffi.Char> msg,
+    int stat,
+    ffi.Pointer<ffi.Char> fname,
   ) {
-    return _luaL_checkstack(L, space, msg);
+    return _luaL_fileresult(L, stat, fname);
   }
 
-  late final _luaL_checkstackPtr =
+  late final _luaL_fileresultPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Void Function(
+          ffi.Int Function(
             ffi.Pointer<lua_State>,
             ffi.Int,
             ffi.Pointer<ffi.Char>,
           )
         >
-      >('luaL_checkstack');
-  late final _luaL_checkstack = _luaL_checkstackPtr
+      >('luaL_fileresult');
+  late final _luaL_fileresult = _luaL_fileresultPtr
       .asFunction<
-        void Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
+        int Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
       >();
 
-  void luaL_checktype(ffi.Pointer<lua_State> L, int arg, int t) {
-    return _luaL_checktype(L, arg, t);
+  int luaL_execresult(ffi.Pointer<lua_State> L, int stat) {
+    return _luaL_execresult(L, stat);
   }
 
-  late final _luaL_checktypePtr =
+  late final _luaL_execresultPtr =
       _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
-        >
-      >('luaL_checktype');
-  late final _luaL_checktype = _luaL_checktypePtr
-      .asFunction<void Function(ffi.Pointer<lua_State>, int, int)>();
-
-  void luaL_checkany(ffi.Pointer<lua_State> L, int arg) {
-    return _luaL_checkany(L, arg);
-  }
-
-  late final _luaL_checkanyPtr =
-      _lookup<
-        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>
-      >('luaL_checkany');
-  late final _luaL_checkany = _luaL_checkanyPtr
-      .asFunction<void Function(ffi.Pointer<lua_State>, int)>();
-
-  ffi.Pointer<ffi.Char> luaL_checklstring(
-    ffi.Pointer<lua_State> L,
-    int arg,
-    ffi.Pointer<ffi.Size> len,
-  ) {
-    return _luaL_checklstring(L, arg, len);
-  }
-
-  late final _luaL_checklstringPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-            ffi.Pointer<lua_State>,
-            ffi.Int,
-            ffi.Pointer<ffi.Size>,
-          )
-        >
-      >('luaL_checklstring');
-  late final _luaL_checklstring = _luaL_checklstringPtr
-      .asFunction<
-        ffi.Pointer<ffi.Char> Function(
-          ffi.Pointer<lua_State>,
-          int,
-          ffi.Pointer<ffi.Size>,
-        )
-      >();
-
-  ffi.Pointer<ffi.Char> luaL_optlstring(
-    ffi.Pointer<lua_State> L,
-    int arg,
-    ffi.Pointer<ffi.Char> def,
-    ffi.Pointer<ffi.Size> len,
-  ) {
-    return _luaL_optlstring(L, arg, def, len);
-  }
-
-  late final _luaL_optlstringPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-            ffi.Pointer<lua_State>,
-            ffi.Int,
-            ffi.Pointer<ffi.Char>,
-            ffi.Pointer<ffi.Size>,
-          )
-        >
-      >('luaL_optlstring');
-  late final _luaL_optlstring = _luaL_optlstringPtr
-      .asFunction<
-        ffi.Pointer<ffi.Char> Function(
-          ffi.Pointer<lua_State>,
-          int,
-          ffi.Pointer<ffi.Char>,
-          ffi.Pointer<ffi.Size>,
-        )
-      >();
-
-  double luaL_checknumber(ffi.Pointer<lua_State> L, int arg) {
-    return _luaL_checknumber(L, arg);
-  }
-
-  late final _luaL_checknumberPtr =
-      _lookup<
-        ffi.NativeFunction<lua_Number Function(ffi.Pointer<lua_State>, ffi.Int)>
-      >('luaL_checknumber');
-  late final _luaL_checknumber = _luaL_checknumberPtr
-      .asFunction<double Function(ffi.Pointer<lua_State>, int)>();
-
-  double luaL_optnumber(ffi.Pointer<lua_State> L, int arg, double def) {
-    return _luaL_optnumber(L, arg, def);
-  }
-
-  late final _luaL_optnumberPtr =
-      _lookup<
-        ffi.NativeFunction<
-          lua_Number Function(ffi.Pointer<lua_State>, ffi.Int, lua_Number)
-        >
-      >('luaL_optnumber');
-  late final _luaL_optnumber = _luaL_optnumberPtr
-      .asFunction<double Function(ffi.Pointer<lua_State>, int, double)>();
-
-  void interror(ffi.Pointer<lua_State> L, int arg) {
-    return _interror(L, arg);
-  }
-
-  late final _interrorPtr =
-      _lookup<
-        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>
-      >('interror');
-  late final _interror = _interrorPtr
-      .asFunction<void Function(ffi.Pointer<lua_State>, int)>();
-
-  int luaL_checkinteger(ffi.Pointer<lua_State> L, int arg) {
-    return _luaL_checkinteger(L, arg);
-  }
-
-  late final _luaL_checkintegerPtr =
-      _lookup<
-        ffi.NativeFunction<
-          lua_Integer Function(ffi.Pointer<lua_State>, ffi.Int)
-        >
-      >('luaL_checkinteger');
-  late final _luaL_checkinteger = _luaL_checkintegerPtr
+        ffi.NativeFunction<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>
+      >('luaL_execresult');
+  late final _luaL_execresult = _luaL_execresultPtr
       .asFunction<int Function(ffi.Pointer<lua_State>, int)>();
 
-  int luaL_optinteger(ffi.Pointer<lua_State> L, int arg, int def) {
-    return _luaL_optinteger(L, arg, def);
-  }
-
-  late final _luaL_optintegerPtr =
-      _lookup<
-        ffi.NativeFunction<
-          lua_Integer Function(ffi.Pointer<lua_State>, ffi.Int, lua_Integer)
-        >
-      >('luaL_optinteger');
-  late final _luaL_optinteger = _luaL_optintegerPtr
-      .asFunction<int Function(ffi.Pointer<lua_State>, int, int)>();
-
-  ffi.Pointer<ffi.Void> resizebox(
-    ffi.Pointer<lua_State> L,
-    int idx,
-    int newsize,
-  ) {
-    return _resizebox(L, idx, newsize);
-  }
-
-  late final _resizeboxPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Void> Function(
-            ffi.Pointer<lua_State>,
-            ffi.Int,
-            ffi.Size,
-          )
-        >
-      >('resizebox');
-  late final _resizebox = _resizeboxPtr
-      .asFunction<
-        ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, int, int)
-      >();
-
-  int boxgc(ffi.Pointer<lua_State> L) {
-    return _boxgc(L);
-  }
-
-  late final _boxgcPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<lua_State>)>>(
-        'boxgc',
-      );
-  late final _boxgc = _boxgcPtr
-      .asFunction<int Function(ffi.Pointer<lua_State>)>();
-
-  /// box metamethods
-  late final ffi.Pointer<ffi.Pointer<luaL_Reg>> _boxmt =
-      _lookup<ffi.Pointer<luaL_Reg>>('boxmt');
-
-  ffi.Pointer<luaL_Reg> get boxmt => _boxmt.value;
-
-  set boxmt(ffi.Pointer<luaL_Reg> value) => _boxmt.value = value;
-
-  void newbox(ffi.Pointer<lua_State> L) {
-    return _newbox(L);
-  }
-
-  late final _newboxPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<lua_State>)>>(
-        'newbox',
-      );
-  late final _newbox = _newboxPtr
-      .asFunction<void Function(ffi.Pointer<lua_State>)>();
-
-  /// Compute new size for buffer 'B', enough to accommodate extra 'sz'
-  /// bytes. (The test for "not big enough" also gets the case when the
-  /// computation of 'newsize' overflows.)
-  int newbuffsize(ffi.Pointer<luaL_Buffer> B, int sz) {
-    return _newbuffsize(B, sz);
-  }
-
-  late final _newbuffsizePtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Size Function(ffi.Pointer<luaL_Buffer>, ffi.Size)
-        >
-      >('newbuffsize');
-  late final _newbuffsize = _newbuffsizePtr
-      .asFunction<int Function(ffi.Pointer<luaL_Buffer>, int)>();
-
-  /// Returns a pointer to a free area with at least 'sz' bytes in buffer
-  /// 'B'. 'boxidx' is the relative position in the stack where is the
-  /// buffer's box or its placeholder.
-  ffi.Pointer<ffi.Char> prepbuffsize(
-    ffi.Pointer<luaL_Buffer> B,
-    int sz,
-    int boxidx,
-  ) {
-    return _prepbuffsize(B, sz, boxidx);
-  }
-
-  late final _prepbuffsizePtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-            ffi.Pointer<luaL_Buffer>,
-            ffi.Size,
-            ffi.Int,
-          )
-        >
-      >('prepbuffsize');
-  late final _prepbuffsize = _prepbuffsizePtr
-      .asFunction<
-        ffi.Pointer<ffi.Char> Function(ffi.Pointer<luaL_Buffer>, int, int)
-      >();
-
-  /// returns a pointer to a free area with at least 'sz' bytes
-  ffi.Pointer<ffi.Char> luaL_prepbuffsize(ffi.Pointer<luaL_Buffer> B, int sz) {
-    return _luaL_prepbuffsize(B, sz);
-  }
-
-  late final _luaL_prepbuffsizePtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(ffi.Pointer<luaL_Buffer>, ffi.Size)
-        >
-      >('luaL_prepbuffsize');
-  late final _luaL_prepbuffsize = _luaL_prepbuffsizePtr
-      .asFunction<
-        ffi.Pointer<ffi.Char> Function(ffi.Pointer<luaL_Buffer>, int)
-      >();
-
-  void luaL_addlstring(
-    ffi.Pointer<luaL_Buffer> B,
-    ffi.Pointer<ffi.Char> s,
-    int l,
-  ) {
-    return _luaL_addlstring(B, s, l);
-  }
-
-  late final _luaL_addlstringPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<luaL_Buffer>,
-            ffi.Pointer<ffi.Char>,
-            ffi.Size,
-          )
-        >
-      >('luaL_addlstring');
-  late final _luaL_addlstring = _luaL_addlstringPtr
-      .asFunction<
-        void Function(ffi.Pointer<luaL_Buffer>, ffi.Pointer<ffi.Char>, int)
-      >();
-
-  void luaL_addstring(ffi.Pointer<luaL_Buffer> B, ffi.Pointer<ffi.Char> s) {
-    return _luaL_addstring(B, s);
-  }
-
-  late final _luaL_addstringPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<luaL_Buffer>, ffi.Pointer<ffi.Char>)
-        >
-      >('luaL_addstring');
-  late final _luaL_addstring = _luaL_addstringPtr
-      .asFunction<
-        void Function(ffi.Pointer<luaL_Buffer>, ffi.Pointer<ffi.Char>)
-      >();
-
-  void luaL_pushresult(ffi.Pointer<luaL_Buffer> B) {
-    return _luaL_pushresult(B);
-  }
-
-  late final _luaL_pushresultPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<luaL_Buffer>)>>(
-        'luaL_pushresult',
-      );
-  late final _luaL_pushresult = _luaL_pushresultPtr
-      .asFunction<void Function(ffi.Pointer<luaL_Buffer>)>();
-
-  void luaL_pushresultsize(ffi.Pointer<luaL_Buffer> B, int sz) {
-    return _luaL_pushresultsize(B, sz);
-  }
-
-  late final _luaL_pushresultsizePtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<luaL_Buffer>, ffi.Size)
-        >
-      >('luaL_pushresultsize');
-  late final _luaL_pushresultsize = _luaL_pushresultsizePtr
-      .asFunction<void Function(ffi.Pointer<luaL_Buffer>, int)>();
-
-  /// 'luaL_addvalue' is the only function in the Buffer system where the
-  /// box (if existent) is not on the top of the stack. So, instead of
-  /// calling 'luaL_addlstring', it replicates the code using -2 as the
-  /// last argument to 'prepbuffsize', signaling that the box is (or will
-  /// be) below the string being added to the buffer. (Box creation can
-  /// trigger an emergency GC, so we should not remove the string from the
-  /// stack before we have the space guaranteed.)
-  void luaL_addvalue(ffi.Pointer<luaL_Buffer> B) {
-    return _luaL_addvalue(B);
-  }
-
-  late final _luaL_addvaluePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<luaL_Buffer>)>>(
-        'luaL_addvalue',
-      );
-  late final _luaL_addvalue = _luaL_addvaluePtr
-      .asFunction<void Function(ffi.Pointer<luaL_Buffer>)>();
-
-  void luaL_buffinit(ffi.Pointer<lua_State> L, ffi.Pointer<luaL_Buffer> B) {
-    return _luaL_buffinit(L, B);
-  }
-
-  late final _luaL_buffinitPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<luaL_Buffer>)
-        >
-      >('luaL_buffinit');
-  late final _luaL_buffinit = _luaL_buffinitPtr
-      .asFunction<
-        void Function(ffi.Pointer<lua_State>, ffi.Pointer<luaL_Buffer>)
-      >();
-
-  ffi.Pointer<ffi.Char> luaL_buffinitsize(
-    ffi.Pointer<lua_State> L,
-    ffi.Pointer<luaL_Buffer> B,
-    int sz,
-  ) {
-    return _luaL_buffinitsize(L, B, sz);
-  }
-
-  late final _luaL_buffinitsizePtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-            ffi.Pointer<lua_State>,
-            ffi.Pointer<luaL_Buffer>,
-            ffi.Size,
-          )
-        >
-      >('luaL_buffinitsize');
-  late final _luaL_buffinitsize = _luaL_buffinitsizePtr
-      .asFunction<
-        ffi.Pointer<ffi.Char> Function(
-          ffi.Pointer<lua_State>,
-          ffi.Pointer<luaL_Buffer>,
-          int,
-        )
-      >();
-
-  /// The previously freed references form a linked list:
-  /// t[freelist] is the index of a first free index, or zero if list is
-  /// empty; t[t[freelist]] is the index of the second element; etc.
   int luaL_ref(ffi.Pointer<lua_State> L, int t) {
     return _luaL_ref(L, t);
   }
@@ -2529,89 +2249,6 @@ class FlutterLuaBridgeBindings {
       >('luaL_unref');
   late final _luaL_unref = _luaL_unrefPtr
       .asFunction<void Function(ffi.Pointer<lua_State>, int, int)>();
-
-  ffi.Pointer<ffi.Char> getF(
-    ffi.Pointer<lua_State> L,
-    ffi.Pointer<ffi.Void> ud,
-    ffi.Pointer<ffi.Size> size,
-  ) {
-    return _getF(L, ud, size);
-  }
-
-  late final _getFPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-            ffi.Pointer<lua_State>,
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Size>,
-          )
-        >
-      >('getF');
-  late final _getF = _getFPtr
-      .asFunction<
-        ffi.Pointer<ffi.Char> Function(
-          ffi.Pointer<lua_State>,
-          ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Size>,
-        )
-      >();
-
-  int errfile(
-    ffi.Pointer<lua_State> L,
-    ffi.Pointer<ffi.Char> what,
-    int fnameindex,
-  ) {
-    return _errfile(L, what, fnameindex);
-  }
-
-  late final _errfilePtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Int Function(
-            ffi.Pointer<lua_State>,
-            ffi.Pointer<ffi.Char>,
-            ffi.Int,
-          )
-        >
-      >('errfile');
-  late final _errfile = _errfilePtr
-      .asFunction<
-        int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>, int)
-      >();
-
-  /// Skip an optional BOM at the start of a stream. If there is an
-  /// incomplete BOM (the first character is correct but the rest is
-  /// not), returns the first character anyway to force an error
-  /// (as no chunk can start with 0xEF).
-  int skipBOM(ffi.Pointer<FILE> f) {
-    return _skipBOM(f);
-  }
-
-  late final _skipBOMPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<FILE>)>>(
-        'skipBOM',
-      );
-  late final _skipBOM = _skipBOMPtr
-      .asFunction<int Function(ffi.Pointer<FILE>)>();
-
-  /// reads the first character of file 'f' and skips an optional BOM mark
-  /// in its beginning plus its first line if it starts with '#'. Returns
-  /// true if it skipped the first line.  In any case, '*cp' has the
-  /// first "valid" character of the file (after the optional BOM and
-  /// a first-line comment).
-  int skipcomment(ffi.Pointer<FILE> f, ffi.Pointer<ffi.Int> cp) {
-    return _skipcomment(f, cp);
-  }
-
-  late final _skipcommentPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Int>)
-        >
-      >('skipcomment');
-  late final _skipcomment = _skipcommentPtr
-      .asFunction<int Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Int>)>();
 
   int luaL_loadfilex(
     ffi.Pointer<lua_State> L,
@@ -2640,41 +2277,14 @@ class FlutterLuaBridgeBindings {
         )
       >();
 
-  ffi.Pointer<ffi.Char> getS(
-    ffi.Pointer<lua_State> L,
-    ffi.Pointer<ffi.Void> ud,
-    ffi.Pointer<ffi.Size> size,
-  ) {
-    return _getS(L, ud, size);
-  }
-
-  late final _getSPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-            ffi.Pointer<lua_State>,
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Size>,
-          )
-        >
-      >('getS');
-  late final _getS = _getSPtr
-      .asFunction<
-        ffi.Pointer<ffi.Char> Function(
-          ffi.Pointer<lua_State>,
-          ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Size>,
-        )
-      >();
-
   int luaL_loadbufferx(
     ffi.Pointer<lua_State> L,
     ffi.Pointer<ffi.Char> buff,
-    int size,
+    int sz,
     ffi.Pointer<ffi.Char> name,
     ffi.Pointer<ffi.Char> mode,
   ) {
-    return _luaL_loadbufferx(L, buff, size, name, mode);
+    return _luaL_loadbufferx(L, buff, sz, name, mode);
   }
 
   late final _luaL_loadbufferxPtr =
@@ -2715,52 +2325,16 @@ class FlutterLuaBridgeBindings {
         int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
       >();
 
-  /// }======================================================
-  int luaL_getmetafield(
-    ffi.Pointer<lua_State> L,
-    int obj,
-    ffi.Pointer<ffi.Char> event,
-  ) {
-    return _luaL_getmetafield(L, obj, event);
+  ffi.Pointer<lua_State> luaL_newstate() {
+    return _luaL_newstate();
   }
 
-  late final _luaL_getmetafieldPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Int Function(
-            ffi.Pointer<lua_State>,
-            ffi.Int,
-            ffi.Pointer<ffi.Char>,
-          )
-        >
-      >('luaL_getmetafield');
-  late final _luaL_getmetafield = _luaL_getmetafieldPtr
-      .asFunction<
-        int Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
-      >();
-
-  int luaL_callmeta(
-    ffi.Pointer<lua_State> L,
-    int obj,
-    ffi.Pointer<ffi.Char> event,
-  ) {
-    return _luaL_callmeta(L, obj, event);
-  }
-
-  late final _luaL_callmetaPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Int Function(
-            ffi.Pointer<lua_State>,
-            ffi.Int,
-            ffi.Pointer<ffi.Char>,
-          )
-        >
-      >('luaL_callmeta');
-  late final _luaL_callmeta = _luaL_callmetaPtr
-      .asFunction<
-        int Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
-      >();
+  late final _luaL_newstatePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<lua_State> Function()>>(
+        'luaL_newstate',
+      );
+  late final _luaL_newstate = _luaL_newstatePtr
+      .asFunction<ffi.Pointer<lua_State> Function()>();
 
   int luaL_len(ffi.Pointer<lua_State> L, int idx) {
     return _luaL_len(L, idx);
@@ -2774,118 +2348,6 @@ class FlutterLuaBridgeBindings {
       >('luaL_len');
   late final _luaL_len = _luaL_lenPtr
       .asFunction<int Function(ffi.Pointer<lua_State>, int)>();
-
-  ffi.Pointer<ffi.Char> luaL_tolstring(
-    ffi.Pointer<lua_State> L,
-    int idx,
-    ffi.Pointer<ffi.Size> len,
-  ) {
-    return _luaL_tolstring(L, idx, len);
-  }
-
-  late final _luaL_tolstringPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-            ffi.Pointer<lua_State>,
-            ffi.Int,
-            ffi.Pointer<ffi.Size>,
-          )
-        >
-      >('luaL_tolstring');
-  late final _luaL_tolstring = _luaL_tolstringPtr
-      .asFunction<
-        ffi.Pointer<ffi.Char> Function(
-          ffi.Pointer<lua_State>,
-          int,
-          ffi.Pointer<ffi.Size>,
-        )
-      >();
-
-  /// set functions from list 'l' into table at top - 'nup'; each
-  /// function gets the 'nup' elements at the top as upvalues.
-  /// Returns with only the table at the stack.
-  void luaL_setfuncs(
-    ffi.Pointer<lua_State> L,
-    ffi.Pointer<luaL_Reg> l,
-    int nup,
-  ) {
-    return _luaL_setfuncs(L, l, nup);
-  }
-
-  late final _luaL_setfuncsPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<lua_State>,
-            ffi.Pointer<luaL_Reg>,
-            ffi.Int,
-          )
-        >
-      >('luaL_setfuncs');
-  late final _luaL_setfuncs = _luaL_setfuncsPtr
-      .asFunction<
-        void Function(ffi.Pointer<lua_State>, ffi.Pointer<luaL_Reg>, int)
-      >();
-
-  /// ensure that stack[idx][fname] has a table and push that table
-  /// into the stack
-  int luaL_getsubtable(
-    ffi.Pointer<lua_State> L,
-    int idx,
-    ffi.Pointer<ffi.Char> fname,
-  ) {
-    return _luaL_getsubtable(L, idx, fname);
-  }
-
-  late final _luaL_getsubtablePtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Int Function(
-            ffi.Pointer<lua_State>,
-            ffi.Int,
-            ffi.Pointer<ffi.Char>,
-          )
-        >
-      >('luaL_getsubtable');
-  late final _luaL_getsubtable = _luaL_getsubtablePtr
-      .asFunction<
-        int Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
-      >();
-
-  /// Stripped-down 'require': After checking "loaded" table, calls 'openf'
-  /// to open a module, registers the result in 'package.loaded' table and,
-  /// if 'glb' is true, also registers the result in the global table.
-  /// Leaves resulting module on the top.
-  void luaL_requiref(
-    ffi.Pointer<lua_State> L,
-    ffi.Pointer<ffi.Char> modname,
-    lua_CFunction openf,
-    int glb,
-  ) {
-    return _luaL_requiref(L, modname, openf, glb);
-  }
-
-  late final _luaL_requirefPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<lua_State>,
-            ffi.Pointer<ffi.Char>,
-            lua_CFunction,
-            ffi.Int,
-          )
-        >
-      >('luaL_requiref');
-  late final _luaL_requiref = _luaL_requirefPtr
-      .asFunction<
-        void Function(
-          ffi.Pointer<lua_State>,
-          ffi.Pointer<ffi.Char>,
-          lua_CFunction,
-          int,
-        )
-      >();
 
   void luaL_addgsub(
     ffi.Pointer<luaL_Buffer> b,
@@ -2947,172 +2409,288 @@ class FlutterLuaBridgeBindings {
         )
       >();
 
-  ffi.Pointer<ffi.Void> l_alloc(
-    ffi.Pointer<ffi.Void> ud,
-    ffi.Pointer<ffi.Void> ptr,
-    int osize,
-    int nsize,
-  ) {
-    return _l_alloc(ud, ptr, osize, nsize);
-  }
-
-  late final _l_allocPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Void> Function(
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Void>,
-            ffi.Size,
-            ffi.Size,
-          )
-        >
-      >('l_alloc');
-  late final _l_alloc = _l_allocPtr
-      .asFunction<
-        ffi.Pointer<ffi.Void> Function(
-          ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Void>,
-          int,
-          int,
-        )
-      >();
-
-  /// Standard panic funcion just prints an error message. The test
-  /// with 'lua_type' avoids possible memory errors in 'lua_tostring'.
-  int panic(ffi.Pointer<lua_State> L) {
-    return _panic(L);
-  }
-
-  late final _panicPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<lua_State>)>>(
-        'panic',
-      );
-  late final _panic = _panicPtr
-      .asFunction<int Function(ffi.Pointer<lua_State>)>();
-
-  /// Warning functions:
-  /// warnfoff: warning system is off
-  /// warnfon: ready to start a new message
-  /// warnfcont: previous message is to be continued
-  void warnfoff(
-    ffi.Pointer<ffi.Void> ud,
-    ffi.Pointer<ffi.Char> message,
-    int tocont,
-  ) {
-    return _warnfoff(ud, message, tocont);
-  }
-
-  late final _warnfoffPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Char>,
-            ffi.Int,
-          )
-        >
-      >('warnfoff');
-  late final _warnfoff = _warnfoffPtr
-      .asFunction<
-        void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, int)
-      >();
-
-  void warnfon(
-    ffi.Pointer<ffi.Void> ud,
-    ffi.Pointer<ffi.Char> message,
-    int tocont,
-  ) {
-    return _warnfon(ud, message, tocont);
-  }
-
-  late final _warnfonPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Char>,
-            ffi.Int,
-          )
-        >
-      >('warnfon');
-  late final _warnfon = _warnfonPtr
-      .asFunction<
-        void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, int)
-      >();
-
-  /// Writes the message and handle 'tocont', finishing the message
-  /// if needed and setting the next warn function.
-  void warnfcont(
-    ffi.Pointer<ffi.Void> ud,
-    ffi.Pointer<ffi.Char> message,
-    int tocont,
-  ) {
-    return _warnfcont(ud, message, tocont);
-  }
-
-  late final _warnfcontPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Char>,
-            ffi.Int,
-          )
-        >
-      >('warnfcont');
-  late final _warnfcont = _warnfcontPtr
-      .asFunction<
-        void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, int)
-      >();
-
-  /// Check whether message is a control message. If so, execute the
-  /// control or ignore it if unknown.
-  int checkcontrol(
+  void luaL_setfuncs(
     ffi.Pointer<lua_State> L,
-    ffi.Pointer<ffi.Char> message,
-    int tocont,
+    ffi.Pointer<luaL_Reg> l,
+    int nup,
   ) {
-    return _checkcontrol(L, message, tocont);
+    return _luaL_setfuncs(L, l, nup);
   }
 
-  late final _checkcontrolPtr =
+  late final _luaL_setfuncsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<lua_State>,
+            ffi.Pointer<luaL_Reg>,
+            ffi.Int,
+          )
+        >
+      >('luaL_setfuncs');
+  late final _luaL_setfuncs = _luaL_setfuncsPtr
+      .asFunction<
+        void Function(ffi.Pointer<lua_State>, ffi.Pointer<luaL_Reg>, int)
+      >();
+
+  int luaL_getsubtable(
+    ffi.Pointer<lua_State> L,
+    int idx,
+    ffi.Pointer<ffi.Char> fname,
+  ) {
+    return _luaL_getsubtable(L, idx, fname);
+  }
+
+  late final _luaL_getsubtablePtr =
       _lookup<
         ffi.NativeFunction<
           ffi.Int Function(
+            ffi.Pointer<lua_State>,
+            ffi.Int,
+            ffi.Pointer<ffi.Char>,
+          )
+        >
+      >('luaL_getsubtable');
+  late final _luaL_getsubtable = _luaL_getsubtablePtr
+      .asFunction<
+        int Function(ffi.Pointer<lua_State>, int, ffi.Pointer<ffi.Char>)
+      >();
+
+  void luaL_traceback(
+    ffi.Pointer<lua_State> L,
+    ffi.Pointer<lua_State> L1,
+    ffi.Pointer<ffi.Char> msg,
+    int level,
+  ) {
+    return _luaL_traceback(L, L1, msg, level);
+  }
+
+  late final _luaL_tracebackPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<lua_State>,
             ffi.Pointer<lua_State>,
             ffi.Pointer<ffi.Char>,
             ffi.Int,
           )
         >
-      >('checkcontrol');
-  late final _checkcontrol = _checkcontrolPtr
+      >('luaL_traceback');
+  late final _luaL_traceback = _luaL_tracebackPtr
       .asFunction<
-        int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>, int)
+        void Function(
+          ffi.Pointer<lua_State>,
+          ffi.Pointer<lua_State>,
+          ffi.Pointer<ffi.Char>,
+          int,
+        )
       >();
 
-  ffi.Pointer<lua_State> luaL_newstate() {
-    return _luaL_newstate();
+  void luaL_requiref(
+    ffi.Pointer<lua_State> L,
+    ffi.Pointer<ffi.Char> modname,
+    lua_CFunction openf,
+    int glb,
+  ) {
+    return _luaL_requiref(L, modname, openf, glb);
   }
 
-  late final _luaL_newstatePtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<lua_State> Function()>>(
-        'luaL_newstate',
-      );
-  late final _luaL_newstate = _luaL_newstatePtr
-      .asFunction<ffi.Pointer<lua_State> Function()>();
-
-  void luaL_checkversion_(ffi.Pointer<lua_State> L, double ver, int sz) {
-    return _luaL_checkversion_(L, ver, sz);
-  }
-
-  late final _luaL_checkversion_Ptr =
+  late final _luaL_requirefPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<lua_State>, lua_Number, ffi.Size)
+          ffi.Void Function(
+            ffi.Pointer<lua_State>,
+            ffi.Pointer<ffi.Char>,
+            lua_CFunction,
+            ffi.Int,
+          )
         >
-      >('luaL_checkversion_');
-  late final _luaL_checkversion_ = _luaL_checkversion_Ptr
-      .asFunction<void Function(ffi.Pointer<lua_State>, double, int)>();
+      >('luaL_requiref');
+  late final _luaL_requiref = _luaL_requirefPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<lua_State>,
+          ffi.Pointer<ffi.Char>,
+          lua_CFunction,
+          int,
+        )
+      >();
+
+  void luaL_buffinit(ffi.Pointer<lua_State> L, ffi.Pointer<luaL_Buffer> B) {
+    return _luaL_buffinit(L, B);
+  }
+
+  late final _luaL_buffinitPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<luaL_Buffer>)
+        >
+      >('luaL_buffinit');
+  late final _luaL_buffinit = _luaL_buffinitPtr
+      .asFunction<
+        void Function(ffi.Pointer<lua_State>, ffi.Pointer<luaL_Buffer>)
+      >();
+
+  ffi.Pointer<ffi.Char> luaL_prepbuffsize(ffi.Pointer<luaL_Buffer> B, int sz) {
+    return _luaL_prepbuffsize(B, sz);
+  }
+
+  late final _luaL_prepbuffsizePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(ffi.Pointer<luaL_Buffer>, ffi.Size)
+        >
+      >('luaL_prepbuffsize');
+  late final _luaL_prepbuffsize = _luaL_prepbuffsizePtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(ffi.Pointer<luaL_Buffer>, int)
+      >();
+
+  void luaL_addlstring(
+    ffi.Pointer<luaL_Buffer> B,
+    ffi.Pointer<ffi.Char> s,
+    int l,
+  ) {
+    return _luaL_addlstring(B, s, l);
+  }
+
+  late final _luaL_addlstringPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<luaL_Buffer>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+          )
+        >
+      >('luaL_addlstring');
+  late final _luaL_addlstring = _luaL_addlstringPtr
+      .asFunction<
+        void Function(ffi.Pointer<luaL_Buffer>, ffi.Pointer<ffi.Char>, int)
+      >();
+
+  void luaL_addstring(ffi.Pointer<luaL_Buffer> B, ffi.Pointer<ffi.Char> s) {
+    return _luaL_addstring(B, s);
+  }
+
+  late final _luaL_addstringPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<luaL_Buffer>, ffi.Pointer<ffi.Char>)
+        >
+      >('luaL_addstring');
+  late final _luaL_addstring = _luaL_addstringPtr
+      .asFunction<
+        void Function(ffi.Pointer<luaL_Buffer>, ffi.Pointer<ffi.Char>)
+      >();
+
+  void luaL_addvalue(ffi.Pointer<luaL_Buffer> B) {
+    return _luaL_addvalue(B);
+  }
+
+  late final _luaL_addvaluePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<luaL_Buffer>)>>(
+        'luaL_addvalue',
+      );
+  late final _luaL_addvalue = _luaL_addvaluePtr
+      .asFunction<void Function(ffi.Pointer<luaL_Buffer>)>();
+
+  void luaL_pushresult(ffi.Pointer<luaL_Buffer> B) {
+    return _luaL_pushresult(B);
+  }
+
+  late final _luaL_pushresultPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<luaL_Buffer>)>>(
+        'luaL_pushresult',
+      );
+  late final _luaL_pushresult = _luaL_pushresultPtr
+      .asFunction<void Function(ffi.Pointer<luaL_Buffer>)>();
+
+  void luaL_pushresultsize(ffi.Pointer<luaL_Buffer> B, int sz) {
+    return _luaL_pushresultsize(B, sz);
+  }
+
+  late final _luaL_pushresultsizePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<luaL_Buffer>, ffi.Size)
+        >
+      >('luaL_pushresultsize');
+  late final _luaL_pushresultsize = _luaL_pushresultsizePtr
+      .asFunction<void Function(ffi.Pointer<luaL_Buffer>, int)>();
+
+  ffi.Pointer<ffi.Char> luaL_buffinitsize(
+    ffi.Pointer<lua_State> L,
+    ffi.Pointer<luaL_Buffer> B,
+    int sz,
+  ) {
+    return _luaL_buffinitsize(L, B, sz);
+  }
+
+  late final _luaL_buffinitsizePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.Pointer<lua_State>,
+            ffi.Pointer<luaL_Buffer>,
+            ffi.Size,
+          )
+        >
+      >('luaL_buffinitsize');
+  late final _luaL_buffinitsize = _luaL_buffinitsizePtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(
+          ffi.Pointer<lua_State>,
+          ffi.Pointer<luaL_Buffer>,
+          int,
+        )
+      >();
+
+  /// A very short-lived native function.
+  ///
+  /// For very short-lived functions, it is fine to call them on the main isolate.
+  /// They will block the Dart execution while running the native function, so
+  /// only do this for native functions which are guaranteed to be short-lived.
+  int sum(int a, int b) {
+    return _sum(a, b);
+  }
+
+  late final _sumPtr =
+      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Int, ffi.Int)>>('sum');
+  late final _sum = _sumPtr.asFunction<int Function(int, int)>();
+
+  /// A longer lived native function, which occupies the thread calling it.
+  ///
+  /// Do not call these kind of native functions in the main isolate. They will
+  /// block Dart execution. This will cause dropped frames in Flutter applications.
+  /// Instead, call these native functions on a separate isolate.
+  int sum_long_running(int a, int b) {
+    return _sum_long_running(a, b);
+  }
+
+  late final _sum_long_runningPtr =
+      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Int, ffi.Int)>>(
+        'sum_long_running',
+      );
+  late final _sum_long_running = _sum_long_runningPtr
+      .asFunction<int Function(int, int)>();
+
+  lua_CFunction set_lua_panic_handle(
+    ffi.Pointer<lua_State> L,
+    lua_CFunction panicf,
+  ) {
+    return _set_lua_panic_handle(L, panicf);
+  }
+
+  late final _set_lua_panic_handlePtr =
+      _lookup<
+        ffi.NativeFunction<
+          lua_CFunction Function(ffi.Pointer<lua_State>, lua_CFunction)
+        >
+      >('set_lua_panic_handle');
+  late final _set_lua_panic_handle = _set_lua_panic_handlePtr
+      .asFunction<
+        lua_CFunction Function(ffi.Pointer<lua_State>, lua_CFunction)
+      >();
 }
 
 final class lua_State extends ffi.Opaque {}
@@ -3281,20 +2859,6 @@ typedef lua_HookFunction =
 typedef Dartlua_HookFunction =
     void Function(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar);
 
-/// userdata to box arbitrary data
-final class UBox extends ffi.Struct {
-  external ffi.Pointer<ffi.Void> box;
-
-  @ffi.Size()
-  external int bsize;
-}
-
-final class luaL_Reg extends ffi.Struct {
-  external ffi.Pointer<ffi.Char> name;
-
-  external lua_CFunction func;
-}
-
 /// {======================================================
 /// Generic Buffer manipulation
 /// =======================================================
@@ -3336,20 +2900,18 @@ final class UnnamedUnion1 extends ffi.Union {
   external ffi.Array<ffi.Char> b;
 }
 
-/// {======================================================
-/// Load functions
-/// =======================================================
-final class LoadF extends ffi.Struct {
-  /// number of pre-read characters
-  @ffi.Int()
-  external int n;
+final class luaL_Reg extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> name;
 
-  /// file being read
+  external lua_CFunction func;
+}
+
+final class luaL_Stream extends ffi.Struct {
+  /// stream (NULL for incompletely created streams)
   external ffi.Pointer<FILE> f;
 
-  /// area for reading file
-  @ffi.Array.multi([1024])
-  external ffi.Array<ffi.Char> buff;
+  /// to close stream (NULL for closed streams)
+  external lua_CFunction closef;
 }
 
 /// stdio state variables.
@@ -3501,13 +3063,6 @@ typedef Dart__int64_t = int;
 
 /// hold a buncha junk that would grow the ABI
 final class __sFILEX extends ffi.Opaque {}
-
-final class LoadS extends ffi.Struct {
-  external ffi.Pointer<ffi.Char> s;
-
-  @ffi.Size()
-  external int size;
-}
 
 const String LUA_VERSION_MAJOR = '5';
 
@@ -3672,10 +3227,18 @@ const String LUA_DBLIBNAME = 'debug';
 
 const String LUA_LOADLIBNAME = 'package';
 
-const int MAX_SIZET = -1;
+const String LUA_GNAME = '_G';
 
-const int LEVELS1 = 10;
+const int LUA_ERRFILE = 6;
 
-const int LEVELS2 = 11;
+const String LUA_LOADED_TABLE = '_LOADED';
 
-const int freelist = 3;
+const String LUA_PRELOAD_TABLE = '_PRELOAD';
+
+const int LUAL_NUMSIZES = 136;
+
+const int LUA_NOREF = -2;
+
+const int LUA_REFNIL = -1;
+
+const String LUA_FILEHANDLE = 'FILE*';
