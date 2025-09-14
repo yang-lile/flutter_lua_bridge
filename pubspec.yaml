@@ -1,7 +1,8 @@
 name: flutter_lua_bridge
-description: "A new Flutter FFI plugin project."
+description: "Dart <-> Lua interoperability. Compile from source code, easy to replace Lua core."
 version: 0.0.1
-homepage:
+homepage: https://github.com/yang-lile/flutter_lua_bridge
+repository: https://github.com/yang-lile/flutter_lua_bridge
 
 environment:
   sdk: ^3.8.1
@@ -21,6 +22,15 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+platforms:
+  android:
+  ios:
+  macos:
+
+topics:
+  - lua
+  - interop
 
 # The following section is specific to Flutter packages.
 flutter:
