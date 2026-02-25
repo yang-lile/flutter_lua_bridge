@@ -20,8 +20,8 @@ class MyApp extends StatefulWidget {
 ///
 /// 读 code 读 a 和 b
 int safeLoader(Pointer<flb.lua_State> l) {
-  flb.bindings.luaL_openlibs(l);
-  final luaVersion = flb.bindings.lua_version(l);
+  flb.luaL_openlibs(l);
+  final luaVersion = flb.lua_version(l);
 
   String code = '''
 function functionalRandom()
@@ -38,24 +38,24 @@ r = functionalRandom()
       print(a,b)
       ''';
   var pointer = code.toPointChar();
-  var luaCallState = flb.bindings.luaL_dostring(l, pointer);
+  var luaCallState = flb.luaL_dostring(l, pointer);
   debugPrint('luaCallState: $luaCallState');
   if (luaCallState != 0) {
-    debugPrint('dostring error: ${flb.bindings.lua_tostring(l, -1)}');
-    flb.bindings.lua_pop(l, -1);
+    debugPrint('dostring error: ${flb.lua_tostring(l, -1)}');
+    flb.lua_pop(l, -1);
     return luaCallState;
   }
-  flb.bindings.lua_pushnumber(l, luaVersion);
+  flb.lua_pushnumber(l, luaVersion);
 
-  flb.bindings.lua_getglobal(l, 'a'.toPointChar());
-  final luaResult = flb.bindings.luaL_optinteger(l, 1, -1);
-  flb.bindings.lua_pop(l, 1);
-  flb.bindings.lua_pushinteger(l, luaResult);
+  flb.lua_getglobal(l, 'a'.toPointChar());
+  final luaResult = flb.luaL_optinteger(l, 1, -1);
+  flb.lua_pop(l, 1);
+  flb.lua_pushinteger(l, luaResult);
 
-  flb.bindings.lua_getglobal(l, 'b'.toNativeUtf8().cast<Char>());
-  final luaResultb = flb.bindings.luaL_optinteger(l, 1, -1);
-  flb.bindings.lua_pop(l, 1);
-  flb.bindings.lua_pushinteger(l, luaResultb);
+  flb.lua_getglobal(l, 'b'.toNativeUtf8().cast<Char>());
+  final luaResultb = flb.luaL_optinteger(l, 1, -1);
+  flb.lua_pop(l, 1);
+  flb.lua_pushinteger(l, luaResultb);
 
   return 3;
 }
@@ -67,27 +67,27 @@ class _MyAppState extends State<MyApp> {
   Duration? stopwatchDuration;
 
   void onPressed() {
-    final l = flb.bindings.luaL_newstate();
+    final l = flb.luaL_newstate();
 
     var dartFunction = Pointer.fromFunction<flb.lua_CFunctionFunction>(
       safeLoader,
       0,
     );
-    flb.bindings.lua_pushcfunction(l, dartFunction);
-    if (flb.bindings.lua_pcall(l, 0, 3, 0) case final stateCode
+    flb.lua_pushcfunction(l, dartFunction);
+    if (flb.lua_pcall(l, 0, 3, 0) case final stateCode
         when stateCode != 0) {
-      debugPrint('dostring error: ${flb.bindings.lua_tostring(l, -1)}');
-      flb.bindings.lua_pop(l, -1);
+      debugPrint('dostring error: ${flb.lua_tostring(l, -1)}');
+      flb.lua_pop(l, -1);
       return;
     }
-    final luaResultb = flb.bindings.lua_isinteger(l, -3 + 2) != 0
-        ? flb.bindings.lua_tointegerx(l, -3 + 2, nullptr)
+    final luaResultb = flb.lua_isinteger(l, -3 + 2) != 0
+        ? flb.lua_tointegerx(l, -3 + 2, nullptr)
         : 0;
-    final luaResult = flb.bindings.lua_isinteger(l, -3 + 1) != 0
-        ? flb.bindings.lua_tointegerx(l, -3 + 1, nullptr)
+    final luaResult = flb.lua_isinteger(l, -3 + 1) != 0
+        ? flb.lua_tointegerx(l, -3 + 1, nullptr)
         : 0;
-    final v = flb.bindings.lua_isnumber(l, -3 + 0) != 0
-        ? flb.bindings.lua_tonumberx(l, -3 + 0, nullptr)
+    final v = flb.lua_isnumber(l, -3 + 0) != 0
+        ? flb.lua_tonumberx(l, -3 + 0, nullptr)
         : 0;
 
     setState(() {
@@ -95,7 +95,7 @@ class _MyAppState extends State<MyApp> {
       fetchAValue = luaResult;
       bValue = luaResultb;
     });
-    flb.bindings.lua_close(l);
+    flb.lua_close(l);
   }
 
   @override
