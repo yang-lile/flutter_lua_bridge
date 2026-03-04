@@ -4,21 +4,13 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart' as flb;
+import 'game/game_demo_page.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-/// 读版本
-///
-/// 读 code 读 a 和 b
+/// 基础 FFI 调用示例
 int safeLoader(Pointer<flb.lua_State> l) {
   flb.luaL_openlibs(l);
   final luaVersion = flb.lua_version(l);
@@ -37,58 +29,80 @@ r = functionalRandom()
       b = r(1, 1024)
       print(a,b)
       ''';
-  var pointer = code.toPointChar();
-  var luaCallState = flb.luaL_dostring(l, pointer);
-  debugPrint('luaCallState: $luaCallState');
-  if (luaCallState != 0) {
-    debugPrint('dostring error: ${flb.lua_tostring(l, -1)}');
-    flb.lua_pop(l, -1);
-    return luaCallState;
+
+  // 使用新的 LuaStateX 扩展方法
+  final result = l.doString(code);
+  if (result != flb.LuaStatus.OK) {
+    final error = l.toLuaString(-1);
+    l.pop(1);
+    debugPrint('Lua error: $error');
+    return result;
   }
+
   flb.lua_pushnumber(l, luaVersion);
 
-  flb.lua_getglobal(l, 'a'.toPointChar());
-  final luaResult = flb.luaL_optinteger(l, 1, -1);
-  flb.lua_pop(l, 1);
-  flb.lua_pushinteger(l, luaResult);
+  // 获取全局变量
+  final ptrA = 'a'.toPointerChar();
+  try {
+    flb.lua_getglobal(l, ptrA);
+    final luaResult = flb.luaL_optinteger(l, -1, -1);
+    l.pop(1);
+    flb.lua_pushinteger(l, luaResult);
+  } finally {
+    calloc.free(ptrA);
+  }
 
-  flb.lua_getglobal(l, 'b'.toNativeUtf8().cast<Char>());
-  final luaResultb = flb.luaL_optinteger(l, 1, -1);
-  flb.lua_pop(l, 1);
-  flb.lua_pushinteger(l, luaResultb);
+  final ptrB = 'b'.toPointerChar();
+  try {
+    flb.lua_getglobal(l, ptrB);
+    final luaResultb = flb.luaL_optinteger(l, -1, -1);
+    l.pop(1);
+    flb.lua_pushinteger(l, luaResultb);
+  } finally {
+    calloc.free(ptrB);
+  }
 
   return 3;
 }
 
-class _MyAppState extends State<MyApp> {
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(home: HomePage());
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   num? luaVersion;
   int? fetchAValue;
   int? bValue;
-  Duration? stopwatchDuration;
 
   void onPressed() {
     final l = flb.luaL_newstate();
 
-    var dartFunction = Pointer.fromFunction<flb.lua_CFunctionFunction>(
-      safeLoader,
-      0,
-    );
-    flb.lua_pushcfunction(l, dartFunction);
-    if (flb.lua_pcall(l, 0, 3, 0) case final stateCode
-        when stateCode != 0) {
-      debugPrint('dostring error: ${flb.lua_tostring(l, -1)}');
-      flb.lua_pop(l, -1);
+    var dartFunction = Pointer.fromFunction<flb.lua_CFunctionFunction>(safeLoader, 0);
+    flb.lua_pushcclosure(l, dartFunction, 0);
+
+    final stateCode = flb.lua_pcallk(l, 0, 3, 0, 0, nullptr);
+    if (stateCode != flb.LuaStatus.OK) {
+      final error = l.toLuaString(-1);
+      l.pop(1);
+      debugPrint('Error: $error');
       return;
     }
-    final luaResultb = flb.lua_isinteger(l, -3 + 2) != 0
-        ? flb.lua_tointegerx(l, -3 + 2, nullptr)
-        : 0;
-    final luaResult = flb.lua_isinteger(l, -3 + 1) != 0
-        ? flb.lua_tointegerx(l, -3 + 1, nullptr)
-        : 0;
-    final v = flb.lua_isnumber(l, -3 + 0) != 0
-        ? flb.lua_tonumberx(l, -3 + 0, nullptr)
-        : 0;
+
+    final luaResultb = flb.lua_isinteger(l, -3 + 2) != 0 ? flb.lua_tointegerx(l, -3 + 2, nullptr) : 0;
+    final luaResult = flb.lua_isinteger(l, -3 + 1) != 0 ? flb.lua_tointegerx(l, -3 + 1, nullptr) : 0;
+    final v = flb.lua_isnumber(l, -3 + 0) != 0 ? flb.lua_tonumberx(l, -3 + 0, nullptr) : 0;
 
     setState(() {
       luaVersion = v;
@@ -99,54 +113,49 @@ class _MyAppState extends State<MyApp> {
   }
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     const textStyle = TextStyle(fontSize: 25);
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('Native Packages')),
-        body: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              spacing: 10,
-              children: [
-                const Text(
-                  'This calls a native function through FFI that is shipped as source in the package. '
-                  'The native code is built as part of the Flutter Runner build.',
-                  style: textStyle,
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  'lua version = $luaVersion',
-                  style: textStyle,
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  'fetch a value: $fetchAValue',
-                  style: textStyle,
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  'fetch b value: $bValue',
-                  style: textStyle,
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  'fetch duration: $stopwatchDuration',
-                  style: textStyle,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Flutter Lua Bridge Demo'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const GameDemoPage()));
+            },
+            child: const Text('游戏Demo', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            spacing: 10,
+            children: [
+              const Text('Flutter Lua Bridge - FFI Example', style: textStyle, textAlign: TextAlign.center),
+              const Text(
+                'This example demonstrates FFI integration with Lua',
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const Divider(),
+              Text('Lua version = $luaVersion', style: textStyle, textAlign: TextAlign.center),
+              Text('Random value A: $fetchAValue', style: textStyle, textAlign: TextAlign.center),
+              Text('Random value B: $bValue', style: textStyle, textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const GameDemoPage()));
+                },
+                icon: const Icon(Icons.gamepad),
+                label: const Text('打开抽卡战斗游戏 Demo'),
+              ),
+            ],
           ),
         ),
-        floatingActionButton: FloatingActionButton(onPressed: onPressed),
       ),
+      floatingActionButton: FloatingActionButton(onPressed: onPressed, child: const Icon(Icons.play_arrow)),
     );
   }
 }
