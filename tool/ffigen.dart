@@ -22,14 +22,20 @@ void main(List<String> args) {
         packageRoot.resolve('src/lua/src/lauxlib.h'),
       ],
     ),
-    
+
     enums: Enums.includeAll,
     functions: Functions.includeAll,
     globals: Globals.includeAll,
     macros: Macros.includeAll,
-    structs: Structs(include: Declarations.includeAll, dependencies: CompoundDependencies.full),
+    structs: Structs(
+      include: Declarations.includeAll,
+      dependencies: CompoundDependencies.full,
+    ),
     typedefs: Typedefs.includeAll,
-    unions: Unions(include: Declarations.includeAll, dependencies: CompoundDependencies.full),
+    unions: Unions(
+      include: Declarations.includeAll,
+      dependencies: CompoundDependencies.full,
+    ),
     unnamedEnums: UnnamedEnums.includeAll,
   ).generate();
 }

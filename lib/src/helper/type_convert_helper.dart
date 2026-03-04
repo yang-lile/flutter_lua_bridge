@@ -1,11 +1,4 @@
-import 'dart:ffi';
+// 此文件已合并到 lib/src/utils/type_convert_helper.dart
+// 保留此文件以维持向后兼容
 
-import 'package:ffi/ffi.dart';
-
-extension PointCharX on Pointer<Char> {
-  String toDartString() => cast<Utf8>().toDartString();
-}
-
-extension NativePointCharX on String {
-  Pointer<Char> toPointChar() => toNativeUtf8().cast<Char>();
-}
+export '../utils/type_convert_helper.dart';
