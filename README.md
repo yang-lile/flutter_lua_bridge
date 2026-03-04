@@ -1,24 +1,90 @@
 # flutter_lua_bridge
 
-Dart <-> Lua interoperability. Compile from source code, easy to replace Lua core.
+Dart FFI bindings for Lua 5.4. Compile Lua from source with no external dependencies.
 
-## Getting Started
+## Features
 
-import this package by cmdline:
+- ✅ Lua 5.4 source code included - easy to customize
+- ✅ Works on macOS, Linux, Windows, Android, iOS
+- ✅ High-level API (`LuaState`) and low-level FFI bindings
+- ✅ Automatic native library building via Dart hooks
+
+## Installation
 
 ```shell
 dart pub add flutter_lua_bridge
 ```
 
-## Project structure
+Or add to `pubspec.yaml`:
 
-This template uses the following structure:
+```yaml
+dependencies:
+  flutter_lua_bridge: ^0.1.0
+```
 
-* `src`: Contains the lua source code, and a CmakeFile.txt file for building
-  that source code into a dynamic library.
+## Usage
 
-* `lib`: Contains the Dart code that defines the API of the plugin, and which
-  calls into the native code using `dart:ffi`.
+### High-level API (Recommended)
 
-* platform folders (`android`, `ios`, `macos`, etc.): Contains the build files
-  for building and bundling the native code library with the platform application.
+```dart
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+
+void main() {
+  LuaState.use((lua) {
+    lua.openLibs();
+    
+    // Run Lua code
+    lua.doString('''
+      function add(a, b)
+        return a + b
+      end
+      result = add(10, 20)
+    ''');
+    
+    // Get result
+    lua.getGlobal('result');
+    print('Result: \${lua.toInteger(-1)}');
+  });
+}
+```
+
+### Low-level FFI
+
+```dart
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+
+void main() {
+  final L = luaL_newstate();
+  luaL_openlibs(L);
+  
+  // Execute Lua code
+  luaL_dostring(L, 'print("Hello from Lua!")'.toNativeUtf8());
+  
+  lua_close(L);
+}
+```
+
+## Platform Support
+
+| Platform | Status |
+|----------|--------|
+| macOS | ✅ |
+| Linux | ✅ |
+| Windows | ✅ |
+| Android | ✅ |
+| iOS | ✅ |
+
+No manual configuration needed - the package automatically builds native libraries on all platforms.
+
+## Example
+
+See the [example](example/) folder for a complete Flutter demo app.
+
+```shell
+cd example
+flutter run
+```
+
+## License
+
+MIT
