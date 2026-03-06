@@ -1,7 +1,7 @@
 import 'dart:ffi';
 import 'dart:io';
 
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+import 'package:flutter_lua_bridge/lua_raw_api.dart';
 
 /// 模拟 C 语言版本的 Lua Shell
 /// 从标准输入读取 Lua 代码，解释执行后输出结果和异常
@@ -105,7 +105,7 @@ void main(List<String> args) {
 /// 加载并执行 Lua 代码
 /// 对应 luaL_loadstring(L, s) || lua_pcall(L, 0, LUA_MULTRET, 0)
 int _dostring(Pointer<lua_State> L, String code) {
-  final Pointer<Char> codePtr = code.toPointChar();
+  final Pointer<Char> codePtr = code.toPointerChar();
 
   // luaL_loadstring: 加载代码（自动计算长度，使用代码内容作为 chunkname）
   int status = luaL_loadstring(L, codePtr);
