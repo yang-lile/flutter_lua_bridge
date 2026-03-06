@@ -3,83 +3,64 @@
 /// Dart 与 Lua 的 FFI 绑定库，支持从源码编译 Lua，
 /// 便于替换 Lua 核心。
 ///
-/// 提供两层 API：
-/// 1. 底层 FFI 绑定 - 直接调用 Lua C API（生成的代码）
-/// 2. 高层封装 - 面向对象的 Dart API（推荐）
+/// 本库提供两种 API 风格：
+///
+/// 1. **原始 C API** (`lua_raw_api.dart`)
+///    - 保持 C 语言命名风格（小写下划线）
+///    - 适合熟悉 Lua C API 的用户
+///    - 直接翻译 C 代码更方便
+///
+/// 2. **Dart 风格 API** (`lua_dart_api.dart`)
+///    - 面向对象的 LuaState 类
+///    - 符合 Dart 命名规范（小驼峰）
+///    - 自动内存管理和异常处理
+///    - 推荐 Dart 开发者使用
+///
+/// 默认导出（向后兼容）：同时导出两套 API
 ///
 /// 使用示例：
 /// ```dart
 /// import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 ///
 /// void main() {
-///   // 方式1：使用高层封装（推荐）
-///   LuaState.create().use((lua) {
+///   // 推荐：使用 Dart 风格 API
+///   LuaState.use((lua) {
 ///     lua.openLibs();
 ///     lua.doString('print("Hello from Lua!")');
 ///   });
-///
-///   // 方式2：使用底层 FFI
+///   
+///   // 也可以使用原始 C API
 ///   final L = luaL_newstate();
 ///   luaL_openlibs(L);
-///   luaL_dostring(L, 'print("Hello")'.toPointerChar());
 ///   lua_close(L);
 /// }
 /// ```
-
-// ==================== 核心常量 ====================
-export 'src/core/lua_constants.dart';
-
-// ==================== Lua 状态封装 ====================
-export 'src/core/lua_state.dart';
-
-// ==================== FFI 生成的底层绑定 ====================
 ///
-/// 这些是由 ffigen 自动生成的 FFI 绑定，
-/// 包含完整的 Lua C API。
+/// 或者只导入你需要的风格：
+/// ```dart
+/// // 只使用 Dart 风格
+/// import 'package:flutter_lua_bridge/lua_dart_api.dart';
 ///
-/// 注意：直接使用这些 API 需要手动管理内存和错误处理。
-///
-/// 隐藏与 lua_constants.dart 中重复的常量
-export 'src/gen/flutter_lua_bridge.g.dart'
-    hide LUA_MULTRET, LUA_NOREF, LUA_REFNIL;
+/// // 只使用原始 C 风格
+/// import 'package:flutter_lua_bridge/lua_raw_api.dart';
+/// ```
 
-// ==================== 辅助工具 ====================
-///
-/// 类型转换辅助，包含 String/Pointer<Char> 转换、
-/// LuaState 扩展方法等。
-export 'src/utils/type_convert_helper.dart';
+library flutter_lua_bridge;
 
-// ==================== 兼容旧版本 ====================
-///
-/// 以下导出为兼容旧版本，建议使用新的 LuaState API
-///
+// ==================== 子库导出 ====================
 
-// 类型转换扩展（已移动到 utils）
-export 'src/utils/type_convert_helper.dart'
-    show PointCharX, NativePointCharX, StringPointerHelper, StringBatch;
+/// 原始 C API 导出（C 语言风格）
+/// - 小写下划线命名
+/// - 直接操作指针
+/// - 需要手动管理内存
+export 'lua_raw_api.dart';
 
-// Lua 状态扩展（已移动到 utils）
-export 'src/utils/type_convert_helper.dart' show LuaStateX;
+/// Dart 风格 API 导出（Dart 习惯）
+/// - 小驼峰命名
+/// - 面向对象封装
+/// - 自动内存管理
+export 'lua_dart_api.dart';
 
-// ==================== 已弃用的导出 ====================
-///
-/// 以下文件的内容已整合到新的结构中，
-/// 保留导出以确保向后兼容。
-///
-@Deprecated('使用 LuaState 类或 lua_constants.dart 中的常量')
-export 'src/macro_defines.dart'
-    hide
-        LUA_MULTRET,
-        LUA_NOREF,
-        LUA_REFNIL,
-        lua_pcall,
-        luaL_dostring,
-        lua_tostring,
-        lua_pop,
-        lua_pushcfunction;
-
-@Deprecated('功能已合并到 type_convert_helper.dart')
-export 'src/helper/quick_call_method.dart';
-
-@Deprecated('功能已合并到 type_convert_helper.dart')
-export 'src/helper/type_convert_helper.dart';
+// ==================== 兼容性导出 ====================
+/// 为了保持向后兼容，主库仍然导出所有内容
+/// 新项目建议根据需求导入子库
