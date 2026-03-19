@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 
 import 'card_loader.dart';
-import 'battle_simulator.dart';
 import 'card_editor_page.dart';
 import 'battle_arena_page.dart';
 import 'models.dart';
@@ -265,7 +264,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
         elevation: 4,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: rarityColor.withOpacity(0.5), width: 2),
+          side: BorderSide(color: rarityColor.withValues(alpha: 0.5), width: 2),
         ),
         child: Container(
           width: 120,
@@ -367,7 +366,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
                   'SR': Colors.purple,
                   'SSR': Colors.orange,
                   'UR': Colors.red,
-                }[card.rarity]?.withOpacity(0.2),
+                }[card.rarity]?.withValues(alpha: 0.2),
               ),
               const SizedBox(height: 8),
               // 描述

@@ -173,7 +173,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              rarityColor.withOpacity(0.1),
+              rarityColor.withValues(alpha: 0.1),
               Colors.white,
             ],
           ),
@@ -352,7 +352,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
             subtitle: Text(_editableCard.normalAttack.description),
             trailing: Chip(
               label: Text('${(_editableCard.normalAttack.multiplier * 100).toInt()}%'),
-              backgroundColor: Colors.orange.withOpacity(0.2),
+              backgroundColor: Colors.orange.withValues(alpha: 0.2),
             ),
           ),
         ),
@@ -366,7 +366,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
             ),
             trailing: Chip(
               label: Text('${(_editableCard.skill.multiplier * 100).toInt()}%'),
-              backgroundColor: Colors.purple.withOpacity(0.2),
+              backgroundColor: Colors.purple.withValues(alpha: 0.2),
             ),
             isThreeLine: true,
           ),
@@ -414,7 +414,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
     }
 
     return Card(
-      color: powerColor.withOpacity(0.1),
+      color: powerColor.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

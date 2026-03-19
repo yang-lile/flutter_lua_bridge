@@ -4,7 +4,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import 'battle_simulator.dart';
 import 'models.dart';
 
 class BattleArenaPage extends StatefulWidget {
@@ -135,6 +134,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
 
       // 跳过眩晕
       if (attacker.stunned) {
+        if (!mounted) return;
         setState(() {
           attacker.stunned = false;
           _actionText = '${attacker.name} 眩晕中，无法行动';
@@ -162,6 +162,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
       // 检查战斗结束
       final result = _checkBattleResult();
       if (result != null) {
+        if (!mounted) return;
         setState(() {
           _battleStatus = result;
           _isBattleRunning = false;
@@ -175,6 +176,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
     // 下一回合
     if (!_isBattleRunning || _isPaused) return;
     
+    if (!mounted) return;
     setState(() {
       _currentTurn++;
       _battleStatus = '第 $_currentTurn 回合';
@@ -187,14 +189,16 @@ class _BattleArenaPageState extends State<BattleArenaPage>
     }
   }
 
-  Future<void> _performAttack(MonsterCard attacker, MonsterCard target, 
+  Future<void> _performAttack(MonsterCard attacker, MonsterCard target,
       int attackerIndex, int targetIndex) async {
     // 显示攻击者
+    if (!mounted) return;
     setState(() {
       _activeAttacker = attackerIndex;
       _actionText = '${attacker.name} 准备攻击';
     });
     await _delay(300);
+    if (!mounted) return;
 
     // 移动到目标
     setState(() {
@@ -203,6 +207,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
       _actionText = '${attacker.name} → ${target.name}';
     });
     await _delay(200);
+    if (!mounted) return;
 
     // 计算伤害（简化版）
     final isSkill = attacker.currentCooldown == 0 && _randomBool();
@@ -221,10 +226,11 @@ class _BattleArenaPageState extends State<BattleArenaPage>
     target.hp = (target.hp - finalDamage).clamp(0, target.maxHp);
 
     // 显示伤害
+    if (!mounted) return;
     setState(() {
       _damageDealt = finalDamage;
       _isCritical = isCrit;
-      _actionText = isSkill ? '${attacker.name} 使用 ${skill.name}!' 
+      _actionText = isSkill ? '${attacker.name} 使用 ${skill.name}!'
                             : '${attacker.name} 普通攻击';
     });
 
@@ -243,6 +249,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
     _scrollToBottom();
 
     await _delay(800);
+    if (!mounted) return;
 
     // 重置动画状态
     setState(() {
@@ -260,6 +267,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
   }
 
   Future<void> _performDeath(MonsterCard monster) async {
+    if (!mounted) return;
     setState(() {
       _actionText = '${monster.name} 倒下了！';
     });
@@ -452,7 +460,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
   Widget _buildTeamColumn(List<MonsterCard> team, bool isTeamA) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-      color: isTeamA ? Colors.blue.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+      color: isTeamA ? Colors.blue.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
       child: Column(
         children: [
           // 队伍标识
@@ -485,8 +493,8 @@ class _BattleArenaPageState extends State<BattleArenaPage>
                 
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  transform: isAttacking 
-                      ? (Matrix4.identity()..translate(isTeamA ? 30.0 : -30.0))
+                  transform: isAttacking
+                      ? (Matrix4.identity()..translateByDouble(isTeamA ? 30.0 : -30.0, 0, 0, 1))
                       : Matrix4.identity(),
                   child: _buildMonsterCard(
                     monster, 
@@ -515,8 +523,8 @@ class _BattleArenaPageState extends State<BattleArenaPage>
 
     return Card(
       elevation: isActive ? 8 : 2,
-      color: monster.isAlive 
-          ? (isActive ? Colors.yellow.withOpacity(0.2) : null)
+      color: monster.isAlive
+          ? (isActive ? Colors.yellow.withValues(alpha: 0.2) : null)
           : Colors.grey[800],
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -599,7 +607,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
                 padding: const EdgeInsets.only(top: 4),
                 child: Chip(
                   label: Text('冷却 ${monster.currentCooldown}'),
-                  backgroundColor: Colors.purple.withOpacity(0.2),
+                  backgroundColor: Colors.purple.withValues(alpha: 0.2),
                   padding: EdgeInsets.zero,
                   visualDensity: VisualDensity.compact,
                 ),
@@ -626,7 +634,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 4,
                   ),
                 ],
@@ -675,7 +683,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.green.withOpacity(0.5),
+              color: Colors.green.withValues(alpha: 0.5),
               blurRadius: 30,
               spreadRadius: 10,
             ),
@@ -719,7 +727,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
               color: Colors.amber,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.amber.withOpacity(0.5),
+                  color: Colors.amber.withValues(alpha: 0.5),
                   blurRadius: 20,
                   spreadRadius: 5,
                 ),
