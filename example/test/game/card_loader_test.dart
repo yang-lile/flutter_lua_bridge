@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart' as flb;
 
-import '../../lib/game/models.dart';
+import 'package:flutter_lua_bridge_example/game/models.dart';
 
 void main() {
   group('MonsterCard Model Tests', () {

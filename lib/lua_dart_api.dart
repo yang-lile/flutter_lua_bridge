@@ -36,7 +36,10 @@
 /// }
 /// ```
 
+@ffi.DefaultAsset('package:flutter_lua_bridge/flutter_lua_bridge.dart')
 library flutter_lua_bridge.dart_api;
+
+import 'dart:ffi' as ffi;
 
 // ==================== 核心常量 ====================
 /// Lua 常量定义（状态码、类型、GC 操作等）

@@ -2,6 +2,7 @@
 
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:flutter_lua_bridge/src/macro_defines.dart';
 
 import '../gen/flutter_lua_bridge.g.dart'
     hide LUA_MULTRET, LUA_NOREF, LUA_REFNIL;

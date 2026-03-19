@@ -32,7 +32,10 @@
 /// }
 /// ```
 
+@ffi.DefaultAsset('package:flutter_lua_bridge/flutter_lua_bridge.dart')
 library flutter_lua_bridge.raw_api;
+
+import 'dart:ffi' as ffi;
 
 // ==================== FFI 生成的底层绑定 ====================
 /// 自动生成的 FFI 绑定，包含完整的 Lua C API
@@ -46,6 +49,10 @@ export 'src/core/lua_constants.dart';
 // ==================== C API 宏函数 ====================
 /// C 语言 Lua API 中的宏和内联函数的 Dart 实现
 export 'src/core/lua_c_api_helpers.dart';
+
+// ==================== 辅助函数和宏定义 ====================
+/// 包含 luaL_openlibs 等辅助函数
+export 'src/macro_defines.dart' show luaL_openlibs, lua_pushcfunction;
 
 // ==================== 基础类型转换（原始风格） ====================
 /// 字符串和指针之间的基础转换

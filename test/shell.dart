@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter_lua_bridge/lua_raw_api.dart';
+import 'package:flutter_lua_bridge/src/macro_defines.dart' hide lua_pop, lua_tostring, lua_pcall, luaL_openlibs, luaL_dostring;
 
 /// 模拟 C 语言版本的 Lua Shell
 /// 从标准输入读取 Lua 代码，解释执行后输出结果和异常
