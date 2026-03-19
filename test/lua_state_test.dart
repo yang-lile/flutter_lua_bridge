@@ -16,8 +16,8 @@ void main() {
 
     test('should get Lua version', () {
       LuaState.use((lua) {
-        expect(lua.version, equals(504));
-        expect(lua.versionString, equals('Lua 504'));
+        expect(lua.version, equals(505));
+        expect(lua.versionString, equals('Lua 505'));
       });
     });
 

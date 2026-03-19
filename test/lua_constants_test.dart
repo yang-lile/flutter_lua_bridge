@@ -51,7 +51,7 @@ void main() {
       expect(LuaGC.RESTART, equals(1));
       expect(LuaGC.COLLECT, equals(2));
       expect(LuaGC.COUNT, equals(3));
-      expect(LuaGC.ISRUNNING, equals(9));
+      expect(LuaGC.ISRUNNING, equals(6));
     });
   });
 

@@ -95,9 +95,9 @@ class LuaGC {
   static const int COUNT = 3;
   static const int COUNTB = 4;
   static const int STEP = 5;
-  static const int SETPAUSE = 6;
-  static const int SETSTEPMUL = 7;
-  static const int ISRUNNING = 9;
+  static const int ISRUNNING = 6;
+  static const int GEN = 7;
+  static const int INC = 8;
 }
 
 /// 算术操作

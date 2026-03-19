@@ -32,7 +32,10 @@
 /// }
 /// ```
 
+@ffi.DefaultAsset('package:flutter_lua_bridge/flutter_lua_bridge.dart')
 library flutter_lua_bridge.raw_api;
+
+import 'dart:ffi' as ffi;
 
 // ==================== FFI 生成的底层绑定 ====================
 /// 自动生成的 FFI 绑定，包含完整的 Lua C API

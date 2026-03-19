@@ -7,7 +7,6 @@
 ///
 
 import 'dart:ffi';
-import 'package:ffi/ffi.dart';
 import '../gen/flutter_lua_bridge.g.dart';
 
 /// lua_pop 宏: lua_settop(L, -(n)-1)

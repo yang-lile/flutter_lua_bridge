@@ -3,6 +3,8 @@
 import 'dart:ffi';
 // ffi 导入通过 type_convert_helper.dart 间接使用
 
+import 'package:flutter_lua_bridge/src/macro_defines.dart';
+
 import '../gen/flutter_lua_bridge.g.dart';
 import '../utils/type_convert_helper.dart';
 import 'lua_constants.dart';
@@ -15,9 +17,7 @@ class LuaException implements Exception {
   const LuaException(this.message, {this.status});
 
   @override
-  String toString() => status != null
-      ? 'LuaException[$status]: $message'
-      : 'LuaException: $message';
+  String toString() => status != null ? 'LuaException[$status]: $message' : 'LuaException: $message';
 }
 
 /// Lua 状态封装类
@@ -67,11 +67,9 @@ class LuaState {
   /// [f] 自定义内存分配函数
   /// [ud] 用户数据
   factory LuaState.createWithAlloc(lua_Alloc f, Pointer<Void> ud) {
-    final state = lua_newstate(f, ud);
+    final state = lua_newstate(f, ud, luaL_makeseed(nullptr));
     if (state == nullptr) {
-      throw const LuaException(
-        'Failed to create Lua state with custom allocator',
-      );
+      throw const LuaException('Failed to create Lua state with custom allocator');
     }
     return LuaState._(state);
   }
@@ -373,11 +371,9 @@ class LuaResult<T> {
 
   const LuaResult._({required this.success, this.value, this.error});
 
-  factory LuaResult.success(T value) =>
-      LuaResult._(success: true, value: value);
+  factory LuaResult.success(T value) => LuaResult._(success: true, value: value);
 
-  factory LuaResult.failure(LuaException error) =>
-      LuaResult._(success: false, error: error);
+  factory LuaResult.failure(LuaException error) => LuaResult._(success: false, error: error);
 
   /// 获取值或抛出异常
   T getOrThrow() {
