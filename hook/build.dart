@@ -49,6 +49,10 @@ Future<void> main(List<String> args) async {
         assetName: '$packageName.dart',
         sources: sources,
         libraries: ['m', 'dl'],
+        // iOS 不支持 system() 函数，需要定义 LUA_USE_IOS
+        flags: input.config.code.targetOS == OS.iOS
+            ? ['-DLUA_USE_IOS']
+            : [],
       );
       await builder.run(input: input, output: output);
     }

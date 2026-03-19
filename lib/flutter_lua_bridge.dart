@@ -80,7 +80,9 @@ export 'lua_raw_api.dart';
 /// - 面向对象封装
 /// - 自动内存管理
 export 'lua_dart_api.dart';
-
 // ==================== 兼容性导出 ====================
 /// 为了保持向后兼容，主库仍然导出所有内容
 /// 新项目建议根据需求导入子库
+
+// 从 macro_defines.dart 导出 luaL_openlibs 以保持向后兼容
+export 'src/macro_defines.dart' show luaL_openlibs, lua_pushcfunction;
