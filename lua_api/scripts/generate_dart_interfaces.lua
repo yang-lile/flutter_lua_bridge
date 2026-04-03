@@ -576,8 +576,8 @@ local function main()
     print("===================================")
     
     -- 读取文件
-    local contents_path = "src/lua/doc/contents.html"
-    local manual_path = "src/lua/doc/manual.html"
+    local contents_path = "lua_src/doc/contents.html"
+    local manual_path = "lua_src/doc/manual.html"
     local output_dir = "lua_api/lib/src/gen"
     
     print("\nReading " .. contents_path .. "...")
