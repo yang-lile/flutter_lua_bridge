@@ -15,6 +15,9 @@ local function read_file(p)
 end
 local function write_file(p, c)
     local f = io.open(p, "w")
+    if f == nil then
+        return error("Cannot write to file: " .. p)
+    end
     f:write(c)
     f:close()
     print("Generated: " .. p)
