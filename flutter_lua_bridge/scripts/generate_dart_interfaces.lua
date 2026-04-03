@@ -576,9 +576,9 @@ local function main()
     print("===================================")
     
     -- 读取文件
-    local contents_path = "lua_src/doc/contents.html"
-    local manual_path = "lua_src/doc/manual.html"
-    local output_dir = "lua_api/lib/src/gen"
+    local contents_path = "../lua_src/doc/contents.html"
+    local manual_path = "../lua_src/doc/manual.html"
+    local output_dir = "../flutter_lua_bridge/lib/src/gen"
     
     print("\nReading " .. contents_path .. "...")
     local contents = read_file(contents_path)

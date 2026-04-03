@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:ffigen/ffigen.dart';
 
 void main(List<String> args) {
-  final packageRoot = Platform.script.resolve('../');
+  final packageRoot = Platform.script.resolve('../../');
   const packageName = 'flutter_lua_bridge';
   FfiGenerator(
     output: Output(
-      dartFile: packageRoot.resolve('lib/src/gen/$packageName.g.dart'),
+      dartFile: packageRoot.resolve('$packageName/lib/src/gen/$packageName.g.dart'),
       commentType: CommentType(CommentStyle.any, CommentLength.full),
       preamble: '''
 // ignore_for_file: always_specify_types
@@ -17,9 +17,9 @@ void main(List<String> args) {
     ),
     headers: Headers(
       entryPoints: [
-        packageRoot.resolve('src/lua/src/lua.h'),
-        packageRoot.resolve('src/lua/src/lualib.h'),
-        packageRoot.resolve('src/lua/src/lauxlib.h'),
+        packageRoot.resolve('lua_src/src/lua.h'),
+        packageRoot.resolve('lua_src/src/lualib.h'),
+        packageRoot.resolve('lua_src/src/lauxlib.h'),
       ],
     ),
 
