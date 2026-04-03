@@ -1,6 +1,8 @@
 // ignore_for_file: always_specify_types
 // ignore_for_file: camel_case_types
 // ignore_for_file: non_constant_identifier_names
+@ffi.DefaultAsset('package:flutter_lua_bridge/flutter_lua_bridge.dart')
+library flutter_lua_bridge;
 
 // AUTO GENERATED FILE, DO NOT EDIT.
 //

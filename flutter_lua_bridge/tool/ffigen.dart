@@ -9,11 +9,16 @@ void main(List<String> args) {
     output: Output(
       dartFile: packageRoot.resolve('$packageName/lib/src/gen/$packageName.g.dart'),
       commentType: CommentType(CommentStyle.any, CommentLength.full),
-      preamble: '''
+      preamble:
+          '''
 // ignore_for_file: always_specify_types
 // ignore_for_file: camel_case_types
 // ignore_for_file: non_constant_identifier_names
+@ffi.DefaultAsset('package:$packageName/$packageName.dart')
+library $packageName;
 ''',
+
+      style: NativeExternalBindings(),
     ),
     headers: Headers(
       entryPoints: [
@@ -27,15 +32,9 @@ void main(List<String> args) {
     functions: Functions.includeAll,
     globals: Globals.includeAll,
     macros: Macros.includeAll,
-    structs: Structs(
-      include: Declarations.includeAll,
-      dependencies: CompoundDependencies.full,
-    ),
+    structs: Structs(include: Declarations.includeAll, dependencies: CompoundDependencies.full),
     typedefs: Typedefs.includeAll,
-    unions: Unions(
-      include: Declarations.includeAll,
-      dependencies: CompoundDependencies.full,
-    ),
+    unions: Unions(include: Declarations.includeAll, dependencies: CompoundDependencies.full),
     unnamedEnums: UnnamedEnums.includeAll,
   ).generate();
 }
