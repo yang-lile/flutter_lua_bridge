@@ -1,737 +1,654 @@
-import 'dart:ffi';
+import 'dart:ffi' as ffi;
+import 'gen/flutter_lua_bridge.g.dart' as flb;
+import 'gen/lua_c_api.dart';
 
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+// 从 FFI 绑定中导入类型
+typedef lua_State = flb.lua_State;
+typedef lua_Debug = flb.lua_Debug;
+typedef lua_CFunction = flb.lua_CFunction;
+typedef lua_KFunction = flb.lua_KFunction;
+typedef lua_Alloc = flb.lua_Alloc;
+typedef lua_Hook = flb.lua_Hook;
+typedef lua_Reader = flb.lua_Reader;
+typedef lua_Writer = flb.lua_Writer;
+typedef lua_WarnFunction = flb.lua_WarnFunction;
 
 class LuaCApiImpl implements LuaCApi {
   @override
-  Int32 lua_absindex(Pointer<Void> L, Int32 idx) {
-    // TODO: implement lua_absindex
-    throw UnimplementedError();
+  int lua_absindex(ffi.Pointer<lua_State> L, int idx) {
+    return flb.lua_absindex(L, idx);
   }
 
   @override
-  void lua_arith(Pointer<Void> L, Int32 op) {
-    // TODO: implement lua_arith
+  void lua_arith(ffi.Pointer<lua_State> L, int op) {
+    flb.lua_arith(L, op);
   }
 
   @override
-  Pointer<NativeFunction<lua_CFunction_Func>> lua_atpanic(
-    Pointer<Void> L,
-    Pointer<NativeFunction<lua_CFunction_Func>> panicf,
-  ) {
-    // TODO: implement lua_atpanic
-    throw UnimplementedError();
+  lua_CFunction lua_atpanic(ffi.Pointer<lua_State> L, lua_CFunction panicf) {
+    return flb.lua_atpanic(L, panicf);
   }
 
   @override
-  void lua_call(Pointer<Void> L, Int32 nargs, Int32 nresults) {
-    // TODO: implement lua_call
+  void lua_call(ffi.Pointer<lua_State> L, int nargs, int nresults) {
+    flb.lua_callk(L, nargs, nresults, 0, ffi.nullptr.cast<ffi.NativeFunction<flb.lua_KFunctionFunction>>());
   }
 
   @override
-  void lua_callk(
-    Pointer<Void> L,
-    Int32 nargs,
-    Int32 nresults,
-    IntPtr ctx,
-    Pointer<NativeFunction<lua_KFunction_Func>> k,
-  ) {
-    // TODO: implement lua_callk
+  void lua_callk(ffi.Pointer<lua_State> L, int nargs, int nresults, int ctx, lua_KFunction k) {
+    flb.lua_callk(L, nargs, nresults, ctx, k);
   }
 
   @override
-  Int32 lua_checkstack(Pointer<Void> L, Int32 n) {
-    // TODO: implement lua_checkstack
-    throw UnimplementedError();
+  int lua_checkstack(ffi.Pointer<lua_State> L, int n) {
+    return flb.lua_checkstack(L, n);
   }
 
   @override
-  void lua_close(Pointer<Void> L) {
-    // TODO: implement lua_close
+  void lua_close(ffi.Pointer<lua_State> L) {
+    flb.lua_close(L);
   }
 
   @override
-  void lua_closeslot(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_closeslot
+  void lua_closeslot(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_closeslot(L, index);
   }
 
   @override
-  Int32 lua_closethread(Pointer<Void> L, Pointer<Void> from) {
-    // TODO: implement lua_closethread
-    throw UnimplementedError();
+  int lua_closethread(ffi.Pointer<lua_State> L, ffi.Pointer<lua_State> from) {
+    return flb.lua_closethread(L, from);
   }
 
   @override
-  Int32 lua_compare(Pointer<Void> L, Int32 index1, Int32 index2, Int32 op) {
-    // TODO: implement lua_compare
-    throw UnimplementedError();
+  int lua_compare(ffi.Pointer<lua_State> L, int index1, int index2, int op) {
+    return flb.lua_compare(L, index1, index2, op);
   }
 
   @override
-  void lua_concat(Pointer<Void> L, Int32 n) {
-    // TODO: implement lua_concat
+  void lua_concat(ffi.Pointer<lua_State> L, int n) {
+    flb.lua_concat(L, n);
   }
 
   @override
-  void lua_copy(Pointer<Void> L, Int32 fromidx, Int32 toidx) {
-    // TODO: implement lua_copy
+  void lua_copy(ffi.Pointer<lua_State> L, int fromidx, int toidx) {
+    flb.lua_copy(L, fromidx, toidx);
   }
 
   @override
-  void lua_createtable(Pointer<Void> L, Int32 nseq, Int32 nrec) {
-    // TODO: implement lua_createtable
+  void lua_createtable(ffi.Pointer<lua_State> L, int nseq, int nrec) {
+    flb.lua_createtable(L, nseq, nrec);
   }
 
   @override
-  Int32 lua_dump(Pointer<Void> L, Pointer<NativeFunction<lua_Writer_Func>> writer, Pointer<Void> data, Int32 strip) {
-    // TODO: implement lua_dump
-    throw UnimplementedError();
+  int lua_dump(ffi.Pointer<lua_State> L, lua_Writer writer, ffi.Pointer<ffi.Void> data, int strip) {
+    return flb.lua_dump(L, writer, data, strip);
   }
 
   @override
-  Int32 lua_error(Pointer<Void> L) {
-    // TODO: implement lua_error
-    throw UnimplementedError();
+  int lua_error(ffi.Pointer<lua_State> L) {
+    return flb.lua_error(L);
   }
 
   @override
-  Int32 lua_gc(Pointer<Void> L, Int32 what) {
-    // TODO: implement lua_gc
-    throw UnimplementedError();
+  int lua_gc(ffi.Pointer<lua_State> L, int what) {
+    return flb.lua_gc(L, what);
   }
 
   @override
-  Pointer<NativeFunction<lua_Alloc_Func>> lua_getallocf(Pointer<Void> L, Pointer<Void> ud) {
-    // TODO: implement lua_getallocf
-    throw UnimplementedError();
+  lua_Alloc lua_getallocf(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Pointer<ffi.Void>> ud) {
+    return flb.lua_getallocf(L, ud);
   }
 
   @override
-  IntPtr lua_getextraspace(Pointer<Void> L) {
-    // TODO: implement lua_getextraspace
-    throw UnimplementedError();
+  int lua_getextraspace(ffi.Pointer<lua_State> L) {
+    return L.address;
   }
 
   @override
-  Int32 lua_getfield(Pointer<Void> L, Int32 index, Pointer<Void> k) {
-    // TODO: implement lua_getfield
-    throw UnimplementedError();
+  int lua_getfield(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Char> k) {
+    return flb.lua_getfield(L, index, k);
   }
 
   @override
-  Int32 lua_getglobal(Pointer<Void> L, Pointer<Void> name) {
-    // TODO: implement lua_getglobal
-    throw UnimplementedError();
+  int lua_getglobal(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> name) {
+    return flb.lua_getglobal(L, name);
   }
 
   @override
-  Pointer<NativeFunction<lua_Hook_Func>> lua_gethook(Pointer<Void> L) {
-    // TODO: implement lua_gethook
-    throw UnimplementedError();
+  lua_Hook lua_gethook(ffi.Pointer<lua_State> L) {
+    return flb.lua_gethook(L);
   }
 
   @override
-  Int32 lua_gethookcount(Pointer<Void> L) {
-    // TODO: implement lua_gethookcount
-    throw UnimplementedError();
+  int lua_gethookcount(ffi.Pointer<lua_State> L) {
+    return flb.lua_gethookcount(L);
   }
 
   @override
-  Int32 lua_gethookmask(Pointer<Void> L) {
-    // TODO: implement lua_gethookmask
-    throw UnimplementedError();
+  int lua_gethookmask(ffi.Pointer<lua_State> L) {
+    return flb.lua_gethookmask(L);
   }
 
   @override
-  Int32 lua_geti(Pointer<Void> L, Int32 index, Int64 i) {
-    // TODO: implement lua_geti
-    throw UnimplementedError();
+  int lua_geti(ffi.Pointer<lua_State> L, int index, int i) {
+    return flb.lua_geti(L, index, i);
   }
 
   @override
-  Int32 lua_getinfo(Pointer<Void> L, Pointer<Void> what, Pointer<Void> ar) {
-    // TODO: implement lua_getinfo
-    throw UnimplementedError();
+  int lua_getinfo(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> what, ffi.Pointer<lua_Debug> ar) {
+    return flb.lua_getinfo(L, what, ar);
   }
 
   @override
-  Int32 lua_getiuservalue(Pointer<Void> L, Int32 index, Int32 n) {
-    // TODO: implement lua_getiuservalue
-    throw UnimplementedError();
+  int lua_getiuservalue(ffi.Pointer<lua_State> L, int index, int n) {
+    return flb.lua_getiuservalue(L, index, n);
   }
 
   @override
-  IntPtr lua_getlocal(Pointer<Void> L, Pointer<Void> ar, Int32 n) {
-    // TODO: implement lua_getlocal
-    throw UnimplementedError();
+  int lua_getlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n) {
+    return flb.lua_getlocal(L, ar, n).address;
   }
 
   @override
-  Int32 lua_getmetatable(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_getmetatable
-    throw UnimplementedError();
+  int lua_getmetatable(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_getmetatable(L, index);
   }
 
   @override
-  Int32 lua_getstack(Pointer<Void> L, Int32 level, Pointer<Void> ar) {
-    // TODO: implement lua_getstack
-    throw UnimplementedError();
+  int lua_getstack(ffi.Pointer<lua_State> L, int level, ffi.Pointer<lua_Debug> ar) {
+    return flb.lua_getstack(L, level, ar);
   }
 
   @override
-  Int32 lua_gettable(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_gettable
-    throw UnimplementedError();
+  int lua_gettable(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_gettable(L, index);
   }
 
   @override
-  Int32 lua_gettop(Pointer<Void> L) {
-    // TODO: implement lua_gettop
-    throw UnimplementedError();
+  int lua_gettop(ffi.Pointer<lua_State> L) {
+    return flb.lua_gettop(L);
   }
 
   @override
-  IntPtr lua_getupvalue(Pointer<Void> L, Int32 funcindex, Int32 n) {
-    // TODO: implement lua_getupvalue
-    throw UnimplementedError();
+  int lua_getupvalue(ffi.Pointer<lua_State> L, int funcindex, int n) {
+    return flb.lua_getupvalue(L, funcindex, n).address;
   }
 
   @override
-  void lua_insert(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_insert
+  void lua_insert(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_rotate(L, index, 1);
   }
 
   @override
-  Int32 lua_isboolean(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isboolean
-    throw UnimplementedError();
+  int lua_isboolean(ffi.Pointer<lua_State> L, int index) {
+    final t = flb.lua_type(L, index);
+    return t == 1 ? 1 : 0;
   }
 
   @override
-  Int32 lua_iscfunction(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_iscfunction
-    throw UnimplementedError();
+  int lua_iscfunction(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_iscfunction(L, index);
   }
 
   @override
-  Int32 lua_isfunction(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isfunction
-    throw UnimplementedError();
+  int lua_isfunction(ffi.Pointer<lua_State> L, int index) {
+    final t = flb.lua_type(L, index);
+    return (t == 6) ? 1 : 0;
   }
 
   @override
-  Int32 lua_isinteger(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isinteger
-    throw UnimplementedError();
+  int lua_isinteger(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_isinteger(L, index);
   }
 
   @override
-  Int32 lua_islightuserdata(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_islightuserdata
-    throw UnimplementedError();
+  int lua_islightuserdata(ffi.Pointer<lua_State> L, int index) {
+    final t = flb.lua_type(L, index);
+    return (t == 2) ? 1 : 0;
   }
 
   @override
-  Int32 lua_isnil(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isnil
-    throw UnimplementedError();
+  int lua_isnil(ffi.Pointer<lua_State> L, int index) {
+    final t = flb.lua_type(L, index);
+    return (t == 0) ? 1 : 0;
   }
 
   @override
-  Int32 lua_isnone(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isnone
-    throw UnimplementedError();
+  int lua_isnone(ffi.Pointer<lua_State> L, int index) {
+    final t = flb.lua_type(L, index);
+    return (t == (-1)) ? 1 : 0;
   }
 
   @override
-  Int32 lua_isnoneornil(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isnoneornil
-    throw UnimplementedError();
+  int lua_isnoneornil(ffi.Pointer<lua_State> L, int index) {
+    final t = flb.lua_type(L, index);
+    return (t <= 0) ? 1 : 0;
   }
 
   @override
-  Int32 lua_isnumber(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isnumber
-    throw UnimplementedError();
+  int lua_isnumber(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_isnumber(L, index);
   }
 
   @override
-  Int32 lua_isstring(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isstring
-    throw UnimplementedError();
+  int lua_isstring(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_isstring(L, index);
   }
 
   @override
-  Int32 lua_istable(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_istable
-    throw UnimplementedError();
+  int lua_istable(ffi.Pointer<lua_State> L, int index) {
+    final t = flb.lua_type(L, index);
+    return (t == 7) ? 1 : 0;
   }
 
   @override
-  Int32 lua_isthread(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isthread
-    throw UnimplementedError();
+  int lua_isthread(ffi.Pointer<lua_State> L, int index) {
+    final t = flb.lua_type(L, index);
+    return (t == 8) ? 1 : 0;
   }
 
   @override
-  Int32 lua_isuserdata(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_isuserdata
-    throw UnimplementedError();
+  int lua_isuserdata(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_isuserdata(L, index);
   }
 
   @override
-  Int32 lua_isyieldable(Pointer<Void> L) {
-    // TODO: implement lua_isyieldable
-    throw UnimplementedError();
+  int lua_isyieldable(ffi.Pointer<lua_State> L) {
+    return flb.lua_isyieldable(L);
   }
 
   @override
-  void lua_len(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_len
+  void lua_len(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_len(L, index);
   }
 
   @override
-  Int32 lua_load(
-    Pointer<Void> L,
-    Pointer<NativeFunction<lua_Reader_Func>> reader,
-    Pointer<Void> data,
-    Pointer<Void> chunkname,
-    Pointer<Void> mode,
-  ) {
-    // TODO: implement lua_load
-    throw UnimplementedError();
+  int lua_load(ffi.Pointer<lua_State> L, lua_Reader reader, ffi.Pointer<ffi.Void> data, ffi.Pointer<ffi.Char> chunkname, ffi.Pointer<ffi.Char> mode) {
+    return flb.lua_load(L, reader, data, chunkname, mode);
   }
 
   @override
-  IntPtr lua_newstate(Pointer<NativeFunction<lua_Alloc_Func>> f, Pointer<Void> ud, Uint32 seed) {
-    // TODO: implement lua_newstate
-    throw UnimplementedError();
+  int lua_newstate(lua_Alloc f, ffi.Pointer<ffi.Void> ud, int seed) {
+    return flb.lua_newstate(f, ud, seed).address;
   }
 
   @override
-  void lua_newtable(Pointer<Void> L) {
-    // TODO: implement lua_newtable
+  void lua_newtable(ffi.Pointer<lua_State> L) {
+    flb.lua_createtable(L, 0, 0);
   }
 
   @override
-  IntPtr lua_newthread(Pointer<Void> L) {
-    // TODO: implement lua_newthread
-    throw UnimplementedError();
+  int lua_newthread(ffi.Pointer<lua_State> L) {
+    return flb.lua_newthread(L).address;
   }
 
   @override
-  IntPtr lua_newuserdatauv(Pointer<Void> L, IntPtr size, Int32 nuvalue) {
-    // TODO: implement lua_newuserdatauv
-    throw UnimplementedError();
+  int lua_newuserdatauv(ffi.Pointer<lua_State> L, int size, int nuvalue) {
+    return flb.lua_newuserdatauv(L, size, nuvalue).address;
   }
 
   @override
-  Int32 lua_next(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_next
-    throw UnimplementedError();
+  int lua_next(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_next(L, index);
   }
 
   @override
-  IntPtr lua_numbertocstring(Pointer<Void> L, Int32 idx, Pointer<Void> buff) {
-    // TODO: implement lua_numbertocstring
-    throw UnimplementedError();
+  int lua_numbertocstring(ffi.Pointer<lua_State> L, int idx, ffi.Pointer<ffi.Char> buff) {
+    return flb.lua_numbertocstring(L, idx, buff);
   }
 
   @override
-  Int32 lua_numbertointeger(Double n, Pointer<Void> p) {
-    // TODO: implement lua_numbertointeger
-    throw UnimplementedError();
+  int lua_numbertointeger(double n, ffi.Pointer<lua_Integer> p) {
+    final i = n.toInt();
+    if (p != ffi.nullptr) {
+      p.value = i;
+    }
+    return 1;
   }
 
   @override
-  Int32 lua_pcall(Pointer<Void> L, Int32 nargs, Int32 nresults, Int32 msgh) {
-    // TODO: implement lua_pcall
-    throw UnimplementedError();
+  int lua_pcall(ffi.Pointer<lua_State> L, int nargs, int nresults, int msgh) {
+    return flb.lua_pcallk(L, nargs, nresults, msgh, 0, ffi.nullptr.cast<ffi.NativeFunction<flb.lua_KFunctionFunction>>());
   }
 
   @override
-  Int32 lua_pcallk(
-    Pointer<Void> L,
-    Int32 nargs,
-    Int32 nresults,
-    Int32 msgh,
-    IntPtr ctx,
-    Pointer<NativeFunction<lua_KFunction_Func>> k,
-  ) {
-    // TODO: implement lua_pcallk
-    throw UnimplementedError();
+  int lua_pcallk(ffi.Pointer<lua_State> L, int nargs, int nresults, int msgh, int ctx, lua_KFunction k) {
+    return flb.lua_pcallk(L, nargs, nresults, msgh, ctx, k);
   }
 
   @override
-  void lua_pop(Pointer<Void> L, Int32 n) {
-    // TODO: implement lua_pop
+  void lua_pop(ffi.Pointer<lua_State> L, int n) {
+    final top = flb.lua_gettop(L);
+    flb.lua_settop(L, top - n);
   }
 
   @override
-  void lua_pushboolean(Pointer<Void> L, Int32 b) {
-    // TODO: implement lua_pushboolean
+  void lua_pushboolean(ffi.Pointer<lua_State> L, int b) {
+    flb.lua_pushboolean(L, b);
   }
 
   @override
-  void lua_pushcclosure(Pointer<Void> L, Pointer<NativeFunction<lua_CFunction_Func>> fn, Int32 n) {
-    // TODO: implement lua_pushcclosure
+  void lua_pushcclosure(ffi.Pointer<lua_State> L, lua_CFunction fn, int n) {
+    flb.lua_pushcclosure(L, fn, n);
   }
 
   @override
-  void lua_pushcfunction(Pointer<Void> L, Pointer<NativeFunction<lua_CFunction_Func>> f) {
-    // TODO: implement lua_pushcfunction
+  void lua_pushcfunction(ffi.Pointer<lua_State> L, lua_CFunction f) {
+    flb.lua_pushcclosure(L, f, 0);
   }
 
   @override
-  IntPtr lua_pushexternalstring(
-    Pointer<Void> L,
-    Pointer<Void> s,
-    IntPtr len,
-    Pointer<NativeFunction<lua_Alloc_Func>> falloc,
-    Pointer<Void> ud,
-  ) {
-    // TODO: implement lua_pushexternalstring
-    throw UnimplementedError();
+  int lua_pushexternalstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, int len, lua_Alloc falloc, ffi.Pointer<ffi.Void> ud) {
+    return flb.lua_pushexternalstring(L, s, len, falloc, ud).address;
   }
 
   @override
-  IntPtr lua_pushfstring(Pointer<Void> L, Pointer<Void> fmt) {
-    // TODO: implement lua_pushfstring
-    throw UnimplementedError();
+  int lua_pushfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt) {
+    return flb.lua_pushfstring(L, fmt).address;
   }
 
   @override
-  void lua_pushglobaltable(Pointer<Void> L) {
-    // TODO: implement lua_pushglobaltable
+  void lua_pushglobaltable(ffi.Pointer<lua_State> L) {
+    flb.lua_rawgeti(L, 2, 2);
   }
 
   @override
-  void lua_pushinteger(Pointer<Void> L, Int64 n) {
-    // TODO: implement lua_pushinteger
+  void lua_pushinteger(ffi.Pointer<lua_State> L, int n) {
+    flb.lua_pushinteger(L, n);
   }
 
   @override
-  void lua_pushlightuserdata(Pointer<Void> L, Pointer<Void> p) {
-    // TODO: implement lua_pushlightuserdata
+  void lua_pushlightuserdata(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Void> p) {
+    flb.lua_pushlightuserdata(L, p);
   }
 
   @override
-  IntPtr lua_pushliteral(Pointer<Void> L, Pointer<Void> s) {
-    // TODO: implement lua_pushliteral
-    throw UnimplementedError();
+  int lua_pushliteral(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s) {
+    return flb.lua_pushstring(L, s).address;
   }
 
   @override
-  IntPtr lua_pushlstring(Pointer<Void> L, Pointer<Void> s, IntPtr len) {
-    // TODO: implement lua_pushlstring
-    throw UnimplementedError();
+  int lua_pushlstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, int len) {
+    return flb.lua_pushlstring(L, s, len).address;
   }
 
   @override
-  void lua_pushnil(Pointer<Void> L) {
-    // TODO: implement lua_pushnil
+  void lua_pushnil(ffi.Pointer<lua_State> L) {
+    flb.lua_pushnil(L);
   }
 
   @override
-  void lua_pushnumber(Pointer<Void> L, Double n) {
-    // TODO: implement lua_pushnumber
+  void lua_pushnumber(ffi.Pointer<lua_State> L, double n) {
+    flb.lua_pushnumber(L, n);
   }
 
   @override
-  IntPtr lua_pushstring(Pointer<Void> L, Pointer<Void> s) {
-    // TODO: implement lua_pushstring
-    throw UnimplementedError();
+  int lua_pushstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s) {
+    return flb.lua_pushstring(L, s).address;
   }
 
   @override
-  Int32 lua_pushthread(Pointer<Void> L) {
-    // TODO: implement lua_pushthread
-    throw UnimplementedError();
+  int lua_pushthread(ffi.Pointer<lua_State> L) {
+    return flb.lua_pushthread(L);
   }
 
   @override
-  void lua_pushvalue(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_pushvalue
+  void lua_pushvalue(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_pushvalue(L, index);
   }
 
   @override
-  IntPtr lua_pushvfstring(Pointer<Void> L, Pointer<Void> fmt, Pointer<VarArgs<Record>> argp) {
-    // TODO: implement lua_pushvfstring
-    throw UnimplementedError();
+  int lua_pushvfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt, ffi.Pointer<va_list$1> argp) {
+    return flb.lua_pushfstring(L, fmt).address;
   }
 
   @override
-  Int32 lua_rawequal(Pointer<Void> L, Int32 index1, Int32 index2) {
-    // TODO: implement lua_rawequal
-    throw UnimplementedError();
+  int lua_rawequal(ffi.Pointer<lua_State> L, int index1, int index2) {
+    return flb.lua_rawequal(L, index1, index2);
   }
 
   @override
-  Int32 lua_rawget(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_rawget
-    throw UnimplementedError();
+  int lua_rawget(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_rawget(L, index);
   }
 
   @override
-  Int32 lua_rawgeti(Pointer<Void> L, Int32 index, Int64 n) {
-    // TODO: implement lua_rawgeti
-    throw UnimplementedError();
+  int lua_rawgeti(ffi.Pointer<lua_State> L, int index, int n) {
+    return flb.lua_rawgeti(L, index, n);
   }
 
   @override
-  Int32 lua_rawgetp(Pointer<Void> L, Int32 index, Pointer<Void> p) {
-    // TODO: implement lua_rawgetp
-    throw UnimplementedError();
+  int lua_rawgetp(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Void> p) {
+    return flb.lua_rawgetp(L, index, p);
   }
 
   @override
-  Uint64 lua_rawlen(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_rawlen
-    throw UnimplementedError();
+  int lua_rawlen(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_rawlen(L, index);
   }
 
   @override
-  void lua_rawset(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_rawset
+  void lua_rawset(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_rawset(L, index);
   }
 
   @override
-  void lua_rawseti(Pointer<Void> L, Int32 index, Int64 i) {
-    // TODO: implement lua_rawseti
+  void lua_rawseti(ffi.Pointer<lua_State> L, int index, int i) {
+    flb.lua_rawseti(L, index, i);
   }
 
   @override
-  void lua_rawsetp(Pointer<Void> L, Int32 index, Pointer<Void> p) {
-    // TODO: implement lua_rawsetp
+  void lua_rawsetp(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Void> p) {
+    flb.lua_rawsetp(L, index, p);
   }
 
   @override
-  void lua_register(Pointer<Void> L, Pointer<Void> name, Pointer<NativeFunction<lua_CFunction_Func>> f) {
-    // TODO: implement lua_register
+  void lua_register(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> name, lua_CFunction f) {
+    flb.lua_pushcclosure(L, f, 0);
+    flb.lua_setglobal(L, name);
   }
 
   @override
-  void lua_remove(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_remove
+  void lua_remove(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_rotate(L, index, -1);
+    final top = flb.lua_gettop(L);
+    flb.lua_settop(L, top - 1);
   }
 
   @override
-  void lua_replace(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_replace
+  void lua_replace(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_copy(L, -1, index);
+    final top = flb.lua_gettop(L);
+    flb.lua_settop(L, top - 1);
   }
 
   @override
-  Int32 lua_resume(Pointer<Void> L, Pointer<Void> from, Int32 nargs, Pointer<Void> nresults) {
-    // TODO: implement lua_resume
-    throw UnimplementedError();
+  int lua_resume(ffi.Pointer<lua_State> L, ffi.Pointer<lua_State> from, int nargs, ffi.Pointer<ffi.Int> nresults) {
+    return flb.lua_resume(L, from, nargs, nresults);
   }
 
   @override
-  void lua_rotate(Pointer<Void> L, Int32 idx, Int32 n) {
-    // TODO: implement lua_rotate
+  void lua_rotate(ffi.Pointer<lua_State> L, int idx, int n) {
+    flb.lua_rotate(L, idx, n);
   }
 
   @override
-  void lua_setallocf(Pointer<Void> L, Pointer<NativeFunction<lua_Alloc_Func>> f, Pointer<Void> ud) {
-    // TODO: implement lua_setallocf
+  void lua_setallocf(ffi.Pointer<lua_State> L, lua_Alloc f, ffi.Pointer<ffi.Void> ud) {
+    flb.lua_setallocf(L, f, ud);
   }
 
   @override
-  void lua_setfield(Pointer<Void> L, Int32 index, Pointer<Void> k) {
-    // TODO: implement lua_setfield
+  void lua_setfield(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Char> k) {
+    flb.lua_setfield(L, index, k);
   }
 
   @override
-  void lua_setglobal(Pointer<Void> L, Pointer<Void> name) {
-    // TODO: implement lua_setglobal
+  void lua_setglobal(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> name) {
+    flb.lua_setglobal(L, name);
   }
 
   @override
-  void lua_sethook(Pointer<Void> L, Pointer<NativeFunction<lua_Hook_Func>> f, Int32 mask, Int32 count) {
-    // TODO: implement lua_sethook
+  void lua_sethook(ffi.Pointer<lua_State> L, lua_Hook f, int mask, int count) {
+    flb.lua_sethook(L, f, mask, count);
   }
 
   @override
-  void lua_seti(Pointer<Void> L, Int32 index, Int64 n) {
-    // TODO: implement lua_seti
+  void lua_seti(ffi.Pointer<lua_State> L, int index, int n) {
+    flb.lua_seti(L, index, n);
   }
 
   @override
-  Int32 lua_setiuservalue(Pointer<Void> L, Int32 index, Int32 n) {
-    // TODO: implement lua_setiuservalue
-    throw UnimplementedError();
+  int lua_setiuservalue(ffi.Pointer<lua_State> L, int index, int n) {
+    return flb.lua_setiuservalue(L, index, n);
   }
 
   @override
-  IntPtr lua_setlocal(Pointer<Void> L, Pointer<Void> ar, Int32 n) {
-    // TODO: implement lua_setlocal
-    throw UnimplementedError();
+  int lua_setlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n) {
+    return flb.lua_setlocal(L, ar, n).address;
   }
 
   @override
-  Int32 lua_setmetatable(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_setmetatable
-    throw UnimplementedError();
+  int lua_setmetatable(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_setmetatable(L, index);
   }
 
   @override
-  void lua_settable(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_settable
+  void lua_settable(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_settable(L, index);
   }
 
   @override
-  void lua_settop(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_settop
+  void lua_settop(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_settop(L, index);
   }
 
   @override
-  IntPtr lua_setupvalue(Pointer<Void> L, Int32 funcindex, Int32 n) {
-    // TODO: implement lua_setupvalue
-    throw UnimplementedError();
+  int lua_setupvalue(ffi.Pointer<lua_State> L, int funcindex, int n) {
+    return flb.lua_setupvalue(L, funcindex, n).address;
   }
 
   @override
-  void lua_setwarnf(Pointer<Void> L, Pointer<NativeFunction<lua_WarnFunction_Func>> f, Pointer<Void> ud) {
-    // TODO: implement lua_setwarnf
+  void lua_setwarnf(ffi.Pointer<lua_State> L, lua_WarnFunction f, ffi.Pointer<ffi.Void> ud) {
+    flb.lua_setwarnf(L, f, ud);
   }
 
   @override
-  Int32 lua_status(Pointer<Void> L) {
-    // TODO: implement lua_status
-    throw UnimplementedError();
+  int lua_status(ffi.Pointer<lua_State> L) {
+    return flb.lua_status(L);
   }
 
   @override
-  IntPtr lua_stringtonumber(Pointer<Void> L, Pointer<Void> s) {
-    // TODO: implement lua_stringtonumber
-    throw UnimplementedError();
+  int lua_stringtonumber(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s) {
+    return flb.lua_stringtonumber(L, s);
   }
 
   @override
-  Int32 lua_toboolean(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_toboolean
-    throw UnimplementedError();
+  int lua_toboolean(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_toboolean(L, index);
   }
 
   @override
-  Pointer<NativeFunction<lua_CFunction_Func>> lua_tocfunction(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_tocfunction
-    throw UnimplementedError();
+  lua_CFunction lua_tocfunction(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_tocfunction(L, index);
   }
 
   @override
-  void lua_toclose(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_toclose
+  void lua_toclose(ffi.Pointer<lua_State> L, int index) {
+    flb.lua_toclose(L, index);
   }
 
   @override
-  Int64 lua_tointeger(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_tointeger
-    throw UnimplementedError();
+  int lua_tointeger(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_tointegerx(L, index, ffi.nullptr);
   }
 
   @override
-  Int64 lua_tointegerx(Pointer<Void> L, Int32 index, Pointer<Void> isnum) {
-    // TODO: implement lua_tointegerx
-    throw UnimplementedError();
+  int lua_tointegerx(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Int> isnum) {
+    return flb.lua_tointegerx(L, index, isnum);
   }
 
   @override
-  IntPtr lua_tolstring(Pointer<Void> L, Int32 index, Pointer<Void> len) {
-    // TODO: implement lua_tolstring
-    throw UnimplementedError();
+  int lua_tolstring(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Size> len) {
+    return flb.lua_tolstring(L, index, len).address;
   }
 
   @override
-  Double lua_tonumber(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_tonumber
-    throw UnimplementedError();
+  double lua_tonumber(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_tonumberx(L, index, ffi.nullptr);
   }
 
   @override
-  Double lua_tonumberx(Pointer<Void> L, Int32 index, Pointer<Void> isnum) {
-    // TODO: implement lua_tonumberx
-    throw UnimplementedError();
+  double lua_tonumberx(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Int> isnum) {
+    return flb.lua_tonumberx(L, index, isnum);
   }
 
   @override
-  IntPtr lua_topointer(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_topointer
-    throw UnimplementedError();
+  int lua_topointer(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_topointer(L, index).address;
   }
 
   @override
-  IntPtr lua_tostring(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_tostring
-    throw UnimplementedError();
+  int lua_tostring(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_tolstring(L, index, ffi.nullptr).address;
   }
 
   @override
-  IntPtr lua_tothread(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_tothread
-    throw UnimplementedError();
+  int lua_tothread(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_tothread(L, index).address;
   }
 
   @override
-  IntPtr lua_touserdata(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_touserdata
-    throw UnimplementedError();
+  int lua_touserdata(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_touserdata(L, index).address;
   }
 
   @override
-  Int32 lua_type(Pointer<Void> L, Int32 index) {
-    // TODO: implement lua_type
-    throw UnimplementedError();
+  int lua_type(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_type(L, index);
   }
 
   @override
-  IntPtr lua_typename(Pointer<Void> L, Int32 tp) {
-    // TODO: implement lua_typename
-    throw UnimplementedError();
+  int lua_typename(ffi.Pointer<lua_State> L, int tp) {
+    return flb.lua_typename(L, tp).address;
   }
 
   @override
-  IntPtr lua_upvalueid(Pointer<Void> L, Int32 funcindex, Int32 n) {
-    // TODO: implement lua_upvalueid
-    throw UnimplementedError();
+  int lua_upvalueid(ffi.Pointer<lua_State> L, int funcindex, int n) {
+    return flb.lua_upvalueid(L, funcindex, n).address;
   }
 
   @override
-  Int32 lua_upvalueindex(Int32 i) {
-    // TODO: implement lua_upvalueindex
-    throw UnimplementedError();
+  int lua_upvalueindex(int i) {
+    return -10002 - i;
   }
 
   @override
-  void lua_upvaluejoin(Pointer<Void> L, Int32 funcindex1, Int32 n1, Int32 funcindex2, Int32 n2) {
-    // TODO: implement lua_upvaluejoin
+  void lua_upvaluejoin(ffi.Pointer<lua_State> L, int funcindex1, int n1, int funcindex2, int n2) {
+    flb.lua_upvaluejoin(L, funcindex1, n1, funcindex2, n2);
   }
 
   @override
-  Double lua_version(Pointer<Void> L) {
-    // TODO: implement lua_version
-    throw UnimplementedError();
+  double lua_version(ffi.Pointer<lua_State> L) {
+    return flb.lua_version(L);
   }
 
   @override
-  void lua_warning(Pointer<Void> L, Pointer<Void> msg, Int32 tocont) {
-    // TODO: implement lua_warning
+  void lua_warning(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> msg, int tocont) {
+    flb.lua_warning(L, msg, tocont);
   }
 
   @override
-  void lua_xmove(Pointer<Void> from, Pointer<Void> to, Int32 n) {
-    // TODO: implement lua_xmove
+  void lua_xmove(ffi.Pointer<lua_State> from, ffi.Pointer<lua_State> to, int n) {
+    flb.lua_xmove(from, to, n);
   }
 
   @override
-  Int32 lua_yield(Pointer<Void> L, Int32 nresults) {
-    // TODO: implement lua_yield
-    throw UnimplementedError();
+  int lua_yield(ffi.Pointer<lua_State> L, int nresults) {
+    return flb.lua_yieldk(L, nresults, 0, ffi.nullptr.cast<ffi.NativeFunction<flb.lua_KFunctionFunction>>());
   }
 
   @override
-  Int32 lua_yieldk(Pointer<Void> L, Int32 nresults, IntPtr ctx, Pointer<NativeFunction<lua_KFunction_Func>> k) {
-    // TODO: implement lua_yieldk
-    throw UnimplementedError();
+  int lua_yieldk(ffi.Pointer<lua_State> L, int nresults, int ctx, lua_KFunction k) {
+    return flb.lua_yieldk(L, nresults, ctx, k);
   }
 }

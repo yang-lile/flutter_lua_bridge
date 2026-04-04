@@ -156,52 +156,59 @@ local function parse_manual_html(content, api_name)
 end
 
 -- C 类型到 Dart 类型的映射
+-- 使用 Dart 原生类型与 ffigen 生成的绑定保持一致
 local c_to_dart_types = {
     -- 基本类型
     ["void"] = "void",
-    ["int"] = "Int32",
-    ["unsigned int"] = "Uint32",
-    ["long"] = "Int64",
-    ["unsigned long"] = "Uint64",
-    ["size_t"] = "IntPtr",
-    ["char"] = "Int8",
-    ["unsigned char"] = "Uint8",
-    ["short"] = "Int16",
-    ["unsigned short"] = "Uint16",
-    ["float"] = "Float",
-    ["double"] = "Double",
-    ["lua_Number"] = "Double",
-    ["lua_Integer"] = "Int64",
-    ["lua_Unsigned"] = "Uint64",
-    ["lua_KContext"] = "IntPtr",
-    ["ptrdiff_t"] = "IntPtr",
+    ["int"] = "int",
+    ["unsigned int"] = "int",
+    ["long"] = "int",
+    ["unsigned long"] = "int",
+    ["size_t"] = "int",
+    ["char"] = "int",
+    ["unsigned char"] = "int",
+    ["short"] = "int",
+    ["unsigned short"] = "int",
+    ["float"] = "double",
+    ["double"] = "double",
+    ["lua_Number"] = "double",
+    ["lua_Integer"] = "int",
+    ["lua_Unsigned"] = "int",
+    ["lua_KContext"] = "int",
+    ["ptrdiff_t"] = "int",
+    
+    -- FFI 原生类型
+    ["DynamicLibrary"] = "ffi.DynamicLibrary",
+    -- IntPtr 在 Dart FFI 中使用 int 表示地址
+    ["IntPtr"] = "int",
     
     -- 指针类型
-    ["void*"] = "Pointer<Void>",
-    ["const void*"] = "Pointer<Void>",
-    ["char*"] = "Pointer<Utf8>",
-    ["const char*"] = "Pointer<Utf8>",
-    ["unsigned char*"] = "Pointer<Uint8>",
-    ["const char* const*"] = "Pointer<Pointer<Utf8>>",
-    ["const char* const lst[]"] = "Pointer<Pointer<Utf8>>",
-    ["const char*const lst[]"] = "Pointer<Pointer<Utf8>>",
-    ["int*"] = "Pointer<Int32>",
-    ["size_t*"] = "Pointer<IntPtr>",
-    ["lua_Number*"] = "Pointer<Double>",
-    ["lua_Integer*"] = "Pointer<Int64>",
-    ["lua_State*"] = "Pointer<lua_State>",
-    ["lua_Debug*"] = "Pointer<lua_Debug>",
-    ["lua_Alloc"] = "Pointer<NativeFunction<lua_Alloc_Func>>",
-    ["lua_CFunction"] = "Pointer<NativeFunction<lua_CFunction_Func>>",
-    ["lua_Hook"] = "Pointer<NativeFunction<lua_Hook_Func>>",
-    ["lua_KFunction"] = "Pointer<NativeFunction<lua_KFunction_Func>>",
-    ["lua_Reader"] = "Pointer<NativeFunction<lua_Reader_Func>>",
-    ["lua_Writer"] = "Pointer<NativeFunction<lua_Writer_Func>>",
-    ["lua_WarnFunction"] = "Pointer<NativeFunction<lua_WarnFunction_Func>>",
-    ["luaL_Buffer*"] = "Pointer<luaL_Buffer>",
-    ["luaL_Reg*"] = "Pointer<luaL_Reg>",
-    ["FILE*"] = "Pointer<FILE>",
-    ["va_list"] = "Pointer<VarArgs>",
+    ["void*"] = "ffi.Pointer<ffi.Void>",
+    ["void**"] = "ffi.Pointer<ffi.Pointer<ffi.Void>>",
+    ["const void*"] = "ffi.Pointer<ffi.Void>",
+    ["char*"] = "ffi.Pointer<ffi.Char>",
+    ["const char*"] = "ffi.Pointer<ffi.Char>",
+    ["unsigned char*"] = "ffi.Pointer<ffi.UnsignedChar>",
+    ["const char* const*"] = "ffi.Pointer<ffi.Pointer<ffi.Char>>",
+    ["const char* const lst[]"] = "ffi.Pointer<ffi.Pointer<ffi.Char>>",
+    ["const char*const lst[]"] = "ffi.Pointer<ffi.Pointer<ffi.Char>>",
+    ["int*"] = "ffi.Pointer<ffi.Int>",
+    ["size_t*"] = "ffi.Pointer<ffi.Size>",
+    ["lua_Number*"] = "ffi.Pointer<ffi.Double>",
+    ["lua_Integer*"] = "ffi.Pointer<lua_Integer>",
+    ["lua_State*"] = "ffi.Pointer<lua_State>",
+    ["lua_Debug*"] = "ffi.Pointer<lua_Debug>",
+    ["lua_Alloc"] = "lua_Alloc",
+    ["lua_CFunction"] = "lua_CFunction",
+    ["lua_Hook"] = "lua_Hook",
+    ["lua_KFunction"] = "lua_KFunction",
+    ["lua_Reader"] = "lua_Reader",
+    ["lua_Writer"] = "lua_Writer",
+    ["lua_WarnFunction"] = "lua_WarnFunction",
+    ["luaL_Buffer*"] = "ffi.Pointer<flb.luaL_Buffer>",
+    ["luaL_Reg*"] = "ffi.Pointer<flb.luaL_Reg>",
+    ["FILE*"] = "ffi.Pointer<FILE>",
+    ["va_list"] = "ffi.Pointer<va_list$1>",
 }
 
 -- 解析 C 函数签名
@@ -288,23 +295,34 @@ local function c_param_to_dart(param)
     if type_part then
         -- 数组类型，移除 [] 后查找类型
         type_part = type_part:gsub("^%s*(.-)%s*$", "%1")
-        -- 对于字符串数组，使用 Pointer<Pointer<Utf8>>
+        -- 对于字符串数组，使用 Pointer<Pointer<Char>>
         if type_part:match("const char") or type_part:match("char") then
             return {
-                dart_type = "Pointer<Pointer<Utf8>>",
+                dart_type = "ffi.Pointer<ffi.Pointer<ffi.Char>>",
                 name = name
             }
         end
         -- 其他数组类型
         return {
-            dart_type = "Pointer<Void>",
+            dart_type = "ffi.Pointer<ffi.Void>",
             name = name
         }
     end
     
-    -- 提取参数名和类型
-    local param_pattern = "(.-)%s*([%a_][%w_]*)$"
-    type_part, name = param:match(param_pattern)
+    -- 提取参数名和类型（处理指针类型如 lua_State* L 或 void** ud）
+    -- 先尝试匹配多级指针类型: 类型名** 参数名（可能有空格）
+    local multi_ptr_pattern = "([%a_][%w_]*)%s*(%*+)%s*([%a_][%w_]*)$"
+    local base_type, stars, var_name = param:match(multi_ptr_pattern)
+    
+    if base_type and stars then
+        -- 是指针类型（可能多级）
+        type_part = base_type .. stars
+        name = var_name
+    else
+        -- 非指针类型，使用普通模式
+        local param_pattern = "(.-)%s+([%a_][%w_]*)$"
+        type_part, name = param:match(param_pattern)
+    end
     
     if not type_part then
         -- 可能是函数指针参数
@@ -312,7 +330,7 @@ local function c_param_to_dart(param)
             -- 简化处理：函数指针参数
             local func_name = param:match("%(%s*[*]%s*([%a_][%w_]*)%s*%)%s*%(")
             return {
-                dart_type = "Pointer<NativeFunction>",
+                dart_type = "ffi.Pointer<ffi.NativeFunction>",
                 name = func_name or "callback"
             }
         end
@@ -327,9 +345,9 @@ local function c_param_to_dart(param)
     if not dart_type then
         -- 尝试匹配指针类型
         if type_part:find("[*]") then
-            dart_type = "Pointer<Void>"
+            dart_type = "ffi.Pointer<ffi.Void>"
         else
-            dart_type = "IntPtr"  -- 默认类型
+            dart_type = "int"  -- 默认类型
         end
     end
     
@@ -343,6 +361,26 @@ end
 local function generate_dart_binding(api_info)
     if not api_info.signature then
         return nil
+    end
+    
+    -- 特殊处理 luaL_opt 宏定义
+    if api_info.name == "luaL_opt" then
+        local lines = {}
+        table.insert(lines, "  /// " .. api_info.name)
+        table.insert(lines, "  ///")
+        if api_info.apii then
+            table.insert(lines, "  /// Stack: " .. api_info.apii:gsub("^%s*(.-)%s*$", "%1"))
+            table.insert(lines, "  ///")
+        end
+        if #api_info.description > 0 then
+            for _, desc in ipairs(api_info.description) do
+                desc = desc:gsub("\n", " ")
+                table.insert(lines, "  /// " .. desc)
+            end
+        end
+        -- luaL_opt 是泛型宏，在 Dart 中简化为返回 int
+        table.insert(lines, "  int luaL_opt(ffi.Pointer<lua_State> L, int func, int arg, int dflt);")
+        return table.concat(lines, "\n")
     end
     
     local parsed = parse_c_signature(api_info.signature)
@@ -380,7 +418,7 @@ local function generate_dart_binding(api_info)
     end
     
     -- 获取返回类型
-    local ret_type = c_to_dart_types[parsed.return_type] or "IntPtr"
+    local ret_type = c_to_dart_types[parsed.return_type] or "int"
     
     -- 生成函数签名
     local func_sig = "  " .. ret_type .. " " .. api_info.name .. "("
@@ -410,7 +448,7 @@ local function generate_dart_typedef(api_info)
     -- 处理函数指针 typedef
     local func_ptr = sig:match("^typedef%s+(.-)%s*%(%s*[*]%s*" .. api_info.name .. "%s*%)%s*%((.-)%)%s*;")
     if func_ptr then
-        local ret_type = c_to_dart_types[func_ptr:gsub("^%s*(.-)%s*$", "%1")] or "IntPtr"
+        local ret_type = c_to_dart_types[func_ptr:gsub("^%s*(.-)%s*$", "%1")] or "int"
         local params = parse_params(sig:match("%((.-)%)%s*;"))
         local dart_params = {}
         
@@ -442,25 +480,25 @@ local function generate_dart_file(apis_info, types_info, constants_info, filenam
     table.insert(lines, "// Generated by: lua_api/scripts/generate_dart_interfaces.lua")
     table.insert(lines, "// DO NOT EDIT MANUALLY")
     table.insert(lines, "")
-    table.insert(lines, "import 'dart:ffi';")
-    table.insert(lines, "import 'package:ffi/ffi.dart';")
+    table.insert(lines, "import 'dart:ffi' as ffi;")
+    table.insert(lines, "import 'flutter_lua_bridge.g.dart' as flb;")
     table.insert(lines, "")
     
-    -- 类型定义部分
-    if #types_info > 0 then
-        table.insert(lines, "// ============================================")
-        table.insert(lines, "// Type Definitions")
-        table.insert(lines, "// ============================================")
-        table.insert(lines, "")
-        
-        for _, api_info in ipairs(types_info) do
-            local typedef = generate_dart_typedef(api_info)
-            if typedef then
-                table.insert(lines, typedef)
-                table.insert(lines, "")
-            end
-        end
-    end
+    -- 类型别名 - 直接使用 FFI 中的类型
+    table.insert(lines, "// Type aliases from FFI bindings")
+    table.insert(lines, "typedef lua_State = flb.lua_State;")
+    table.insert(lines, "typedef lua_Debug = flb.lua_Debug;")
+    table.insert(lines, "typedef lua_CFunction = flb.lua_CFunction;")
+    table.insert(lines, "typedef lua_KFunction = flb.lua_KFunction;")
+    table.insert(lines, "typedef lua_Alloc = flb.lua_Alloc;")
+    table.insert(lines, "typedef lua_Hook = flb.lua_Hook;")
+    table.insert(lines, "typedef lua_Reader = flb.lua_Reader;")
+    table.insert(lines, "typedef lua_Writer = flb.lua_Writer;")
+    table.insert(lines, "typedef lua_WarnFunction = flb.lua_WarnFunction;")
+    table.insert(lines, "typedef lua_Integer = flb.lua_Integer;")
+    table.insert(lines, "typedef FILE = flb.FILE;")
+    table.insert(lines, [[typedef va_list$1 = flb.va_list$1;]])
+    table.insert(lines, "")
     
     -- 常量定义部分
     if #constants_info > 0 then
@@ -488,10 +526,10 @@ local function generate_dart_file(apis_info, types_info, constants_info, filenam
     table.insert(lines, "")
     table.insert(lines, "abstract class LuaCApi {")
     table.insert(lines, "  /// Lookup function for dynamic library")
-    table.insert(lines, "  static late final DynamicLibrary _dylib;")
+    table.insert(lines, "  static late final ffi.DynamicLibrary _dylib;")
     table.insert(lines, "")
     table.insert(lines, "  /// Initialize with dynamic library")
-    table.insert(lines, "  static void initialize(DynamicLibrary dylib) {")
+    table.insert(lines, "  static void initialize(ffi.DynamicLibrary dylib) {")
     table.insert(lines, "    _dylib = dylib;")
     table.insert(lines, "  }")
     table.insert(lines, "")
@@ -529,8 +567,8 @@ local function generate_aux_dart_file(apis_info, filename)
     table.insert(lines, "// Generated by: lua_api/scripts/generate_dart_interfaces.lua")
     table.insert(lines, "// DO NOT EDIT MANUALLY")
     table.insert(lines, "")
-    table.insert(lines, "import 'dart:ffi';")
-    table.insert(lines, "import 'package:ffi/ffi.dart';")
+    table.insert(lines, "import 'dart:ffi' as ffi;")
+    table.insert(lines, "import 'flutter_lua_bridge.g.dart' as flb;")
     table.insert(lines, "import 'lua_c_api.dart';")
     table.insert(lines, "")
     table.insert(lines, "// ============================================")
@@ -539,10 +577,10 @@ local function generate_aux_dart_file(apis_info, filename)
     table.insert(lines, "")
     table.insert(lines, "abstract class LuaAuxApi {")
     table.insert(lines, "  /// Lookup function for dynamic library")
-    table.insert(lines, "  static late final DynamicLibrary _dylib;")
+    table.insert(lines, "  static late final ffi.DynamicLibrary _dylib;")
     table.insert(lines, "")
     table.insert(lines, "  /// Initialize with dynamic library")
-    table.insert(lines, "  static void initialize(DynamicLibrary dylib) {")
+    table.insert(lines, "  static void initialize(ffi.DynamicLibrary dylib) {")
     table.insert(lines, "    _dylib = dylib;")
     table.insert(lines, "  }")
     table.insert(lines, "")
@@ -575,10 +613,10 @@ local function main()
     print("Lua C API Dart Interface Generator")
     print("===================================")
     
-    -- 读取文件
-    local contents_path = "../lua_src/doc/contents.html"
-    local manual_path = "../lua_src/doc/manual.html"
-    local output_dir = "../flutter_lua_bridge/lib/src/gen"
+    -- 读取文件（从项目根目录运行）
+    local contents_path = "lua_src/doc/contents.html"
+    local manual_path = "lua_src/doc/manual.html"
+    local output_dir = "flutter_lua_bridge/lib/src/gen"
     
     print("\nReading " .. contents_path .. "...")
     local contents = read_file(contents_path)

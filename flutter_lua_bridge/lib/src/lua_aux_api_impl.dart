@@ -1,399 +1,430 @@
-import 'dart:ffi';
+import 'dart:ffi' as ffi;
+import 'gen/flutter_lua_bridge.g.dart' as flb;
+import 'gen/lua_aux_api.dart';
+import 'gen/lua_c_api.dart';
 
-import 'package:ffi/src/utf8.dart';
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
-
+/// Lua 辅助库 API 实现
+/// 
+/// 注意：一些函数在 C 中是宏定义，不在 FFI 绑定中，这里提供 Dart 实现
 class LuaAuxApiImpl implements LuaAuxApi {
-  @override
-  void luaL_addchar(Pointer<Void> B, Int8 c) {
-    // TODO: implement luaL_addchar
-  }
+  const LuaAuxApiImpl({required LuaCApi luaCApi}) : _luaCApi = luaCApi;
+  
+  final LuaCApi _luaCApi;
 
+  // ========== 缓冲区操作函数 ==========
+  
   @override
-  IntPtr luaL_addgsub(Pointer<Void> B, Pointer<Void> s, Pointer<Void> p, Pointer<Void> r) {
-    // TODO: implement luaL_addgsub
-    throw UnimplementedError();
+  void luaL_addchar(ffi.Pointer<flb.luaL_Buffer> B, int c) {
+    // luaL_addchar 是 C 宏，实现为: ((void)((B)->b[(B)->n++] = (char)(c)))
+    // 需要直接操作缓冲区结构
+    final buffer = B.ref;
+    final n = buffer.n;
+    buffer.b[n] = c;
+    buffer.n = n + 1;
   }
 
   @override
-  void luaL_addlstring(Pointer<Void> B, Pointer<Void> s, IntPtr l) {
-    // TODO: implement luaL_addlstring
+  int luaL_addgsub(ffi.Pointer<flb.luaL_Buffer> B, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r) {
+    // FFI 中返回 void，但接口定义为返回 int，返回 0 表示成功
+    flb.luaL_addgsub(B, s, p, r);
+    return 0;
   }
 
   @override
-  void luaL_addsize(Pointer<Void> B, IntPtr n) {
-    // TODO: implement luaL_addsize
+  void luaL_addlstring(ffi.Pointer<flb.luaL_Buffer> B, ffi.Pointer<ffi.Char> s, int l) {
+    flb.luaL_addlstring(B, s, l);
   }
 
   @override
-  void luaL_addstring(Pointer<Void> B, Pointer<Void> s) {
-    // TODO: implement luaL_addstring
+  void luaL_addsize(ffi.Pointer<flb.luaL_Buffer> B, int n) {
+    // luaL_addsize 是 C 宏，实现为: ((B)->n += (n))
+    final buffer = B.ref;
+    buffer.n = buffer.n + n;
   }
 
   @override
-  void luaL_addvalue(Pointer<Void> B) {
-    // TODO: implement luaL_addvalue
+  void luaL_addstring(ffi.Pointer<flb.luaL_Buffer> B, ffi.Pointer<ffi.Char> s) {
+    flb.luaL_addstring(B, s);
   }
 
   @override
-  IntPtr luaL_alloc(Pointer<Void> ud, Pointer<Void> ptr, IntPtr osize, IntPtr nsize) {
-    // TODO: implement luaL_alloc
-    throw UnimplementedError();
+  void luaL_addvalue(ffi.Pointer<flb.luaL_Buffer> B) {
+    flb.luaL_addvalue(B);
   }
 
   @override
-  void luaL_argcheck(Pointer<Void> L, Int32 cond, Int32 arg, Pointer<Void> extramsg) {
-    // TODO: implement luaL_argcheck
+  int luaL_buffaddr(ffi.Pointer<flb.luaL_Buffer> B) {
+    // luaL_buffaddr 是 C 宏，实现为: ((B)->b)
+    return B.ref.b.address;
   }
 
   @override
-  Int32 luaL_argerror(Pointer<Void> L, Int32 arg, Pointer<Void> extramsg) {
-    // TODO: implement luaL_argerror
-    throw UnimplementedError();
+  void luaL_buffinit(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Buffer> B) {
+    flb.luaL_buffinit(L, B);
   }
 
   @override
-  void luaL_argexpected(Pointer<Void> L, Int32 cond, Int32 arg, Pointer<Void> tname) {
-    // TODO: implement luaL_argexpected
+  int luaL_buffinitsize(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Buffer> B, int sz) {
+    return flb.luaL_buffinitsize(L, B, sz).address;
   }
 
   @override
-  IntPtr luaL_buffaddr(Pointer<Void> B) {
-    // TODO: implement luaL_buffaddr
-    throw UnimplementedError();
+  int luaL_bufflen(ffi.Pointer<flb.luaL_Buffer> B) {
+    // luaL_bufflen 是 C 宏，实现为: ((B)->n)
+    return B.ref.n;
   }
 
   @override
-  void luaL_buffinit(Pointer<Void> L, Pointer<Void> B) {
-    // TODO: implement luaL_buffinit
+  void luaL_buffsub(ffi.Pointer<flb.luaL_Buffer> B, int n) {
+    // luaL_buffsub 是 C 宏，实现为: ((B)->n -= (n))
+    final buffer = B.ref;
+    buffer.n = buffer.n - n;
   }
 
   @override
-  IntPtr luaL_buffinitsize(Pointer<Void> L, Pointer<Void> B, IntPtr sz) {
-    // TODO: implement luaL_buffinitsize
-    throw UnimplementedError();
+  void luaL_pushresult(ffi.Pointer<flb.luaL_Buffer> B) {
+    flb.luaL_pushresult(B);
   }
 
   @override
-  IntPtr luaL_bufflen(Pointer<Void> B) {
-    // TODO: implement luaL_bufflen
-    throw UnimplementedError();
+  void luaL_pushresultsize(ffi.Pointer<flb.luaL_Buffer> B, int sz) {
+    flb.luaL_pushresultsize(B, sz);
   }
 
   @override
-  void luaL_buffsub(Pointer<Void> B, Int32 n) {
-    // TODO: implement luaL_buffsub
+  int luaL_prepbuffer(ffi.Pointer<flb.luaL_Buffer> B) {
+    // luaL_prepbuffer 是 C 宏，实现为: luaL_prepbuffsize(B, LUAL_BUFFERSIZE)
+    // LUAL_BUFFERSIZE 通常是 8192
+    const lualBuffersize = 8192;
+    return luaL_prepbuffsize(B, lualBuffersize);
   }
 
   @override
-  Int32 luaL_callmeta(Pointer<Void> L, Int32 obj, Pointer<Void> e) {
-    // TODO: implement luaL_callmeta
-    throw UnimplementedError();
+  int luaL_prepbuffsize(ffi.Pointer<flb.luaL_Buffer> B, int sz) {
+    return flb.luaL_prepbuffsize(B, sz).address;
   }
+
+  // ========== 参数检查函数 ==========
 
   @override
-  void luaL_checkany(Pointer<Void> L, Int32 arg) {
-    // TODO: implement luaL_checkany
+  void luaL_argcheck(ffi.Pointer<lua_State> L, int cond, int arg, ffi.Pointer<ffi.Char> extramsg) {
+    // luaL_argcheck 是 C 宏，实现为: ((void)((cond) || luaL_argerror(L, (arg), (extramsg))))
+    if (cond == 0) {
+      luaL_argerror(L, arg, extramsg);
+    }
   }
 
   @override
-  Int64 luaL_checkinteger(Pointer<Void> L, Int32 arg) {
-    // TODO: implement luaL_checkinteger
-    throw UnimplementedError();
+  int luaL_argerror(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> extramsg) {
+    return flb.luaL_argerror(L, arg, extramsg);
   }
 
   @override
-  IntPtr luaL_checklstring(Pointer<Void> L, Int32 arg, Pointer<Void> l) {
-    // TODO: implement luaL_checklstring
-    throw UnimplementedError();
+  void luaL_argexpected(ffi.Pointer<lua_State> L, int cond, int arg, ffi.Pointer<ffi.Char> tname) {
+    // luaL_argexpected 是 C 宏，实现为: ((void)((cond) || luaL_typeerror(L, (arg), (tname))))
+    if (cond == 0) {
+      luaL_typeerror(L, arg, tname);
+    }
   }
 
   @override
-  Double luaL_checknumber(Pointer<Void> L, Int32 arg) {
-    // TODO: implement luaL_checknumber
-    throw UnimplementedError();
+  void luaL_checkany(ffi.Pointer<lua_State> L, int arg) {
+    flb.luaL_checkany(L, arg);
   }
 
   @override
-  Int32 luaL_checkoption(Pointer<Void> L, Int32 arg, Pointer<Void> def, Pointer<Pointer<Utf8>> lst) {
-    // TODO: implement luaL_checkoption
-    throw UnimplementedError();
+  int luaL_checkinteger(ffi.Pointer<lua_State> L, int arg) {
+    return flb.luaL_checkinteger(L, arg);
   }
 
   @override
-  void luaL_checkstack(Pointer<Void> L, Int32 sz, Pointer<Void> msg) {
-    // TODO: implement luaL_checkstack
+  int luaL_checklstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Size> l) {
+    return flb.luaL_checklstring(L, arg, l).address;
   }
 
   @override
-  IntPtr luaL_checkstring(Pointer<Void> L, Int32 arg) {
-    // TODO: implement luaL_checkstring
-    throw UnimplementedError();
+  double luaL_checknumber(ffi.Pointer<lua_State> L, int arg) {
+    return flb.luaL_checknumber(L, arg);
   }
 
   @override
-  void luaL_checktype(Pointer<Void> L, Int32 arg, Int32 t) {
-    // TODO: implement luaL_checktype
+  int luaL_checkoption(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> def, ffi.Pointer<ffi.Pointer<ffi.Char>> lst) {
+    return flb.luaL_checkoption(L, arg, def, lst);
   }
 
   @override
-  IntPtr luaL_checkudata(Pointer<Void> L, Int32 arg, Pointer<Void> tname) {
-    // TODO: implement luaL_checkudata
-    throw UnimplementedError();
+  void luaL_checkstack(ffi.Pointer<lua_State> L, int sz, ffi.Pointer<ffi.Char> msg) {
+    flb.luaL_checkstack(L, sz, msg);
   }
 
   @override
-  void luaL_checkversion(Pointer<Void> L) {
-    // TODO: implement luaL_checkversion
+  int luaL_checkstring(ffi.Pointer<lua_State> L, int arg) {
+    // luaL_checkstring 是 C 宏，实现为: (luaL_checklstring(L, (narg), NULL))
+    return luaL_checklstring(L, arg, ffi.nullptr.cast<ffi.Size>());
   }
 
   @override
-  Int32 luaL_dofile(Pointer<Void> L, Pointer<Void> filename) {
-    // TODO: implement luaL_dofile
-    throw UnimplementedError();
+  void luaL_checktype(ffi.Pointer<lua_State> L, int arg, int t) {
+    flb.luaL_checktype(L, arg, t);
   }
 
   @override
-  Int32 luaL_dostring(Pointer<Void> L, Pointer<Void> str) {
-    // TODO: implement luaL_dostring
-    throw UnimplementedError();
+  int luaL_checkudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname) {
+    return flb.luaL_checkudata(L, arg, tname).address;
   }
 
   @override
-  Int32 luaL_error(Pointer<Void> L, Pointer<Void> fmt) {
-    // TODO: implement luaL_error
-    throw UnimplementedError();
+  void luaL_checkversion(ffi.Pointer<lua_State> L) {
+    flb.luaL_checkversion_(L, 504.0, ffi.sizeOf<ffi.Pointer<lua_State>>());
   }
 
+  // ========== 类型转换和工具函数 ==========
+
   @override
-  Int32 luaL_execresult(Pointer<Void> L, Int32 stat) {
-    // TODO: implement luaL_execresult
-    throw UnimplementedError();
+  int luaL_callmeta(ffi.Pointer<lua_State> L, int obj, ffi.Pointer<ffi.Char> e) {
+    return flb.luaL_callmeta(L, obj, e);
   }
 
   @override
-  Int32 luaL_fileresult(Pointer<Void> L, Int32 stat, Pointer<Void> fname) {
-    // TODO: implement luaL_fileresult
-    throw UnimplementedError();
+  int luaL_tolstring(ffi.Pointer<lua_State> L, int idx, ffi.Pointer<ffi.Size> len) {
+    return flb.luaL_tolstring(L, idx, len).address;
   }
 
   @override
-  Int32 luaL_getmetafield(Pointer<Void> L, Int32 obj, Pointer<Void> e) {
-    // TODO: implement luaL_getmetafield
-    throw UnimplementedError();
+  int luaL_len(ffi.Pointer<lua_State> L, int index) {
+    return flb.luaL_len(L, index);
   }
 
   @override
-  Int32 luaL_getmetatable(Pointer<Void> L, Pointer<Void> tname) {
-    // TODO: implement luaL_getmetatable
-    throw UnimplementedError();
+  int luaL_gsub(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r) {
+    return flb.luaL_gsub(L, s, p, r).address;
   }
+
+  // ========== 文件和字符串加载函数 ==========
 
   @override
-  Int32 luaL_getsubtable(Pointer<Void> L, Int32 idx, Pointer<Void> fname) {
-    // TODO: implement luaL_getsubtable
-    throw UnimplementedError();
+  int luaL_dofile(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> filename) {
+    // luaL_dofile 是 C 宏，实现为: (luaL_loadfile(L, filename) || lua_pcall(L, 0, LUA_MULTRET, 0))
+    final res = luaL_loadfile(L, filename);
+    if (res != 0) return res;
+    return flb.lua_pcallk(L, 0, -1, 0, 0, ffi.nullptr.cast<ffi.NativeFunction<flb.lua_KFunctionFunction>>());
   }
 
   @override
-  IntPtr luaL_gsub(Pointer<Void> L, Pointer<Void> s, Pointer<Void> p, Pointer<Void> r) {
-    // TODO: implement luaL_gsub
-    throw UnimplementedError();
+  int luaL_dostring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> str) {
+    // luaL_dostring 是 C 宏，实现为: (luaL_loadstring(L, str) || lua_pcall(L, 0, LUA_MULTRET, 0))
+    final res = luaL_loadstring(L, str);
+    if (res != 0) return res;
+    return flb.lua_pcallk(L, 0, -1, 0, 0, ffi.nullptr.cast<ffi.NativeFunction<flb.lua_KFunctionFunction>>());
   }
 
   @override
-  Int64 luaL_len(Pointer<Void> L, Int32 index) {
-    // TODO: implement luaL_len
-    throw UnimplementedError();
+  int luaL_loadbuffer(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> buff, int sz, ffi.Pointer<ffi.Char> name) {
+    // luaL_loadbuffer 是 C 宏，实现为: luaL_loadbufferx(L, buff, sz, name, NULL)
+    return luaL_loadbufferx(L, buff, sz, name, ffi.nullptr);
   }
 
   @override
-  Int32 luaL_loadbuffer(Pointer<Void> L, Pointer<Void> buff, IntPtr sz, Pointer<Void> name) {
-    // TODO: implement luaL_loadbuffer
-    throw UnimplementedError();
+  int luaL_loadbufferx(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> buff, int sz, ffi.Pointer<ffi.Char> name, ffi.Pointer<ffi.Char> mode) {
+    return flb.luaL_loadbufferx(L, buff, sz, name, mode);
   }
 
   @override
-  Int32 luaL_loadbufferx(Pointer<Void> L, Pointer<Void> buff, IntPtr sz, Pointer<Void> name, Pointer<Void> mode) {
-    // TODO: implement luaL_loadbufferx
-    throw UnimplementedError();
+  int luaL_loadfile(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> filename) {
+    // luaL_loadfile 是 C 宏，实现为: luaL_loadfilex(L, filename, NULL)
+    return luaL_loadfilex(L, filename, ffi.nullptr);
   }
 
   @override
-  Int32 luaL_loadfile(Pointer<Void> L, Pointer<Void> filename) {
-    // TODO: implement luaL_loadfile
-    throw UnimplementedError();
+  int luaL_loadfilex(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> filename, ffi.Pointer<ffi.Char> mode) {
+    return flb.luaL_loadfilex(L, filename, mode);
   }
 
   @override
-  Int32 luaL_loadfilex(Pointer<Void> L, Pointer<Void> filename, Pointer<Void> mode) {
-    // TODO: implement luaL_loadfilex
-    throw UnimplementedError();
+  int luaL_loadstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s) {
+    return flb.luaL_loadstring(L, s);
   }
 
+  // ========== 元表函数 ==========
+
   @override
-  Int32 luaL_loadstring(Pointer<Void> L, Pointer<Void> s) {
-    // TODO: implement luaL_loadstring
-    throw UnimplementedError();
+  int luaL_getmetafield(ffi.Pointer<lua_State> L, int obj, ffi.Pointer<ffi.Char> e) {
+    return flb.luaL_getmetafield(L, obj, e);
   }
 
   @override
-  Uint32 luaL_makeseed(Pointer<Void> L) {
-    // TODO: implement luaL_makeseed
-    throw UnimplementedError();
+  int luaL_getmetatable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> tname) {
+    // luaL_getmetatable 是 C 宏，实现为: (lua_getfield(L, LUA_REGISTRYINDEX, (n)))
+    return flb.lua_getfield(L, -1001000, tname);  // LUA_REGISTRYINDEX = -1001000
   }
 
   @override
-  void luaL_newlib(Pointer<Void> L, Pointer<Void> l) {
-    // TODO: implement luaL_newlib
+  int luaL_getsubtable(ffi.Pointer<lua_State> L, int idx, ffi.Pointer<ffi.Char> fname) {
+    return flb.luaL_getsubtable(L, idx, fname);
   }
 
   @override
-  void luaL_newlibtable(Pointer<Void> L, Pointer<Void> l) {
-    // TODO: implement luaL_newlibtable
+  int luaL_newmetatable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> tname) {
+    return flb.luaL_newmetatable(L, tname);
   }
 
   @override
-  Int32 luaL_newmetatable(Pointer<Void> L, Pointer<Void> tname) {
-    // TODO: implement luaL_newmetatable
-    throw UnimplementedError();
+  void luaL_setmetatable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> tname) {
+    flb.luaL_setmetatable(L, tname);
   }
+
+  // ========== 库函数 ==========
 
   @override
-  IntPtr luaL_newstate() {
-    // TODO: implement luaL_newstate
-    throw UnimplementedError();
+  void luaL_newlib(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Void> l) {
+    // luaL_newlib 是 C 宏，实现为: (luaL_newlibtable(L, l), luaL_setfuncs(L, l, 0))
+    luaL_newlibtable(L, l);
+    luaL_setfuncs(L, l.cast<flb.luaL_Reg>(), 0);
   }
 
   @override
-  void luaL_openlibs(Pointer<Void> L) {
-    // TODO: implement luaL_openlibs
+  void luaL_newlibtable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Void> l) {
+    // luaL_newlibtable 是 C 宏，实现为: lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
+    // 由于无法直接计算数组大小，使用估计值
+    flb.lua_createtable(L, 0, 16);
   }
 
   @override
-  void luaL_openselectedlibs(Pointer<Void> L, Int32 load, Int32 preload) {
-    // TODO: implement luaL_openselectedlibs
+  void luaL_setfuncs(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Reg> l, int nup) {
+    flb.luaL_setfuncs(L, l, nup);
   }
 
   @override
-  IntPtr luaL_opt(IntPtr L, IntPtr func, IntPtr arg, IntPtr dflt) {
-    // TODO: implement luaL_opt
-    throw UnimplementedError();
+  void luaL_openlibs(ffi.Pointer<lua_State> L) {
+    // luaL_openlibs 是 C 函数，但 FFI 中可能没有
+    // 手动打开所有标准库
+    flb.luaL_openselectedlibs(L, ~0, ~0);  // 加载所有库
   }
 
   @override
-  Int64 luaL_optinteger(Pointer<Void> L, Int32 arg, Int64 d) {
-    // TODO: implement luaL_optinteger
-    throw UnimplementedError();
+  void luaL_openselectedlibs(ffi.Pointer<lua_State> L, int load, int preload) {
+    flb.luaL_openselectedlibs(L, load, preload);
   }
 
   @override
-  IntPtr luaL_optlstring(Pointer<Void> L, Int32 arg, Pointer<Void> d, Pointer<Void> l) {
-    // TODO: implement luaL_optlstring
-    throw UnimplementedError();
+  void luaL_requiref(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> modname, lua_CFunction openf, int glb) {
+    flb.luaL_requiref(L, modname, openf, glb);
   }
 
+  // ========== 状态和内存函数 ==========
+
   @override
-  Double luaL_optnumber(Pointer<Void> L, Int32 arg, Double d) {
-    // TODO: implement luaL_optnumber
-    throw UnimplementedError();
+  int luaL_newstate() {
+    return flb.luaL_newstate().address;
   }
 
   @override
-  IntPtr luaL_optstring(Pointer<Void> L, Int32 arg, Pointer<Void> d) {
-    // TODO: implement luaL_optstring
-    throw UnimplementedError();
+  int luaL_makeseed(ffi.Pointer<lua_State> L) {
+    return flb.luaL_makeseed(L);
   }
 
   @override
-  IntPtr luaL_prepbuffer(Pointer<Void> B) {
-    // TODO: implement luaL_prepbuffer
-    throw UnimplementedError();
+  int luaL_alloc(ffi.Pointer<ffi.Void> ud, ffi.Pointer<ffi.Void> ptr, int osize, int nsize) {
+    return flb.luaL_alloc(ud, ptr, osize, nsize).address;
   }
 
+  // ========== 错误处理函数 ==========
+
   @override
-  IntPtr luaL_prepbuffsize(Pointer<Void> B, IntPtr sz) {
-    // TODO: implement luaL_prepbuffsize
-    throw UnimplementedError();
+  int luaL_error(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt) {
+    return flb.luaL_error(L, fmt);
   }
 
   @override
-  void luaL_pushfail(Pointer<Void> L) {
-    // TODO: implement luaL_pushfail
+  int luaL_typeerror(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname) {
+    return flb.luaL_typeerror(L, arg, tname);
   }
 
   @override
-  void luaL_pushresult(Pointer<Void> B) {
-    // TODO: implement luaL_pushresult
+  int luaL_fileresult(ffi.Pointer<lua_State> L, int stat, ffi.Pointer<ffi.Char> fname) {
+    return flb.luaL_fileresult(L, stat, fname);
   }
 
   @override
-  void luaL_pushresultsize(Pointer<Void> B, IntPtr sz) {
-    // TODO: implement luaL_pushresultsize
+  int luaL_execresult(ffi.Pointer<lua_State> L, int stat) {
+    return flb.luaL_execresult(L, stat);
   }
 
   @override
-  Int32 luaL_ref(Pointer<Void> L, Int32 t) {
-    // TODO: implement luaL_ref
-    throw UnimplementedError();
+  void luaL_where(ffi.Pointer<lua_State> L, int lvl) {
+    flb.luaL_where(L, lvl);
   }
 
   @override
-  void luaL_requiref(
-    Pointer<Void> L,
-    Pointer<Void> modname,
-    Pointer<NativeFunction<lua_CFunction_Func>> openf,
-    Int32 glb,
-  ) {
-    // TODO: implement luaL_requiref
+  void luaL_traceback(ffi.Pointer<lua_State> L, ffi.Pointer<lua_State> L1, ffi.Pointer<ffi.Char> msg, int level) {
+    flb.luaL_traceback(L, L1, msg, level);
   }
+
+  // ========== 可选参数函数 ==========
 
+//   @override
+//   int luaL_opt(ffi.Pointer<lua_State> L, int func, int arg, int dflt) {
+//     // luaL_opt 是 C 宏，实现为: (lua_isnoneornil(L,(arg)) ? (dflt) : func(L,(arg)))
+//     // 这是一个泛型宏，在 Dart 中需要调用者传入已经获取的值
+//     // 简化实现：如果 func 不为 0 则返回 func，否则返回 dflt
+//     // return func != 0 ? func : dflt;
+// flb.luaL_opt
+// return _luaCApi.lua_isnoneornil(L,arg);
+//   }
+
   @override
-  void luaL_setfuncs(Pointer<Void> L, Pointer<Void> l, Int32 nup) {
-    // TODO: implement luaL_setfuncs
+  int luaL_optinteger(ffi.Pointer<lua_State> L, int arg, int d) {
+    return flb.luaL_optinteger(L, arg, d);
   }
 
   @override
-  void luaL_setmetatable(Pointer<Void> L, Pointer<Void> tname) {
-    // TODO: implement luaL_setmetatable
+  int luaL_optlstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d, ffi.Pointer<ffi.Size> l) {
+    return flb.luaL_optlstring(L, arg, d, l).address;
   }
 
   @override
-  IntPtr luaL_testudata(Pointer<Void> L, Int32 arg, Pointer<Void> tname) {
-    // TODO: implement luaL_testudata
-    throw UnimplementedError();
+  double luaL_optnumber(ffi.Pointer<lua_State> L, int arg, double d) {
+    return flb.luaL_optnumber(L, arg, d);
   }
 
   @override
-  IntPtr luaL_tolstring(Pointer<Void> L, Int32 idx, Pointer<Void> len) {
-    // TODO: implement luaL_tolstring
-    throw UnimplementedError();
+  int luaL_optstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d) {
+    // luaL_optstring 是 C 宏，实现为: luaL_optlstring(L, (narg), (d), NULL)
+    return luaL_optlstring(L, arg, d, ffi.nullptr.cast<ffi.Size>());
   }
+
+  // ========== 引用函数 ==========
 
   @override
-  void luaL_traceback(Pointer<Void> L, Pointer<Void> L1, Pointer<Void> msg, Int32 level) {
-    // TODO: implement luaL_traceback
+  int luaL_ref(ffi.Pointer<lua_State> L, int t) {
+    return flb.luaL_ref(L, t);
   }
 
   @override
-  Int32 luaL_typeerror(Pointer<Void> L, Int32 arg, Pointer<Void> tname) {
-    // TODO: implement luaL_typeerror
-    throw UnimplementedError();
+  void luaL_unref(ffi.Pointer<lua_State> L, int t, int ref) {
+    flb.luaL_unref(L, t, ref);
   }
 
+  // ========== Userdata 函数 ==========
+
   @override
-  IntPtr luaL_typename(Pointer<Void> L, Int32 index) {
-    // TODO: implement luaL_typename
-    throw UnimplementedError();
+  int luaL_testudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname) {
+    return flb.luaL_testudata(L, arg, tname).address;
   }
+
+  // ========== 其他函数 ==========
 
   @override
-  void luaL_unref(Pointer<Void> L, Int32 t, Int32 ref) {
-    // TODO: implement luaL_unref
+  void luaL_pushfail(ffi.Pointer<lua_State> L) {
+    // luaL_pushfail 是 C 宏，在 Lua 5.4 中实现为: lua_pushnil(L)
+    // 在较新版本中可能不同
+    flb.lua_pushnil(L);
   }
 
   @override
-  void luaL_where(Pointer<Void> L, Int32 lvl) {
-    // TODO: implement luaL_where
+  int luaL_typename(ffi.Pointer<lua_State> L, int index) {
+    // luaL_typename 是 C 宏，实现为: (lua_typename(L, lua_type(L, (i))))
+    final t = flb.lua_type(L, index);
+    return flb.lua_typename(L, t).address;
   }
 }
