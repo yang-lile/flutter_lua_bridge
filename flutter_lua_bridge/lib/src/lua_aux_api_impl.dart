@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'dart:ffi' as ffi;
 import 'gen/flutter_lua_bridge.g.dart' as flb;
 import 'gen/lua_aux_api.dart';
@@ -360,15 +362,15 @@ class LuaAuxApiImpl implements LuaAuxApi {
 
   // ========== 可选参数函数 ==========
 
-//   @override
-//   int luaL_opt(ffi.Pointer<lua_State> L, int func, int arg, int dflt) {
-//     // luaL_opt 是 C 宏，实现为: (lua_isnoneornil(L,(arg)) ? (dflt) : func(L,(arg)))
-//     // 这是一个泛型宏，在 Dart 中需要调用者传入已经获取的值
-//     // 简化实现：如果 func 不为 0 则返回 func，否则返回 dflt
-//     // return func != 0 ? func : dflt;
-// flb.luaL_opt
-// return _luaCApi.lua_isnoneornil(L,arg);
-//   }
+  @override
+  T luaL_opt<T>(ffi.Pointer<lua_State> L, int arg, T dflt, T Function(ffi.Pointer<lua_State> L, int arg) fetch) {
+    // luaL_opt 是 C 宏，实现为: (lua_isnoneornil(L,(arg)) ? (dflt) : func(L,(arg)))
+    // 在 Dart 中使用回调函数来实现泛型支持
+    if (_luaCApi.lua_isnoneornil(L, arg) != 0) {
+      return dflt;
+    }
+    return fetch(L, arg);
+  }
 
   @override
   int luaL_optinteger(ffi.Pointer<lua_State> L, int arg, int d) {
