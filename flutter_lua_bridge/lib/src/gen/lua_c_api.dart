@@ -47,7 +47,7 @@ abstract class LuaCApi {
 
   /// lua_arith
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-(2|1), +1, e]
   ///
   /// Performs an arithmetic or bitwise operation over the two values (or one, in the case of negations) at the top of the stack, with the value on the top being the second operand, pops these values, and pushes the result of the operation. The function follows the semantics of the corresponding Lua operator (that is, it may call metamethods).
   void lua_arith(ffi.Pointer<lua_State> L, int op);
@@ -61,7 +61,7 @@ abstract class LuaCApi {
 
   /// lua_call
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-(nargs+1), +nresults, e]
   ///
   /// Calls a function. Like regular Lua calls, lua_call respects the __call metamethod. So, here the word "function" means any callable value.
   /// The maximum value for nresults is 250.
@@ -71,7 +71,7 @@ abstract class LuaCApi {
 
   /// lua_callk
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-(nargs+1), +nresults, e]
   ///
   /// This function behaves exactly like lua_call, but allows the called function to yield (see &sect;4.5).
   void lua_callk(ffi.Pointer<lua_State> L, int nargs, int nresults, int ctx, lua_KFunction k);
@@ -114,7 +114,7 @@ abstract class LuaCApi {
 
   /// lua_concat
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-n, +1, e]
   ///
   /// Concatenates the n values at the top of the stack, pops them, and leaves the result on the top. If n is 1, the result is the single value on the stack (that is, the function does nothing); if n is 0, the result is the empty string. Concatenation is performed following the usual semantics of Lua (see &sect;3.4.6).
   void lua_concat(ffi.Pointer<lua_State> L, int n);
@@ -128,7 +128,7 @@ abstract class LuaCApi {
 
   /// lua_createtable
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Creates a new empty table and pushes it onto the stack. Parameter nseq is a hint for how many elements the table will have as a sequence; parameter nrec is a hint for how many other elements the table will have. Lua may use these hints to preallocate memory for the new table. This preallocation may help performance when you know in advance how many elements the table will have. Otherwise you should use the function lua_newtable.
   void lua_createtable(ffi.Pointer<lua_State> L, int nseq, int nrec);
@@ -169,11 +169,11 @@ abstract class LuaCApi {
   ///
   /// Returns a pointer to a raw memory area associated with the given Lua state. The application can use this area for any purpose; Lua does not use it for anything.
   /// By default, this area has the size of a pointer to void, but you can recompile Lua with a different size for this area. (See LUA_EXTRASPACE in luaconf.h.)
-  int lua_getextraspace(ffi.Pointer<lua_State> L);
+  ffi.Pointer<ffi.Void> lua_getextraspace(ffi.Pointer<lua_State> L);
 
   /// lua_getfield
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +1, e]
   ///
   /// Pushes onto the stack the value t[k], where t is the value at the given index. As in Lua, this function may trigger a metamethod for the "index" event (see &sect;2.4).
   int lua_getfield(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Char> k);
@@ -236,7 +236,7 @@ abstract class LuaCApi {
   /// Gets information about a local variable or a temporary value of a given activation record or a given function.
   /// lua_getlocal pushes the variable's value onto the stack and returns its name.
   /// Returns NULL (and pushes nothing) when the index is greater than the number of active local variables.
-  int lua_getlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n);
+  ffi.Pointer<ffi.Char> lua_getlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n);
 
   /// lua_getmetatable
   ///
@@ -254,7 +254,7 @@ abstract class LuaCApi {
 
   /// lua_gettable
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-1, +1, e]
   ///
   /// Pushes onto the stack the value t[k], where t is the value at the given index and k is the value on the top of the stack.
   /// Returns the type of the pushed value.
@@ -272,7 +272,7 @@ abstract class LuaCApi {
   /// Stack: [-0, +(0|1), &ndash;]
   ///
   /// Gets information about the n-th upvalue of the closure at index funcindex. It pushes the upvalue's value onto the stack and returns its name. Returns NULL (and pushes nothing) when the index n is greater than the number of upvalues.
-  int lua_getupvalue(ffi.Pointer<lua_State> L, int funcindex, int n);
+  ffi.Pointer<ffi.Char> lua_getupvalue(ffi.Pointer<lua_State> L, int funcindex, int n);
 
   /// lua_insert
   ///
@@ -381,7 +381,7 @@ abstract class LuaCApi {
 
   /// lua_len
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +1, e]
   ///
   /// Returns the length of the value at the given index. It is equivalent to the '#' operator in Lua (see &sect;3.4.7) and may trigger a metamethod for the "length" event (see &sect;2.4). The result is pushed on the stack.
   void lua_len(ffi.Pointer<lua_State> L, int index);
@@ -401,28 +401,28 @@ abstract class LuaCApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Creates a new independent state and returns its main thread. Returns NULL if it cannot create the state (due to lack of memory). The argument f is the allocator function; Lua will do all memory allocation for this state through this function (see lua_Alloc). The second argument, ud, is an opaque pointer that Lua passes to the allocator in every call. The third argument, seed, is a seed for the hashing of strings.
-  int lua_newstate(lua_Alloc f, ffi.Pointer<ffi.Void> ud, int seed);
+  ffi.Pointer<lua_State> lua_newstate(lua_Alloc f, ffi.Pointer<ffi.Void> ud, int seed);
 
   /// lua_newtable
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Creates a new empty table and pushes it onto the stack. It is equivalent to lua_createtable(L,0,0).
   void lua_newtable(ffi.Pointer<lua_State> L);
 
   /// lua_newthread
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Creates a new thread, pushes it on the stack, and returns a pointer to a lua_State that represents this new thread. The new thread returned by this function shares with the original thread its global environment, but has an independent execution stack.
-  int lua_newthread(ffi.Pointer<lua_State> L);
+  ffi.Pointer<lua_State> lua_newthread(ffi.Pointer<lua_State> L);
 
   /// lua_newuserdatauv
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// This function creates and pushes on the stack a new full userdata, with nuvalue associated Lua values, called user values, plus an associated block of raw memory with size bytes. (The user values can be set and read with the functions lua_setiuservalue and lua_getiuservalue.)
-  int lua_newuserdatauv(ffi.Pointer<lua_State> L, int size, int nuvalue);
+  ffi.Pointer<ffi.Void> lua_newuserdatauv(ffi.Pointer<lua_State> L, int size, int nuvalue);
 
   /// lua_next
   ///
@@ -464,7 +464,7 @@ abstract class LuaCApi {
 
   /// lua_pop
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-n, +0, &ndash;]
   ///
   /// Pops n elements from the stack. It is implemented as a macro over lua_settop.
   void lua_pop(ffi.Pointer<lua_State> L, int n);
@@ -502,11 +502,11 @@ abstract class LuaCApi {
 
   /// lua_pushfstring
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Pushes onto the stack a formatted string and returns a pointer to this string (see &sect;4.1.3). The result is a copy of fmt with each conversion specifier replaced by a string representation of its respective extra argument. A conversion specifier (and its corresponding extra argument) can be '%%' (inserts the character '%'), '%s' (inserts a zero-terminated string, with no size restrictions), '%f' (inserts a lua_Number), '%I' (inserts a lua_Integer), '%p' (inserts a void pointer), '%d' (inserts an int), '%c' (inserts an int as a one-byte character), and '%U' (inserts an unsigned long as a UTF-8 byte sequence).
   /// Besides memory allocation errors, this function may raise an error if the resulting string is too large.
-  int lua_pushfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt);
+  ffi.Pointer<ffi.Char> lua_pushfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt);
 
   /// lua_pushglobaltable
   ///
@@ -531,18 +531,18 @@ abstract class LuaCApi {
 
   /// lua_pushliteral
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// This macro is equivalent to lua_pushstring, but should be used only when s is a literal string. (Lua may optimize this case.)
-  int lua_pushliteral(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s);
+  ffi.Pointer<ffi.Char> lua_pushliteral(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s);
 
   /// lua_pushlstring
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Pushes the string pointed to by s with size len onto the stack. Lua will make or reuse an internal copy of the given string, so the memory at s can be freed or reused immediately after the function returns. The string can contain any binary data, including embedded zeros.
   /// Besides memory allocation errors, this function may raise an error if the string is too large.
-  int lua_pushlstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, int len);
+  ffi.Pointer<ffi.Char> lua_pushlstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, int len);
 
   /// lua_pushnil
   ///
@@ -560,11 +560,11 @@ abstract class LuaCApi {
 
   /// lua_pushstring
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Pushes the zero-terminated string pointed to by s onto the stack. Lua will make or reuse an internal copy of the given string, so the memory at s can be freed or reused immediately after the function returns.
   /// If s is NULL, pushes nil and returns NULL.
-  int lua_pushstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s);
+  ffi.Pointer<ffi.Char> lua_pushstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s);
 
   /// lua_pushthread
   ///
@@ -582,10 +582,10 @@ abstract class LuaCApi {
 
   /// lua_pushvfstring
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Equivalent to lua_pushfstring, except that it receives a va_list instead of a variable number of arguments, and it does not raise errors. Instead, in case of errors it pushes the error message and returns NULL.
-  int lua_pushvfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt, ffi.Pointer<va_list$1> argp);
+  ffi.Pointer<ffi.Char> lua_pushvfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt, ffi.Pointer<va_list$1> argp);
 
   /// lua_rawequal
   ///
@@ -728,7 +728,7 @@ abstract class LuaCApi {
   ///
   /// Sets the value of a local variable of a given activation record. It assigns the value on the top of the stack to the variable and returns its name. It also pops the value from the stack.
   /// Parameters ar and n are as in the function lua_getlocal.
-  int lua_setlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n);
+  ffi.Pointer<ffi.Char> lua_setlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n);
 
   /// lua_setmetatable
   ///
@@ -739,7 +739,7 @@ abstract class LuaCApi {
 
   /// lua_settable
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-2, +0, e]
   ///
   /// Does the equivalent to t[k] = v, where t is the value at the given index, v is the value on the top of the stack, and k is the value just below the top.
   void lua_settable(ffi.Pointer<lua_State> L, int index);
@@ -757,7 +757,7 @@ abstract class LuaCApi {
   ///
   /// Sets the value of a closure's upvalue. It assigns the value on the top of the stack to the upvalue and returns its name. It also pops the value from the stack.
   /// Parameters funcindex and n are as in the function lua_getupvalue.
-  int lua_setupvalue(ffi.Pointer<lua_State> L, int funcindex, int n);
+  ffi.Pointer<ffi.Char> lua_setupvalue(ffi.Pointer<lua_State> L, int funcindex, int n);
 
   /// lua_setwarnf
   ///
@@ -819,11 +819,11 @@ abstract class LuaCApi {
 
   /// lua_tolstring
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +0, m]
   ///
   /// Converts the Lua value at the given index to a C string. The Lua value must be a string or a number; otherwise, the function returns NULL. If the value is a number, then lua_tolstring also changes the actual value in the stack to a string. (This change confuses lua_next when lua_tolstring is applied to keys during a table traversal.)
   /// The pointer returned by lua_tolstring may be invalidated by the garbage collector if the corresponding Lua value is removed from the stack (see &sect;4.1.3).
-  int lua_tolstring(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Size> len);
+  ffi.Pointer<ffi.Char> lua_tolstring(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Size> len);
 
   /// lua_tonumber
   ///
@@ -844,28 +844,28 @@ abstract class LuaCApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Converts the value at the given index to a generic C pointer (void*). The value can be a userdata, a table, a thread, a string, or a function; otherwise, lua_topointer returns NULL. Different objects will give different pointers. There is no way to convert the pointer back to its original value.
-  int lua_topointer(ffi.Pointer<lua_State> L, int index);
+  ffi.Pointer<ffi.Void> lua_topointer(ffi.Pointer<lua_State> L, int index);
 
   /// lua_tostring
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +0, m]
   ///
   /// Equivalent to lua_tolstring with len equal to NULL.
-  int lua_tostring(ffi.Pointer<lua_State> L, int index);
+  ffi.Pointer<ffi.Char> lua_tostring(ffi.Pointer<lua_State> L, int index);
 
   /// lua_tothread
   ///
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Converts the value at the given index to a Lua thread (represented as lua_State*). This value must be a thread; otherwise, the function returns NULL.
-  int lua_tothread(ffi.Pointer<lua_State> L, int index);
+  ffi.Pointer<lua_State> lua_tothread(ffi.Pointer<lua_State> L, int index);
 
   /// lua_touserdata
   ///
   /// Stack: [-0, +0, &ndash;]
   ///
   /// If the value at the given index is a full userdata, returns its memory-block address. If the value is a light userdata, returns its value (a pointer). Otherwise, returns NULL.
-  int lua_touserdata(ffi.Pointer<lua_State> L, int index);
+  ffi.Pointer<ffi.Void> lua_touserdata(ffi.Pointer<lua_State> L, int index);
 
   /// lua_type
   ///
@@ -879,7 +879,7 @@ abstract class LuaCApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Returns the name of the type encoded by the value tp, which must be one the values returned by lua_type.
-  int lua_typename(ffi.Pointer<lua_State> L, int tp);
+  ffi.Pointer<ffi.Char> lua_typename(ffi.Pointer<lua_State> L, int tp);
 
   /// lua_upvalueid
   ///
@@ -887,7 +887,7 @@ abstract class LuaCApi {
   ///
   /// Returns a unique identifier for the upvalue numbered n from the closure at index funcindex.
   /// Parameters funcindex and n are as in the function lua_getupvalue, but n cannot be greater than the number of upvalues.
-  int lua_upvalueid(ffi.Pointer<lua_State> L, int funcindex, int n);
+  ffi.Pointer<ffi.Void> lua_upvalueid(ffi.Pointer<lua_State> L, int funcindex, int n);
 
   /// lua_upvalueindex
   ///

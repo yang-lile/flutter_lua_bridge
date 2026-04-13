@@ -24,10 +24,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_addgsub(ffi.Pointer<flb.luaL_Buffer> B, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r) {
-    // FFI 中返回 void，但接口定义为返回 int，返回 0 表示成功
+  void luaL_addgsub(ffi.Pointer<flb.luaL_Buffer> B, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r) {
     flb.luaL_addgsub(B, s, p, r);
-    return 0;
   }
 
   @override
@@ -53,9 +51,9 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_buffaddr(ffi.Pointer<flb.luaL_Buffer> B) {
+  ffi.Pointer<ffi.Char> luaL_buffaddr(ffi.Pointer<flb.luaL_Buffer> B) {
     // luaL_buffaddr 是 C 宏，实现为: ((B)->b)
-    return B.ref.b.address;
+    return B.ref.b;
   }
 
   @override
@@ -64,8 +62,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_buffinitsize(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Buffer> B, int sz) {
-    return flb.luaL_buffinitsize(L, B, sz).address;
+  ffi.Pointer<ffi.Char> luaL_buffinitsize(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Buffer> B, int sz) {
+    return flb.luaL_buffinitsize(L, B, sz);
   }
 
   @override
@@ -92,7 +90,7 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_prepbuffer(ffi.Pointer<flb.luaL_Buffer> B) {
+  ffi.Pointer<ffi.Char> luaL_prepbuffer(ffi.Pointer<flb.luaL_Buffer> B) {
     // luaL_prepbuffer 是 C 宏，实现为: luaL_prepbuffsize(B, LUAL_BUFFERSIZE)
     // LUAL_BUFFERSIZE 通常是 8192
     const lualBuffersize = 8192;
@@ -100,8 +98,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_prepbuffsize(ffi.Pointer<flb.luaL_Buffer> B, int sz) {
-    return flb.luaL_prepbuffsize(B, sz).address;
+  ffi.Pointer<ffi.Char> luaL_prepbuffsize(ffi.Pointer<flb.luaL_Buffer> B, int sz) {
+    return flb.luaL_prepbuffsize(B, sz);
   }
 
   // ========== 参数检查函数 ==========
@@ -138,8 +136,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_checklstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Size> l) {
-    return flb.luaL_checklstring(L, arg, l).address;
+  ffi.Pointer<ffi.Char> luaL_checklstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Size> l) {
+    return flb.luaL_checklstring(L, arg, l);
   }
 
   @override
@@ -158,7 +156,7 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_checkstring(ffi.Pointer<lua_State> L, int arg) {
+  ffi.Pointer<ffi.Char> luaL_checkstring(ffi.Pointer<lua_State> L, int arg) {
     // luaL_checkstring 是 C 宏，实现为: (luaL_checklstring(L, (narg), NULL))
     return luaL_checklstring(L, arg, ffi.nullptr.cast<ffi.Size>());
   }
@@ -169,8 +167,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_checkudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname) {
-    return flb.luaL_checkudata(L, arg, tname).address;
+  ffi.Pointer<ffi.Void> luaL_checkudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname) {
+    return flb.luaL_checkudata(L, arg, tname);
   }
 
   @override
@@ -186,8 +184,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_tolstring(ffi.Pointer<lua_State> L, int idx, ffi.Pointer<ffi.Size> len) {
-    return flb.luaL_tolstring(L, idx, len).address;
+  ffi.Pointer<ffi.Char> luaL_tolstring(ffi.Pointer<lua_State> L, int idx, ffi.Pointer<ffi.Size> len) {
+    return flb.luaL_tolstring(L, idx, len);
   }
 
   @override
@@ -196,8 +194,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_gsub(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r) {
-    return flb.luaL_gsub(L, s, p, r).address;
+  ffi.Pointer<ffi.Char> luaL_gsub(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r) {
+    return flb.luaL_gsub(L, s, p, r);
   }
 
   // ========== 文件和字符串加载函数 ==========
@@ -314,8 +312,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   // ========== 状态和内存函数 ==========
 
   @override
-  int luaL_newstate() {
-    return flb.luaL_newstate().address;
+  ffi.Pointer<lua_State> luaL_newstate() {
+    return flb.luaL_newstate();
   }
 
   @override
@@ -378,8 +376,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_optlstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d, ffi.Pointer<ffi.Size> l) {
-    return flb.luaL_optlstring(L, arg, d, l).address;
+  ffi.Pointer<ffi.Char> luaL_optlstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d, ffi.Pointer<ffi.Size> l) {
+    return flb.luaL_optlstring(L, arg, d, l);
   }
 
   @override
@@ -388,7 +386,7 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_optstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d) {
+  ffi.Pointer<ffi.Char> luaL_optstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d) {
     // luaL_optstring 是 C 宏，实现为: luaL_optlstring(L, (narg), (d), NULL)
     return luaL_optlstring(L, arg, d, ffi.nullptr.cast<ffi.Size>());
   }
@@ -408,8 +406,8 @@ class LuaAuxApiImpl implements LuaAuxApi {
   // ========== Userdata 函数 ==========
 
   @override
-  int luaL_testudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname) {
-    return flb.luaL_testudata(L, arg, tname).address;
+  ffi.Pointer<ffi.Void> luaL_testudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname) {
+    return flb.luaL_testudata(L, arg, tname);
   }
 
   // ========== 其他函数 ==========
@@ -422,9 +420,9 @@ class LuaAuxApiImpl implements LuaAuxApi {
   }
 
   @override
-  int luaL_typename(ffi.Pointer<lua_State> L, int index) {
+  ffi.Pointer<ffi.Char> luaL_typename(ffi.Pointer<lua_State> L, int index) {
     // luaL_typename 是 C 宏，实现为: (lua_typename(L, lua_type(L, (i))))
     final t = flb.lua_type(L, index);
-    return flb.lua_typename(L, t).address;
+    return flb.lua_typename(L, t);
   }
 }

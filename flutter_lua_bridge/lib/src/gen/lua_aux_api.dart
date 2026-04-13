@@ -32,10 +32,10 @@ abstract class LuaAuxApi {
   // --- luaL_addgsub functions ---
   /// luaL_addgsub
   ///
-  /// Stack: [-?, +?, &ndash;]
+  /// Stack: [-?, +?, m]
   ///
   /// Adds a copy of the string s to the buffer B (see luaL_Buffer), replacing any occurrence of the string p with the string r.
-  int luaL_addgsub(ffi.Pointer<flb.luaL_Buffer> B, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r);
+  void luaL_addgsub(ffi.Pointer<flb.luaL_Buffer> B, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r);
 
 
   // --- luaL_addlstring functions ---
@@ -68,7 +68,7 @@ abstract class LuaAuxApi {
   // --- luaL_addvalue functions ---
   /// luaL_addvalue
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-1, +0, &ndash;]
   ///
   /// Adds the value on the top of the stack to the buffer B (see luaL_Buffer). Pops the value.
   void luaL_addvalue(ffi.Pointer<flb.luaL_Buffer> B);
@@ -116,13 +116,13 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Returns the address of the current content of buffer B (see luaL_Buffer). Note that any addition to the buffer may invalidate this address.
-  int luaL_buffaddr(ffi.Pointer<flb.luaL_Buffer> B);
+  ffi.Pointer<ffi.Char> luaL_buffaddr(ffi.Pointer<flb.luaL_Buffer> B);
 
 
   // --- luaL_buffinit functions ---
   /// luaL_buffinit
   ///
-  /// Stack: [-0, +?, &ndash;]
+  /// Stack: [-0, +0, &ndash;]
   ///
   /// Initializes a buffer B (see luaL_Buffer). This function does not allocate any space; the buffer must be declared as a variable.
   void luaL_buffinit(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Buffer> B);
@@ -131,10 +131,10 @@ abstract class LuaAuxApi {
   // --- luaL_buffinitsize functions ---
   /// luaL_buffinitsize
   ///
-  /// Stack: [-?, +?, &ndash;]
+  /// Stack: [-0, +0, &ndash;]
   ///
   /// Equivalent to the sequence luaL_buffinit, luaL_prepbuffsize.
-  int luaL_buffinitsize(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Buffer> B, int sz);
+  ffi.Pointer<ffi.Char> luaL_buffinitsize(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Buffer> B, int sz);
 
 
   // --- luaL_bufflen functions ---
@@ -181,10 +181,10 @@ abstract class LuaAuxApi {
   // --- luaL_checklstring functions ---
   /// luaL_checklstring
   ///
-  /// Stack: [-0, +?, &ndash;]
+  /// Stack: [-0, +0, v]
   ///
   /// Checks whether the function argument arg is a string and returns this string; if l is not NULL fills its referent with the string's length.
-  int luaL_checklstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Size> l);
+  ffi.Pointer<ffi.Char> luaL_checklstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Size> l);
 
 
   // --- luaL_checknumber functions ---
@@ -218,10 +218,10 @@ abstract class LuaAuxApi {
   // --- luaL_checkstring functions ---
   /// luaL_checkstring
   ///
-  /// Stack: [-0, +?, &ndash;]
+  /// Stack: [-0, +0, v]
   ///
   /// Checks whether the function argument arg is a string and returns this string.
-  int luaL_checkstring(ffi.Pointer<lua_State> L, int arg);
+  ffi.Pointer<ffi.Char> luaL_checkstring(ffi.Pointer<lua_State> L, int arg);
 
 
   // --- luaL_checktype functions ---
@@ -236,10 +236,10 @@ abstract class LuaAuxApi {
   // --- luaL_checkudata functions ---
   /// luaL_checkudata
   ///
-  /// Stack: [-0, +?, &ndash;]
+  /// Stack: [-0, +0, v]
   ///
   /// Checks whether the function argument arg is a userdata of the type tname (see luaL_newmetatable) and returns the userdata's memory-block address (see lua_touserdata).
-  int luaL_checkudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
+  ffi.Pointer<ffi.Void> luaL_checkudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
 
 
   // --- luaL_checkversion functions ---
@@ -326,10 +326,10 @@ abstract class LuaAuxApi {
   // --- luaL_gsub functions ---
   /// luaL_gsub
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Creates a copy of string s, replacing any occurrence of the string p with the string r. Pushes the resulting string on the stack and returns it.
-  int luaL_gsub(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r);
+  ffi.Pointer<ffi.Char> luaL_gsub(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r);
 
 
   // --- luaL_len functions ---
@@ -400,7 +400,7 @@ abstract class LuaAuxApi {
   // --- luaL_newlib functions ---
   /// luaL_newlib
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Creates a new table and registers there the functions in the list l.
   /// The array l must be the actual array, not a pointer to it.
@@ -410,7 +410,7 @@ abstract class LuaAuxApi {
   // --- luaL_newlibtable functions ---
   /// luaL_newlibtable
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// Creates a new table with a size optimized to store all entries in the array l (but does not actually store them). It is intended to be used in conjunction with luaL_setfuncs (see luaL_newlib).
   void luaL_newlibtable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Void> l);
@@ -419,7 +419,7 @@ abstract class LuaAuxApi {
   // --- luaL_newmetatable functions ---
   /// luaL_newmetatable
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +1, m]
   ///
   /// If the registry already has the key tname, returns 0. Otherwise, creates a new table to be used as a metatable for userdata, adds to this new table the pair __name = tname, adds to the registry the pair [tname] = new table, and returns 1.
   int luaL_newmetatable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> tname);
@@ -431,7 +431,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Creates a new Lua state. It calls lua_newstate with luaL_alloc as the allocator function and the result of luaL_makeseed(NULL) as the seed, and then sets a warning function and a panic function (see &sect;4.4) that print messages to the standard error output.
-  int luaL_newstate();
+  ffi.Pointer<lua_State> luaL_newstate();
 
 
   // --- luaL_openlibs functions ---
@@ -471,11 +471,11 @@ abstract class LuaAuxApi {
   // --- luaL_optlstring functions ---
   /// luaL_optlstring
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +0, v]
   ///
   /// If the function argument arg is a string, returns this string. If this argument is absent or is nil, returns d. Otherwise, raises an error.
   /// This function uses lua_tolstring to get its result, so all conversions and caveats of that function apply here.
-  int luaL_optlstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d, ffi.Pointer<ffi.Size> l);
+  ffi.Pointer<ffi.Char> luaL_optlstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d, ffi.Pointer<ffi.Size> l);
 
 
   // --- luaL_optnumber functions ---
@@ -490,28 +490,28 @@ abstract class LuaAuxApi {
   // --- luaL_optstring functions ---
   /// luaL_optstring
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +0, v]
   ///
   /// If the function argument arg is a string, returns this string. If this argument is absent or is nil, returns d. Otherwise, raises an error.
-  int luaL_optstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d);
+  ffi.Pointer<ffi.Char> luaL_optstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d);
 
 
   // --- luaL_prepbuffer functions ---
   /// luaL_prepbuffer
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +0, &ndash;]
   ///
   /// Equivalent to luaL_prepbuffsize with the predefined size LUAL_BUFFERSIZE.
-  int luaL_prepbuffer(ffi.Pointer<flb.luaL_Buffer> B);
+  ffi.Pointer<ffi.Char> luaL_prepbuffer(ffi.Pointer<flb.luaL_Buffer> B);
 
 
   // --- luaL_prepbuffsize functions ---
   /// luaL_prepbuffsize
   ///
-  /// Stack: [-0, +1, &ndash;]
+  /// Stack: [-0, +0, m]
   ///
   /// Returns an address to a space of size sz where you can copy a string to be added to buffer B (see luaL_Buffer). After copying the string into this space you must call luaL_addsize with the size of the string to actually add it to the buffer.
-  int luaL_prepbuffsize(ffi.Pointer<flb.luaL_Buffer> B, int sz);
+  ffi.Pointer<ffi.Char> luaL_prepbuffsize(ffi.Pointer<flb.luaL_Buffer> B, int sz);
 
 
   // --- luaL_pushfail functions ---
@@ -526,7 +526,7 @@ abstract class LuaAuxApi {
   // --- luaL_pushresult functions ---
   /// luaL_pushresult
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-?, +1, m]
   ///
   /// Finishes the use of buffer B leaving the final string on the top of the stack.
   void luaL_pushresult(ffi.Pointer<flb.luaL_Buffer> B);
@@ -544,7 +544,7 @@ abstract class LuaAuxApi {
   // --- luaL_ref functions ---
   /// luaL_ref
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-1, +0, m]
   ///
   /// Creates and returns a reference, in the table at index t, for the object on the top of the stack (and pops the object).
   /// You can retrieve an object referred by the reference r by calling lua_rawgeti(L,t,r) or lua_geti(L,t,r). The function luaL_unref frees a reference.
@@ -583,19 +583,19 @@ abstract class LuaAuxApi {
   // --- luaL_testudata functions ---
   /// luaL_testudata
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +0, m]
   ///
   /// This function works like luaL_checkudata, except that, when the test fails, it returns NULL instead of raising an error.
-  int luaL_testudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
+  ffi.Pointer<ffi.Void> luaL_testudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
 
 
   // --- luaL_tolstring functions ---
   /// luaL_tolstring
   ///
-  /// Stack: [-0, +0, &ndash;]
+  /// Stack: [-0, +1, e]
   ///
   /// Converts any Lua value at the given index to a C string in a reasonable format. The resulting string is pushed onto the stack and also returned by the function (see &sect;4.1.3). If len is not NULL, the function also sets *len with the string length.
-  int luaL_tolstring(ffi.Pointer<lua_State> L, int idx, ffi.Pointer<ffi.Size> len);
+  ffi.Pointer<ffi.Char> luaL_tolstring(ffi.Pointer<lua_State> L, int idx, ffi.Pointer<ffi.Size> len);
 
 
   // --- luaL_traceback functions ---
@@ -622,7 +622,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Returns the name of the type of the value at the given index.
-  int luaL_typename(ffi.Pointer<lua_State> L, int index);
+  ffi.Pointer<ffi.Char> luaL_typename(ffi.Pointer<lua_State> L, int index);
 
 
   // --- luaL_unref functions ---

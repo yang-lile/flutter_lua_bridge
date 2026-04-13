@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names, camel_case_types
+
 import 'dart:ffi' as ffi;
 import 'gen/flutter_lua_bridge.g.dart' as flb;
 import 'gen/lua_c_api.dart';
@@ -100,8 +102,12 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_getextraspace(ffi.Pointer<lua_State> L) {
-    return L.address;
+  ffi.Pointer<ffi.Void> lua_getextraspace(ffi.Pointer<lua_State> L) {
+    // lua_getextraspace is a macro: ((void *)((char *)(L) - LUA_EXTRASPACE))
+    // LUA_EXTRASPACE defaults to sizeof(void*)
+    final ptr = L.cast<ffi.Uint8>().cast<ffi.Int8>();
+    final extraspacePtr = ptr + (-ffi.sizeOf<ffi.Pointer<ffi.Void>>());
+    return extraspacePtr.cast<ffi.Void>();
   }
 
   @override
@@ -145,8 +151,10 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_getlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n) {
-    return flb.lua_getlocal(L, ar, n).address;
+  ffi.Pointer<ffi.Char> lua_getlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n) {
+    // lua_getlocal returns const char* (pointer to local variable name)
+    // Returns NULL (and pushes nothing) when the index is greater than the number of active local variables
+    return flb.lua_getlocal(L, ar, n);
   }
 
   @override
@@ -170,8 +178,10 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_getupvalue(ffi.Pointer<lua_State> L, int funcindex, int n) {
-    return flb.lua_getupvalue(L, funcindex, n).address;
+  ffi.Pointer<ffi.Char> lua_getupvalue(ffi.Pointer<lua_State> L, int funcindex, int n) {
+    // lua_getupvalue returns const char* (pointer to upvalue name)
+    // Returns NULL (and pushes nothing) when the index n is greater than the number of upvalues
+    return flb.lua_getupvalue(L, funcindex, n);
   }
 
   @override
@@ -268,8 +278,8 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_newstate(lua_Alloc f, ffi.Pointer<ffi.Void> ud, int seed) {
-    return flb.lua_newstate(f, ud, seed).address;
+  ffi.Pointer<lua_State> lua_newstate(lua_Alloc f, ffi.Pointer<ffi.Void> ud, int seed) {
+    return flb.lua_newstate(f, ud, seed);
   }
 
   @override
@@ -278,13 +288,13 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_newthread(ffi.Pointer<lua_State> L) {
-    return flb.lua_newthread(L).address;
+  ffi.Pointer<lua_State> lua_newthread(ffi.Pointer<lua_State> L) {
+    return flb.lua_newthread(L);
   }
 
   @override
-  int lua_newuserdatauv(ffi.Pointer<lua_State> L, int size, int nuvalue) {
-    return flb.lua_newuserdatauv(L, size, nuvalue).address;
+  ffi.Pointer<ffi.Void> lua_newuserdatauv(ffi.Pointer<lua_State> L, int size, int nuvalue) {
+    return flb.lua_newuserdatauv(L, size, nuvalue);
   }
 
   @override
@@ -343,8 +353,8 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_pushfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt) {
-    return flb.lua_pushfstring(L, fmt).address;
+  ffi.Pointer<ffi.Char> lua_pushfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt) {
+    return flb.lua_pushfstring(L, fmt);
   }
 
   @override
@@ -363,13 +373,13 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_pushliteral(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s) {
-    return flb.lua_pushstring(L, s).address;
+  ffi.Pointer<ffi.Char> lua_pushliteral(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s) {
+    return flb.lua_pushstring(L, s);
   }
 
   @override
-  int lua_pushlstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, int len) {
-    return flb.lua_pushlstring(L, s, len).address;
+  ffi.Pointer<ffi.Char> lua_pushlstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, int len) {
+    return flb.lua_pushlstring(L, s, len);
   }
 
   @override
@@ -383,8 +393,8 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_pushstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s) {
-    return flb.lua_pushstring(L, s).address;
+  ffi.Pointer<ffi.Char> lua_pushstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s) {
+    return flb.lua_pushstring(L, s);
   }
 
   @override
@@ -398,8 +408,9 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_pushvfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt, ffi.Pointer<va_list$1> argp) {
-    return flb.lua_pushfstring(L, fmt).address;
+  ffi.Pointer<ffi.Char> lua_pushvfstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt, ffi.Pointer<va_list$1> argp) {
+    // va_list is not directly supported, fallback to regular pushfstring
+    return flb.lua_pushfstring(L, fmt);
   }
 
   @override
@@ -503,8 +514,8 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_setlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n) {
-    return flb.lua_setlocal(L, ar, n).address;
+  ffi.Pointer<ffi.Char> lua_setlocal(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar, int n) {
+    return flb.lua_setlocal(L, ar, n);
   }
 
   @override
@@ -523,8 +534,8 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_setupvalue(ffi.Pointer<lua_State> L, int funcindex, int n) {
-    return flb.lua_setupvalue(L, funcindex, n).address;
+  ffi.Pointer<ffi.Char> lua_setupvalue(ffi.Pointer<lua_State> L, int funcindex, int n) {
+    return flb.lua_setupvalue(L, funcindex, n);
   }
 
   @override
@@ -568,8 +579,8 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_tolstring(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Size> len) {
-    return flb.lua_tolstring(L, index, len).address;
+  ffi.Pointer<ffi.Char> lua_tolstring(ffi.Pointer<lua_State> L, int index, ffi.Pointer<ffi.Size> len) {
+    return flb.lua_tolstring(L, index, len);
   }
 
   @override
@@ -583,23 +594,23 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_topointer(ffi.Pointer<lua_State> L, int index) {
-    return flb.lua_topointer(L, index).address;
+  ffi.Pointer<ffi.Void> lua_topointer(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_topointer(L, index);
   }
 
   @override
-  int lua_tostring(ffi.Pointer<lua_State> L, int index) {
-    return flb.lua_tolstring(L, index, ffi.nullptr).address;
+  ffi.Pointer<ffi.Char> lua_tostring(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_tolstring(L, index, ffi.nullptr);
   }
 
   @override
-  int lua_tothread(ffi.Pointer<lua_State> L, int index) {
-    return flb.lua_tothread(L, index).address;
+  ffi.Pointer<lua_State> lua_tothread(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_tothread(L, index);
   }
 
   @override
-  int lua_touserdata(ffi.Pointer<lua_State> L, int index) {
-    return flb.lua_touserdata(L, index).address;
+  ffi.Pointer<ffi.Void> lua_touserdata(ffi.Pointer<lua_State> L, int index) {
+    return flb.lua_touserdata(L, index);
   }
 
   @override
@@ -608,13 +619,13 @@ class LuaCApiImpl implements LuaCApi {
   }
 
   @override
-  int lua_typename(ffi.Pointer<lua_State> L, int tp) {
-    return flb.lua_typename(L, tp).address;
+  ffi.Pointer<ffi.Char> lua_typename(ffi.Pointer<lua_State> L, int tp) {
+    return flb.lua_typename(L, tp);
   }
 
   @override
-  int lua_upvalueid(ffi.Pointer<lua_State> L, int funcindex, int n) {
-    return flb.lua_upvalueid(L, funcindex, n).address;
+  ffi.Pointer<ffi.Void> lua_upvalueid(ffi.Pointer<lua_State> L, int funcindex, int n) {
+    return flb.lua_upvalueid(L, funcindex, n);
   }
 
   @override
