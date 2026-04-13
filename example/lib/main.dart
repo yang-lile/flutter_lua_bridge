@@ -3,7 +3,8 @@ import 'package:ffi/ffi.dart';
 
 import 'package:flutter/material.dart';
 
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart' as flb;
+import 'package:flutter_lua_bridge/src/gen/flutter_lua_bridge.g.dart' as ffi_gen;
+import 'package:flutter_lua_bridge/src/flutter_lua_bridge.dart';
 import 'game/game_demo_page.dart';
 
 void main() {
@@ -11,9 +12,9 @@ void main() {
 }
 
 /// 基础 FFI 调用示例
-int safeLoader(Pointer<flb.lua_State> l) {
-  flb.luaL_openlibs(l);
-  final luaVersion = flb.lua_version(l);
+int safeLoader(Pointer<ffi_gen.lua_State> l) {
+  FlutterLuaBridge.auxApi.luaL_openlibs(l);
+  final luaVersion = ffi_gen.lua_version(l);
 
   String code = '''
 function functionalRandom()
@@ -30,34 +31,34 @@ r = functionalRandom()
       print(a,b)
       ''';
 
-  // 使用新的 LuaStateX 扩展方法
-  final result = l.doString(code);
-  if (result != flb.LuaStatus.OK) {
-    final error = l.toLuaString(-1);
-    l.pop(1);
+  // 执行 Lua 代码
+  final result = FlutterLuaBridge.auxApi.luaL_dostring(l, code.toNativeUtf8().cast<Char>());
+  if (result != ffi_gen.LUA_OK) {
+    final error = FlutterLuaBridge.auxApi.luaL_tolstring(l, -1, nullptr);
+    FlutterLuaBridge.cApi.lua_pop(l, 1);
     debugPrint('Lua error: $error');
     return result;
   }
 
-  flb.lua_pushnumber(l, luaVersion);
+  ffi_gen.lua_pushnumber(l, luaVersion);
 
   // 获取全局变量
-  final ptrA = 'a'.toPointerChar();
+  final ptrA = 'a'.toNativeUtf8().cast<Char>();
   try {
-    flb.lua_getglobal(l, ptrA);
-    final luaResult = flb.luaL_optinteger(l, -1, -1);
-    l.pop(1);
-    flb.lua_pushinteger(l, luaResult);
+    ffi_gen.lua_getglobal(l, ptrA);
+    final luaResult = FlutterLuaBridge.auxApi.luaL_optinteger(l, -1, -1);
+    FlutterLuaBridge.cApi.lua_pop(l, 1);
+    ffi_gen.lua_pushinteger(l, luaResult);
   } finally {
     calloc.free(ptrA);
   }
 
-  final ptrB = 'b'.toPointerChar();
+  final ptrB = 'b'.toNativeUtf8().cast<Char>();
   try {
-    flb.lua_getglobal(l, ptrB);
-    final luaResultb = flb.luaL_optinteger(l, -1, -1);
-    l.pop(1);
-    flb.lua_pushinteger(l, luaResultb);
+    ffi_gen.lua_getglobal(l, ptrB);
+    final luaResultb = FlutterLuaBridge.auxApi.luaL_optinteger(l, -1, -1);
+    FlutterLuaBridge.cApi.lua_pop(l, 1);
+    ffi_gen.lua_pushinteger(l, luaResultb);
   } finally {
     calloc.free(ptrB);
   }
@@ -87,29 +88,29 @@ class _HomePageState extends State<HomePage> {
   int? bValue;
 
   void onPressed() {
-    final l = flb.luaL_newstate();
+    final l = FlutterLuaBridge.auxApi.luaL_newstate();
 
-    var dartFunction = Pointer.fromFunction<flb.lua_CFunctionFunction>(safeLoader, 0);
-    flb.lua_pushcclosure(l, dartFunction, 0);
+    var dartFunction = Pointer.fromFunction<ffi_gen.lua_CFunctionFunction>(safeLoader, 0);
+    ffi_gen.lua_pushcclosure(l, dartFunction, 0);
 
-    final stateCode = flb.lua_pcallk(l, 0, 3, 0, 0, nullptr);
-    if (stateCode != flb.LuaStatus.OK) {
-      final error = l.toLuaString(-1);
-      l.pop(1);
+    final stateCode = ffi_gen.lua_pcallk(l, 0, 3, 0, 0, nullptr);
+    if (stateCode != ffi_gen.LUA_OK) {
+      final error = FlutterLuaBridge.auxApi.luaL_tolstring(l, -1, nullptr);
+      FlutterLuaBridge.cApi.lua_pop(l, 1);
       debugPrint('Error: $error');
       return;
     }
 
-    final luaResultb = flb.lua_isinteger(l, -3 + 2) != 0 ? flb.lua_tointegerx(l, -3 + 2, nullptr) : 0;
-    final luaResult = flb.lua_isinteger(l, -3 + 1) != 0 ? flb.lua_tointegerx(l, -3 + 1, nullptr) : 0;
-    final v = flb.lua_isnumber(l, -3 + 0) != 0 ? flb.lua_tonumberx(l, -3 + 0, nullptr) : 0;
+    final luaResultb = ffi_gen.lua_isinteger(l, -3 + 2) != 0 ? ffi_gen.lua_tointegerx(l, -3 + 2, nullptr) : 0;
+    final luaResult = ffi_gen.lua_isinteger(l, -3 + 1) != 0 ? ffi_gen.lua_tointegerx(l, -3 + 1, nullptr) : 0;
+    final v = ffi_gen.lua_isnumber(l, -3 + 0) != 0 ? ffi_gen.lua_tonumberx(l, -3 + 0, nullptr) : 0;
 
     setState(() {
       luaVersion = v;
       fetchAValue = luaResult;
       bValue = luaResultb;
     });
-    flb.lua_close(l);
+    ffi_gen.lua_close(l);
   }
 
   @override

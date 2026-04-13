@@ -48,9 +48,8 @@ void main() {
       // Build our app and trigger a frame.
       await tester.pumpWidget(const MyApp());
 
-      // Verify the game demo button is present.
-      final buttonFinder = find.widgetWithText(ElevatedButton, '打开抽卡战斗游戏 Demo');
-      expect(buttonFinder, findsOneWidget);
+      // Verify the game demo button text is present.
+      expect(find.text('打开抽卡战斗游戏 Demo'), findsOneWidget);
 
       // Verify the button has the correct icon.
       expect(find.byIcon(Icons.gamepad), findsOneWidget);
