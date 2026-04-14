@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flutter_lua_bridge_example/game/card_loader.dart';
 import 'package:flutter_lua_bridge_example/game/models.dart';
 
 void main() {
@@ -422,6 +423,186 @@ void main() {
       expect(skill.type, equals(DamageType.physical));
       expect(skill.multiplier, equals(1.0));
       expect(skill.cooldown, equals(0));
+    });
+  });
+
+  group('CardLoader Integration Tests - Load from Assets', () {
+    late CardLoader cardLoader;
+
+    setUpAll(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+    });
+
+    setUp(() {
+      cardLoader = CardLoader();
+      cardLoader.init();
+    });
+
+    tearDown(() {
+      cardLoader.dispose();
+    });
+
+    test('should load warrior card from assets', () async {
+      final card = await cardLoader.loadCard('assets/game/cards/warrior.lua');
+
+      expect(card.id, equals('warrior_001'));
+      expect(card.name, equals('狂暴战士'));
+      expect(card.description, equals('高血量高物理攻击的坦克型怪物'));
+      expect(card.rarity, equals('SR'));
+      expect(card.maxHp, equals(1200));
+      expect(card.attack, equals(85));
+      expect(card.magicAttack, equals(10));
+      expect(card.physicalDefense, equals(60));
+      expect(card.magicDefense, equals(20));
+      expect(card.speed, equals(50));
+      expect(card.critRate, equals(0.15));
+      expect(card.critDamage, equals(2.0));
+      expect(card.magicCritRate, equals(0.0));
+
+      // Verify normal attack
+      expect(card.normalAttack.name, equals('重击'));
+      expect(card.normalAttack.type, equals(DamageType.physical));
+      expect(card.normalAttack.multiplier, equals(1.0));
+
+      // Verify skill
+      expect(card.skill.name, equals('旋风斩'));
+      expect(card.skill.type, equals(DamageType.physical));
+      expect(card.skill.multiplier, equals(1.5));
+      expect(card.skill.cooldown, equals(2));
+    });
+
+    test('should load mage card from assets', () async {
+      final card = await cardLoader.loadCard('assets/game/cards/mage.lua');
+
+      expect(card.id, equals('mage_001'));
+      expect(card.name, equals('元素法师'));
+      expect(card.description, equals('高法术伤害但脆弱的输出型怪物'));
+      expect(card.rarity, equals('SSR'));
+      expect(card.maxHp, equals(700));
+      expect(card.attack, equals(20));
+      expect(card.magicAttack, equals(120));
+      expect(card.physicalDefense, equals(15));
+      expect(card.magicDefense, equals(50));
+      expect(card.speed, equals(70));
+      expect(card.critRate, equals(0.05));
+      expect(card.critDamage, equals(1.5));
+      expect(card.magicCritRate, equals(0.20));
+
+      // Verify normal attack is MAGIC type
+      expect(card.normalAttack.name, equals('魔法弹'));
+      expect(card.normalAttack.type, equals(DamageType.magic));
+      expect(card.normalAttack.multiplier, equals(1.0));
+
+      // Verify skill
+      expect(card.skill.name, equals('陨石术'));
+      expect(card.skill.type, equals(DamageType.magic));
+      expect(card.skill.multiplier, equals(2.2));
+      expect(card.skill.cooldown, equals(3));
+    });
+
+    test('should load assassin card from assets', () async {
+      final card = await cardLoader.loadCard('assets/game/cards/assassin.lua');
+
+      expect(card.id, equals('assassin_001'));
+      expect(card.name, equals('暗影刺客'));
+      expect(card.rarity, equals('SSR'));
+      expect(card.maxHp, equals(650));
+      expect(card.attack, equals(100));
+      expect(card.speed, equals(95));
+      expect(card.critRate, equals(0.30));
+      expect(card.critDamage, equals(2.5));
+
+      // Verify skill has ignoreDefense
+      expect(card.skill.name, equals('暗影突袭'));
+      expect(card.skill.multiplier, equals(1.8));
+      expect(card.skill.ignoreDefense, equals(0.3));
+    });
+
+    test('should load healer card from assets', () async {
+      final card = await cardLoader.loadCard('assets/game/cards/healer.lua');
+
+      expect(card.id, equals('healer_001'));
+      expect(card.name, equals('圣光牧师'));
+      expect(card.rarity, equals('SR'));
+      expect(card.maxHp, equals(900));
+      expect(card.magicAttack, equals(60));
+      expect(card.magicDefense, equals(45));
+
+      // Verify HEAL type skill
+      expect(card.skill.name, equals('群体治疗'));
+      expect(card.skill.type, equals(DamageType.heal));
+      expect(card.skill.healBase, equals(150));
+    });
+
+    test('should load all cards with correct rarity distribution', () async {
+      final cards = <MonsterCard>[];
+      final cardPaths = [
+        'assets/game/cards/warrior.lua',
+        'assets/game/cards/mage.lua',
+        'assets/game/cards/assassin.lua',
+        'assets/game/cards/healer.lua',
+      ];
+
+      for (final path in cardPaths) {
+        cards.add(await cardLoader.loadCard(path));
+      }
+
+      // Verify all cards loaded
+      expect(cards.length, equals(4));
+
+      // Count rarity distribution
+      final srCards = cards.where((c) => c.rarity == 'SR').length;
+      final ssrCards = cards.where((c) => c.rarity == 'SSR').length;
+
+      expect(srCards, equals(2)); // warrior, healer
+      expect(ssrCards, equals(2)); // mage, assassin
+    });
+
+    test('should load cards with correct stat ranges', () async {
+      final warrior = await cardLoader.loadCard('assets/game/cards/warrior.lua');
+      final mage = await cardLoader.loadCard('assets/game/cards/mage.lua');
+      final assassin = await cardLoader.loadCard('assets/game/cards/assassin.lua');
+      final healer = await cardLoader.loadCard('assets/game/cards/healer.lua');
+
+      // Warrior: highest HP and physical defense
+      expect(warrior.maxHp, greaterThan(mage.maxHp));
+      expect(warrior.physicalDefense, greaterThan(mage.physicalDefense));
+
+      // Mage: highest magic attack
+      expect(mage.magicAttack, greaterThan(warrior.magicAttack));
+      expect(mage.magicAttack, greaterThan(assassin.magicAttack));
+
+      // Assassin: highest speed and crit
+      expect(assassin.speed, greaterThan(warrior.speed));
+      expect(assassin.speed, greaterThan(mage.speed));
+      expect(assassin.critRate, greaterThan(warrior.critRate));
+      expect(assassin.critDamage, greaterThan(warrior.critDamage));
+
+      // Healer: balanced stats
+      expect(healer.maxHp, greaterThan(mage.maxHp));
+      expect(healer.maxHp, lessThan(warrior.maxHp));
+    });
+
+    test('should preserve card immutability after loading', () async {
+      final original = await cardLoader.loadCard('assets/game/cards/warrior.lua');
+      final copy = original.copy();
+
+      // Modify copy
+      copy.hp = 500;
+
+      // Original should be unchanged
+      expect(original.hp, equals(original.maxHp));
+      expect(copy.hp, equals(500));
+    });
+
+    test('should handle formulas loading once', () async {
+      // First load should load formulas
+      final card1 = await cardLoader.loadCard('assets/game/cards/warrior.lua');
+      expect(card1.id, equals('warrior_001'));
+
+      // Second load should reuse loaded formulas (no error)
+      final card2 = await cardLoader.loadCard('assets/game/cards/mage.lua');
+      expect(card2.id, equals('mage_001'));
     });
   });
 }

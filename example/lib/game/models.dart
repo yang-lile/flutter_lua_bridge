@@ -123,7 +123,9 @@ class MonsterCard {
     Pointer<flb.lua_State>? luaState,
     int? passiveRef,
   ) {
-    final stats = data['baseStats'] as Map<String, dynamic>? ?? {};
+    final stats = data['baseStats'] is Map<String, dynamic>
+        ? data['baseStats'] as Map<String, dynamic>
+        : <String, dynamic>{};
     
     return MonsterCard(
       id: data['id']?.toString() ?? 'unknown',
@@ -140,8 +142,12 @@ class MonsterCard {
       critRate: stats['critRate'] != null ? (stats['critRate'] as num).toDouble() : 0.0,
       critDamage: stats['critDamage'] != null ? (stats['critDamage'] as num).toDouble() : 1.5,
       magicCritRate: stats['magicCritRate'] != null ? (stats['magicCritRate'] as num).toDouble() : 0.0,
-      normalAttack: Skill.fromLua((data['normalAttack'] as Map<String, dynamic>?) ?? {}),
-      skill: Skill.fromLua((data['skill'] as Map<String, dynamic>?) ?? {}),
+      normalAttack: Skill.fromLua(data['normalAttack'] is Map<String, dynamic>
+          ? data['normalAttack'] as Map<String, dynamic>
+          : <String, dynamic>{}),
+      skill: Skill.fromLua(data['skill'] is Map<String, dynamic>
+          ? data['skill'] as Map<String, dynamic>
+          : <String, dynamic>{}),
       luaState: luaState,
       passiveRef: passiveRef,
     );

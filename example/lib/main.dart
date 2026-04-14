@@ -12,12 +12,12 @@ void main() {
 
 /// 基础 FFI 调用示例
 int safeLoader(Pointer<flb.lua_State> l) {
-  flb.luaL_openlibs(l);
+  flb.FlutterLuaBridge.auxApi.luaL_openlibs(l);
   final luaVersion = flb.lua_version(l);
 
   String code = '''
 function functionalRandom()
-    local seed = tonumber(tostring(os.time()):reverse():sub(1,6)) 
+    local seed = tonumber(tostring(os.time()):reverse():sub(1,6))
     return function(low, up)
         math.randomseed(tonumber(tostring(os.time()):reverse():sub(1,6)) )
         seed = math.random(low, up)
@@ -30,11 +30,11 @@ r = functionalRandom()
       print(a,b)
       ''';
 
-  // 使用新的 LuaStateX 扩展方法
-  final result = l.doString(code);
-  if (result != flb.LuaStatus.OK) {
-    final error = l.toLuaString(-1);
-    l.pop(1);
+  // 执行 Lua 代码
+  final result = flb.FlutterLuaBridge.auxApi.luaL_dostring(l, code.toNativeUtf8().cast<Char>());
+  if (result != flb.LUA_OK) {
+    final error = flb.FlutterLuaBridge.auxApi.luaL_tolstring(l, -1, nullptr);
+    flb.FlutterLuaBridge.cApi.lua_pop(l, 1);
     debugPrint('Lua error: $error');
     return result;
   }
@@ -42,21 +42,21 @@ r = functionalRandom()
   flb.lua_pushnumber(l, luaVersion);
 
   // 获取全局变量
-  final ptrA = 'a'.toPointerChar();
+  final ptrA = 'a'.toNativeUtf8().cast<Char>();
   try {
     flb.lua_getglobal(l, ptrA);
-    final luaResult = flb.luaL_optinteger(l, -1, -1);
-    l.pop(1);
+    final luaResult = flb.FlutterLuaBridge.auxApi.luaL_optinteger(l, -1, -1);
+    flb.FlutterLuaBridge.cApi.lua_pop(l, 1);
     flb.lua_pushinteger(l, luaResult);
   } finally {
     calloc.free(ptrA);
   }
 
-  final ptrB = 'b'.toPointerChar();
+  final ptrB = 'b'.toNativeUtf8().cast<Char>();
   try {
     flb.lua_getglobal(l, ptrB);
-    final luaResultb = flb.luaL_optinteger(l, -1, -1);
-    l.pop(1);
+    final luaResultb = flb.FlutterLuaBridge.auxApi.luaL_optinteger(l, -1, -1);
+    flb.FlutterLuaBridge.cApi.lua_pop(l, 1);
     flb.lua_pushinteger(l, luaResultb);
   } finally {
     calloc.free(ptrB);
@@ -87,15 +87,15 @@ class _HomePageState extends State<HomePage> {
   int? bValue;
 
   void onPressed() {
-    final l = flb.luaL_newstate();
+    final l = flb.FlutterLuaBridge.auxApi.luaL_newstate();
 
     var dartFunction = Pointer.fromFunction<flb.lua_CFunctionFunction>(safeLoader, 0);
     flb.lua_pushcclosure(l, dartFunction, 0);
 
     final stateCode = flb.lua_pcallk(l, 0, 3, 0, 0, nullptr);
-    if (stateCode != flb.LuaStatus.OK) {
-      final error = l.toLuaString(-1);
-      l.pop(1);
+    if (stateCode != flb.LUA_OK) {
+      final error = flb.FlutterLuaBridge.auxApi.luaL_tolstring(l, -1, nullptr);
+      flb.FlutterLuaBridge.cApi.lua_pop(l, 1);
       debugPrint('Error: $error');
       return;
     }
