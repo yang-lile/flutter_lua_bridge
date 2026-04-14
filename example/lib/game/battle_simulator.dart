@@ -1,13 +1,13 @@
 // 战斗模拟器
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart' as flb;
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
 import 'models.dart';
 
 /// 战斗模拟器
 class BattleSimulator {
-  final Pointer<flb.lua_State> lua;
+  final Pointer<lua_State> lua;
   int _turn = 0;
   final List<BattleLog> _logs = [];
 
@@ -238,8 +238,8 @@ class BattleSimulator {
     final formulasPtr = '_FORMULAS'.toNativeUtf8().cast<Char>();
     final funcPtr = funcName.toNativeUtf8().cast<Char>();
     try {
-      flb.lua_getglobal(lua, formulasPtr);
-      flb.lua_getfield(lua, -1, funcPtr);
+      FlutterLuaBridge.cApi.lua_getglobal(lua, formulasPtr);
+      FlutterLuaBridge.cApi.lua_getfield(lua, -1, funcPtr);
     } finally {
       calloc.free(formulasPtr);
       calloc.free(funcPtr);
@@ -249,33 +249,33 @@ class BattleSimulator {
     final attackerPtr = 'attacker'.toNativeUtf8().cast<Char>();
     final defenderPtr = 'defender'.toNativeUtf8().cast<Char>();
     try {
-      flb.lua_getglobal(lua, attackerPtr);
-      flb.lua_getglobal(lua, defenderPtr);
-      flb.lua_pushnumber(lua, skill.multiplier);
+      FlutterLuaBridge.cApi.lua_getglobal(lua, attackerPtr);
+      FlutterLuaBridge.cApi.lua_getglobal(lua, defenderPtr);
+      FlutterLuaBridge.cApi.lua_pushnumber(lua, skill.multiplier);
     } finally {
       calloc.free(attackerPtr);
       calloc.free(defenderPtr);
     }
 
-    final result = flb.lua_pcallk(lua, 3, 2, 0, 0, nullptr);
+    final result = FlutterLuaBridge.cApi.lua_pcallk(lua, 3, 2, 0, 0, nullptr);
 
     int damage = 0;
     bool isCrit = false;
 
-    if (result == flb.LUA_OK) {
+    if (result == LUA_OK) {
       // 返回值: damage, isCrit
-      isCrit = flb.lua_toboolean(lua, -1) != 0;
-      flb.FlutterLuaBridge.cApi.lua_pop(lua, 1);
-      damage = flb.lua_tointegerx(lua, -1, nullptr);
-      flb.FlutterLuaBridge.cApi.lua_pop(lua, 1);
+      isCrit = FlutterLuaBridge.cApi.lua_toboolean(lua, -1) != 0;
+      FlutterLuaBridge.cApi.lua_pop(lua, 1);
+      damage = FlutterLuaBridge.cApi.lua_tointegerx(lua, -1, nullptr);
+      FlutterLuaBridge.cApi.lua_pop(lua, 1);
     } else {
       // 公式调用失败，使用默认计算
-      flb.lua_settop(lua, -2); // pop error
+      FlutterLuaBridge.cApi.lua_settop(lua, -2); // pop error
       damage = _defaultDamageCalculation(attacker, defender, skill);
     }
 
     // 清理
-    flb.lua_settop(lua, -2); // 弹出 _FORMULAS
+    FlutterLuaBridge.cApi.lua_settop(lua, -2); // 弹出 _FORMULAS
 
     return _DamageResult(damage: damage, isCrit: isCrit);
   }
@@ -302,28 +302,28 @@ class BattleSimulator {
     final funcPtr = 'calculateHeal'.toNativeUtf8().cast<Char>();
     final casterPtr = 'caster'.toNativeUtf8().cast<Char>();
     try {
-      flb.lua_getglobal(lua, formulasPtr);
-      flb.lua_getfield(lua, -1, funcPtr);
-      flb.lua_getglobal(lua, casterPtr);
-      flb.lua_pushnumber(lua, skill.healBase?.toDouble() ?? 100);
+      FlutterLuaBridge.cApi.lua_getglobal(lua, formulasPtr);
+      FlutterLuaBridge.cApi.lua_getfield(lua, -1, funcPtr);
+      FlutterLuaBridge.cApi.lua_getglobal(lua, casterPtr);
+      FlutterLuaBridge.cApi.lua_pushnumber(lua, skill.healBase?.toDouble() ?? 100);
     } finally {
       calloc.free(formulasPtr);
       calloc.free(funcPtr);
       calloc.free(casterPtr);
     }
 
-    final result = flb.lua_pcallk(lua, 2, 1, 0, 0, nullptr);
+    final result = FlutterLuaBridge.cApi.lua_pcallk(lua, 2, 1, 0, 0, nullptr);
 
     int heal = skill.healBase ?? 100;
 
-    if (result == flb.LUA_OK) {
-      heal = flb.lua_tointegerx(lua, -1, nullptr);
-      flb.lua_settop(lua, -2);
+    if (result == LUA_OK) {
+      heal = FlutterLuaBridge.cApi.lua_tointegerx(lua, -1, nullptr);
+      FlutterLuaBridge.cApi.lua_settop(lua, -2);
     } else {
-      flb.lua_settop(lua, -2);
+      FlutterLuaBridge.cApi.lua_settop(lua, -2);
     }
 
-    flb.lua_settop(lua, -2); // 弹出 _FORMULAS
+    FlutterLuaBridge.cApi.lua_settop(lua, -2); // 弹出 _FORMULAS
 
     return heal;
   }
@@ -350,7 +350,7 @@ class BattleSimulator {
 
   /// 将怪物属性推入 Lua 全局表
   void _pushMonsterTable(MonsterCard monster, String name) {
-    flb.lua_createtable(lua, 0, 10);
+    FlutterLuaBridge.cApi.lua_createtable(lua, 0, 10);
 
     _setField('name', monster.name);
     _setField('hp', monster.hp.toDouble());
@@ -364,19 +364,19 @@ class BattleSimulator {
     _setField('critDamage', monster.critDamage);
     _setField('magicCritRate', monster.magicCritRate);
 
-    flb.lua_setglobal(lua, name.toNativeUtf8().cast<Char>());
+    FlutterLuaBridge.cApi.lua_setglobal(lua, name.toNativeUtf8().cast<Char>());
   }
 
   void _setField(String key, dynamic value) {
-    flb.lua_pushstring(lua, key.toNativeUtf8().cast<Char>());
+    FlutterLuaBridge.cApi.lua_pushstring(lua, key.toNativeUtf8().cast<Char>());
     if (value is double) {
-      flb.lua_pushnumber(lua, value);
+      FlutterLuaBridge.cApi.lua_pushnumber(lua, value);
     } else if (value is int) {
-      flb.lua_pushinteger(lua, value);
+      FlutterLuaBridge.cApi.lua_pushinteger(lua, value);
     } else if (value is String) {
-      flb.lua_pushstring(lua, value.toNativeUtf8().cast<Char>());
+      FlutterLuaBridge.cApi.lua_pushstring(lua, value.toNativeUtf8().cast<Char>());
     }
-    flb.lua_settable(lua, -3);
+    FlutterLuaBridge.cApi.lua_settable(lua, -3);
   }
 
   /// 检查战斗结果

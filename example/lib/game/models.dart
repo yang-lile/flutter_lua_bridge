@@ -1,6 +1,6 @@
 // 游戏数据模型
 import 'dart:ffi';
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart' as flb;
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
 /// 伤害类型
 enum DamageType { physical, magic, heal }
@@ -93,7 +93,7 @@ class MonsterCard {
   final Skill skill;
   
   // Lua 函数引用（用于被动技能）
-  final Pointer<flb.lua_State>? luaState;
+  final Pointer<lua_State>? luaState;
   final int? passiveRef;
 
   MonsterCard({
@@ -120,7 +120,7 @@ class MonsterCard {
   /// 从 Lua 表创建怪物
   factory MonsterCard.fromLua(
     Map<String, dynamic> data,
-    Pointer<flb.lua_State>? luaState,
+    Pointer<lua_State>? luaState,
     int? passiveRef,
   ) {
     final stats = data['baseStats'] is Map<String, dynamic>
