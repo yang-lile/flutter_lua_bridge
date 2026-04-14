@@ -32,7 +32,7 @@ r = functionalRandom()
 
   // 执行 Lua 代码
   final result = FlutterLuaBridge.auxApi.luaL_dostring(l, code.toNativeUtf8().cast<Char>());
-  if (result.asLuaStatus.isError) {
+  if (LuaStatusCode(result).isError) {
     final error = FlutterLuaBridge.auxApi.luaL_tolstring(l, -1, nullptr);
     FlutterLuaBridge.cApi.lua_pop(l, 1);
     debugPrint('Lua error: $error');
@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> {
     FlutterLuaBridge.cApi.lua_pushcclosure(l, dartFunction, 0);
 
     final stateCode = FlutterLuaBridge.cApi.lua_pcallk(l, 0, 3, 0, 0, nullptr);
-    if (stateCode.asLuaStatus.isError) {
+    if (LuaStatusCode(stateCode).isError) {
       final error = FlutterLuaBridge.auxApi.luaL_tolstring(l, -1, nullptr);
       FlutterLuaBridge.cApi.lua_pop(l, 1);
       debugPrint('Error: $error');

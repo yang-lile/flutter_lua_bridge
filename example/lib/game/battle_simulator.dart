@@ -259,7 +259,7 @@ class BattleSimulator {
 
     final result = FlutterLuaBridge.cApi.lua_pcallk(lua, 3, 2, 0, 0, nullptr);
 
-    if (result.asLuaStatus.isError) {
+    if (LuaStatusCode(result).isError) {
       // 公式调用失败，使用默认计算
       FlutterLuaBridge.cApi.lua_settop(lua, -2); // pop error
       final damage = _defaultDamageCalculation(attacker, defender, skill);
@@ -316,7 +316,7 @@ class BattleSimulator {
 
     int heal = skill.healBase ?? 100;
 
-    if (result.asLuaStatus.isOk) {
+    if (LuaStatusCode(result).isOk) {
       heal = FlutterLuaBridge.cApi.lua_tointegerx(lua, -1, nullptr);
       FlutterLuaBridge.cApi.lua_settop(lua, -2);
     } else {
