@@ -1,8 +1,11 @@
 name: flutter_lua_bridge
 description: "Dart <-> Lua interoperability. Compile from source code, easy to replace Lua core."
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/yang-lile/flutter_lua_bridge
 repository: https://github.com/yang-lile/flutter_lua_bridge
+publish_to: https://pub.dev
+
+resolution: workspace
 
 environment:
   sdk: ^3.10.0
