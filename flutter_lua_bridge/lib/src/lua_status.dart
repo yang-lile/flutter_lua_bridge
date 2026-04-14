@@ -1,22 +1,22 @@
 import 'gen/flutter_lua_bridge.g.dart';
 
 /// Extension type wrapping Lua status codes for type-safe checks.
-extension type const LuaStatus._(int value) {
-  static const ok = LuaStatus._(LUA_OK);
-  static const yield = LuaStatus._(LUA_YIELD);
-  static const errRun = LuaStatus._(LUA_ERRRUN);
-  static const errSyntax = LuaStatus._(LUA_ERRSYNTAX);
-  static const errMem = LuaStatus._(LUA_ERRMEM);
-  static const errErr = LuaStatus._(LUA_ERRERR);
+extension type const LuaStatusCode(int value) {
+  static const ok = LuaStatusCode(LUA_OK);
+  static const yield = LuaStatusCode(LUA_YIELD);
+  static const errRun = LuaStatusCode(LUA_ERRRUN);
+  static const errSyntax = LuaStatusCode(LUA_ERRSYNTAX);
+  static const errMem = LuaStatusCode(LUA_ERRMEM);
+  static const errErr = LuaStatusCode(LUA_ERRERR);
+  static const errFile = LuaStatusCode(LUA_ERRFILE);
 
   /// Whether the status represents success ([LUA_OK]).
   bool get isOk => value == LUA_OK;
 
-  /// Whether the status represents any kind of error.
-  bool get isError => value != LUA_OK;
-}
+  /// Whether the status represents a yield ([LUA_YIELD]).
+  bool get isYield => value == LUA_YIELD;
 
-/// Shorthand to treat a raw Lua status [int] as a [LuaStatus].
-extension LuaStatusExt on int {
-  LuaStatus get asLuaStatus => LuaStatus._(this);
+  /// Whether the status represents any kind of error
+  /// ([LUA_ERRRUN], [LUA_ERRSYNTAX], [LUA_ERRMEM], [LUA_ERRERR], [LUA_ERRFILE]).
+  bool get isError => value >= LUA_ERRRUN;
 }

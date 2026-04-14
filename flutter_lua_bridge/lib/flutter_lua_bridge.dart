@@ -13,3 +13,6 @@ export 'src/lua_status.dart';
 // FlutterLuaBridge 主类
 export 'src/flutter_lua_bridge.dart';
 
+// 高层封装
+export 'src/lua_state.dart';
+
