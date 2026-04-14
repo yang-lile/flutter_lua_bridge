@@ -13,15 +13,6 @@ import 'lua_c_api.dart';
 // ============================================
 
 abstract class LuaAuxApi {
-  /// Lookup function for dynamic library
-  static late final ffi.DynamicLibrary _dylib;
-
-  /// Initialize with dynamic library
-  static void initialize(ffi.DynamicLibrary dylib) {
-    _dylib = dylib;
-  }
-
-
   // --- luaL_addchar functions ---
   /// luaL_addchar
   ///

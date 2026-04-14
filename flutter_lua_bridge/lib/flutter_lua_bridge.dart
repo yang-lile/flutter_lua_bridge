@@ -5,10 +5,15 @@
 library;
 
 // Generated interfaces
+export 'src/gen/flutter_lua_bridge.g.dart';
 export 'src/gen/lua_aux_api.dart';
-export 'src/gen/lua_c_api.dart';
+// 隐藏从 .g.dart 中重新导出的类型别名以避免冲突
+export 'src/gen/lua_c_api.dart' hide lua_State, lua_Debug, lua_CFunction, lua_KFunction, lua_Alloc, lua_Hook, lua_Reader, lua_Writer, lua_WarnFunction, lua_Integer, FILE, va_list$1;
 
 // Implementations (隐藏内部类型定义)
 export 'src/lua_c_api_impl.dart' hide lua_State, lua_Debug, lua_CFunction, lua_KFunction, lua_Alloc, lua_Hook, lua_Reader, lua_Writer, lua_WarnFunction;
 export 'src/lua_aux_api_impl.dart';
+
+// FlutterLuaBridge 主类
+export 'src/flutter_lua_bridge.dart';
 

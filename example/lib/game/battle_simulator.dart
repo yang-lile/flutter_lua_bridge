@@ -1,8 +1,7 @@
 // 战斗模拟器
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:flutter_lua_bridge/src/gen/flutter_lua_bridge.g.dart' as ffi_gen;
-import 'package:flutter_lua_bridge/src/flutter_lua_bridge.dart';
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart' as ffi_gen;
 
 import 'models.dart';
 
@@ -296,9 +295,9 @@ class BattleSimulator {
     if (result == ffi_gen.LUA_OK) {
       // 返回值: damage, isCrit
       isCrit = ffi_gen.lua_toboolean(lua, -1) != 0;
-      FlutterLuaBridge.cApi.lua_pop(lua, 1);
+      ffi_gen.FlutterLuaBridge.cApi.lua_pop(lua, 1);
       damage = ffi_gen.lua_tointegerx(lua, -1, nullptr);
-      FlutterLuaBridge.cApi.lua_pop(lua, 1);
+      ffi_gen.FlutterLuaBridge.cApi.lua_pop(lua, 1);
     } else {
       // 公式调用失败，使用默认计算
       ffi_gen.lua_settop(lua, -2); // pop error

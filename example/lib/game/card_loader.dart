@@ -3,8 +3,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 import 'package:flutter/services.dart';
-import 'package:flutter_lua_bridge/src/gen/flutter_lua_bridge.g.dart' as ffi_gen;
-import 'package:flutter_lua_bridge/src/flutter_lua_bridge.dart';
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart' as ffi_gen;
 
 import 'models.dart';
 
@@ -16,8 +15,8 @@ class CardLoader {
   /// 初始化 Lua 状态
   void init() {
     if (_lua != null) return;
-    _lua = FlutterLuaBridge.auxApi.luaL_newstate();
-    FlutterLuaBridge.auxApi.luaL_openlibs(_lua!);
+    _lua = ffi_gen.FlutterLuaBridge.auxApi.luaL_newstate();
+    ffi_gen.FlutterLuaBridge.auxApi.luaL_openlibs(_lua!);
   }
 
   /// 关闭 Lua 状态
@@ -40,11 +39,11 @@ class CardLoader {
     if (_formulasLoaded) return;
     
     final formulaCode = await rootBundle.loadString('assets/game/formulas.lua');
-    final result = FlutterLuaBridge.auxApi.luaL_dostring(lua, formulaCode.toNativeUtf8().cast<Char>());
+    final result = ffi_gen.FlutterLuaBridge.auxApi.luaL_dostring(lua, formulaCode.toNativeUtf8().cast<Char>());
     
     if (result != ffi_gen.LUA_OK) {
-      final error = FlutterLuaBridge.auxApi.luaL_tolstring(lua, -1, nullptr);
-      FlutterLuaBridge.cApi.lua_pop(lua, 1);
+      final error = ffi_gen.FlutterLuaBridge.auxApi.luaL_tolstring(lua, -1, nullptr);
+      ffi_gen.FlutterLuaBridge.cApi.lua_pop(lua, 1);
       throw Exception('Failed to load formulas: $error');
     }
     
@@ -67,17 +66,17 @@ class CardLoader {
     final cardCode = await rootBundle.loadString(assetPath);
     
     // 执行卡牌配置脚本
-    final result = FlutterLuaBridge.auxApi.luaL_dostring(lua, cardCode.toNativeUtf8().cast<Char>());
+    final result = ffi_gen.FlutterLuaBridge.auxApi.luaL_dostring(lua, cardCode.toNativeUtf8().cast<Char>());
     if (result != ffi_gen.LUA_OK) {
-      final error = FlutterLuaBridge.auxApi.luaL_tolstring(lua, -1, nullptr);
-      FlutterLuaBridge.cApi.lua_pop(lua, 1);
+      final error = ffi_gen.FlutterLuaBridge.auxApi.luaL_tolstring(lua, -1, nullptr);
+      ffi_gen.FlutterLuaBridge.cApi.lua_pop(lua, 1);
       throw Exception('Failed to load card from $assetPath: $error');
     }
     
     // 获取返回的表（lua 脚本返回的是最后一个表达式）
     // 卡牌配置表在栈顶
     final cardData = _parseLuaTable(-1);
-    FlutterLuaBridge.cApi.lua_pop(lua, 1);
+    ffi_gen.FlutterLuaBridge.cApi.lua_pop(lua, 1);
     
     // 如果表中没有 id，说明返回结构不对，尝试从 require 结果获取
     if (!cardData.containsKey('id')) {
@@ -109,7 +108,7 @@ class CardLoader {
       }
       
       // 弹出 value，保留 key 用于下一次迭代
-      FlutterLuaBridge.cApi.lua_pop(lua, 1);
+      ffi_gen.FlutterLuaBridge.cApi.lua_pop(lua, 1);
     }
     
     return result;
@@ -129,8 +128,8 @@ class CardLoader {
         return ffi_gen.lua_tonumberx(lua, absIdx, nullptr);
       case ffi_gen.LUA_TSTRING:
         // luaL_tolstring 会将结果压入栈，需要弹出
-        final str = FlutterLuaBridge.auxApi.luaL_tolstring(lua, absIdx, nullptr).cast<Utf8>().toDartString();
-        FlutterLuaBridge.cApi.lua_pop(lua, 1);
+        final str = ffi_gen.FlutterLuaBridge.auxApi.luaL_tolstring(lua, absIdx, nullptr).cast<Utf8>().toDartString();
+        ffi_gen.FlutterLuaBridge.cApi.lua_pop(lua, 1);
         return str;
       case ffi_gen.LUA_TTABLE:
         return _parseLuaTable(absIdx);

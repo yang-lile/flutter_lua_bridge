@@ -30,15 +30,6 @@ typedef va_list$1 = flb.va_list$1;
 // ============================================
 
 abstract class LuaCApi {
-  /// Lookup function for dynamic library
-  static late final ffi.DynamicLibrary _dylib;
-
-  /// Initialize with dynamic library
-  static void initialize(ffi.DynamicLibrary dylib) {
-    _dylib = dylib;
-  }
-
-
   // --- lua_ functions ---
   /// lua_absindex
   ///
