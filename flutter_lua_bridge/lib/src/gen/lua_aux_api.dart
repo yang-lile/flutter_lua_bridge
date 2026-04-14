@@ -6,7 +6,6 @@
 
 import 'dart:ffi' as ffi;
 import 'flutter_lua_bridge.g.dart' as flb;
-import 'lua_c_api.dart';
 
 // ============================================
 // Auxiliary Library Bindings
@@ -82,7 +81,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Checks whether cond is true. If it is not, raises an error with a standard message (see luaL_argerror).
-  void luaL_argcheck(ffi.Pointer<lua_State> L, int cond, int arg, ffi.Pointer<ffi.Char> extramsg);
+  void luaL_argcheck(ffi.Pointer<flb.lua_State> L, int cond, int arg, ffi.Pointer<ffi.Char> extramsg);
 
 
   // --- luaL_argerror functions ---
@@ -91,7 +90,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Raises an error reporting a problem with argument arg of the C function that called it, using a standard message that includes extramsg as a comment: bad argument #arg to 'funcname' (extramsg)
-  int luaL_argerror(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> extramsg);
+  int luaL_argerror(ffi.Pointer<flb.lua_State> L, int arg, ffi.Pointer<ffi.Char> extramsg);
 
 
   // --- luaL_argexpected functions ---
@@ -100,7 +99,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Checks whether cond is true. If it is not, raises an error about the type of the argument arg with a standard message (see luaL_typeerror).
-  void luaL_argexpected(ffi.Pointer<lua_State> L, int cond, int arg, ffi.Pointer<ffi.Char> tname);
+  void luaL_argexpected(ffi.Pointer<flb.lua_State> L, int cond, int arg, ffi.Pointer<ffi.Char> tname);
 
 
   // --- luaL_buffaddr functions ---
@@ -118,7 +117,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Initializes a buffer B (see luaL_Buffer). This function does not allocate any space; the buffer must be declared as a variable.
-  void luaL_buffinit(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Buffer> B);
+  void luaL_buffinit(ffi.Pointer<flb.lua_State> L, ffi.Pointer<flb.luaL_Buffer> B);
 
 
   // --- luaL_buffinitsize functions ---
@@ -127,7 +126,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Equivalent to the sequence luaL_buffinit, luaL_prepbuffsize.
-  ffi.Pointer<ffi.Char> luaL_buffinitsize(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Buffer> B, int sz);
+  ffi.Pointer<ffi.Char> luaL_buffinitsize(ffi.Pointer<flb.lua_State> L, ffi.Pointer<flb.luaL_Buffer> B, int sz);
 
 
   // --- luaL_bufflen functions ---
@@ -152,14 +151,14 @@ abstract class LuaAuxApi {
   /// luaL_callmeta
   ///
   /// Calls a metamethod.
-  int luaL_callmeta(ffi.Pointer<lua_State> L, int obj, ffi.Pointer<ffi.Char> e);
+  int luaL_callmeta(ffi.Pointer<flb.lua_State> L, int obj, ffi.Pointer<ffi.Char> e);
 
 
   // --- luaL_checkany functions ---
   /// luaL_checkany
   ///
   /// Checks whether the function has an argument of any type (including nil) at position arg.
-  void luaL_checkany(ffi.Pointer<lua_State> L, int arg);
+  void luaL_checkany(ffi.Pointer<flb.lua_State> L, int arg);
 
 
   // --- luaL_checkinteger functions ---
@@ -168,7 +167,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +?, &ndash;]
   ///
   /// Checks whether the function argument arg is an integer (or can be converted to an integer) and returns this integer.
-  int luaL_checkinteger(ffi.Pointer<lua_State> L, int arg);
+  int luaL_checkinteger(ffi.Pointer<flb.lua_State> L, int arg);
 
 
   // --- luaL_checklstring functions ---
@@ -177,7 +176,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, v]
   ///
   /// Checks whether the function argument arg is a string and returns this string; if l is not NULL fills its referent with the string's length.
-  ffi.Pointer<ffi.Char> luaL_checklstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Size> l);
+  ffi.Pointer<ffi.Char> luaL_checklstring(ffi.Pointer<flb.lua_State> L, int arg, ffi.Pointer<ffi.Size> l);
 
 
   // --- luaL_checknumber functions ---
@@ -186,7 +185,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +?, &ndash;]
   ///
   /// Checks whether the function argument arg is a number and returns this number converted to a lua_Number.
-  double luaL_checknumber(ffi.Pointer<lua_State> L, int arg);
+  double luaL_checknumber(ffi.Pointer<flb.lua_State> L, int arg);
 
 
   // --- luaL_checkoption functions ---
@@ -196,7 +195,7 @@ abstract class LuaAuxApi {
   ///
   /// Checks whether the function argument arg is a string and searches for this string in the array lst (which must be NULL-terminated). Returns the index in the array where the string was found. Raises an error if the argument is not a string or if the string cannot be found.
   /// This is a useful function for mapping strings to C enums. (The usual convention in Lua libraries is to use strings instead of numbers to select options.)
-  int luaL_checkoption(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> def, ffi.Pointer<ffi.Pointer<ffi.Char>> lst);
+  int luaL_checkoption(ffi.Pointer<flb.lua_State> L, int arg, ffi.Pointer<ffi.Char> def, ffi.Pointer<ffi.Pointer<ffi.Char>> lst);
 
 
   // --- luaL_checkstack functions ---
@@ -205,7 +204,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +?, &ndash;]
   ///
   /// Grows the stack size to top + sz elements, raising an error if the stack cannot grow to that size. msg is an additional text to go into the error message (or NULL for no additional text).
-  void luaL_checkstack(ffi.Pointer<lua_State> L, int sz, ffi.Pointer<ffi.Char> msg);
+  void luaL_checkstack(ffi.Pointer<flb.lua_State> L, int sz, ffi.Pointer<ffi.Char> msg);
 
 
   // --- luaL_checkstring functions ---
@@ -214,7 +213,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, v]
   ///
   /// Checks whether the function argument arg is a string and returns this string.
-  ffi.Pointer<ffi.Char> luaL_checkstring(ffi.Pointer<lua_State> L, int arg);
+  ffi.Pointer<ffi.Char> luaL_checkstring(ffi.Pointer<flb.lua_State> L, int arg);
 
 
   // --- luaL_checktype functions ---
@@ -223,7 +222,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +?, &ndash;]
   ///
   /// Checks whether the function argument arg has type t. See lua_type for the encoding of types for t.
-  void luaL_checktype(ffi.Pointer<lua_State> L, int arg, int t);
+  void luaL_checktype(ffi.Pointer<flb.lua_State> L, int arg, int t);
 
 
   // --- luaL_checkudata functions ---
@@ -232,7 +231,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, v]
   ///
   /// Checks whether the function argument arg is a userdata of the type tname (see luaL_newmetatable) and returns the userdata's memory-block address (see lua_touserdata).
-  ffi.Pointer<ffi.Void> luaL_checkudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
+  ffi.Pointer<ffi.Void> luaL_checkudata(ffi.Pointer<flb.lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
 
 
   // --- luaL_checkversion functions ---
@@ -241,7 +240,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +?, &ndash;]
   ///
   /// Checks whether the code making the call and the Lua library being called are using the same version of Lua and the same numeric types.
-  void luaL_checkversion(ffi.Pointer<lua_State> L);
+  void luaL_checkversion(ffi.Pointer<flb.lua_State> L);
 
 
   // --- luaL_dofile functions ---
@@ -250,7 +249,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +?, &ndash;]
   ///
   /// Loads and runs the given file. It is defined as the following macro: (luaL_loadfile(L, filename) || lua_pcall(L, 0, LUA_MULTRET, 0))
-  int luaL_dofile(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> filename);
+  int luaL_dofile(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> filename);
 
 
   // --- luaL_dostring functions ---
@@ -259,7 +258,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +?, &ndash;]
   ///
   /// Loads and runs the given string. It is defined as the following macro: (luaL_loadstring(L, str) || lua_pcall(L, 0, LUA_MULTRET, 0))
-  int luaL_dostring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> str);
+  int luaL_dostring(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> str);
 
 
   // --- luaL_error functions ---
@@ -268,7 +267,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// Raises an error. The error message format is given by fmt plus any extra arguments, following the same rules of lua_pushfstring. It also adds at the beginning of the message the file name and the line number where the error occurred, if this information is available.
-  int luaL_error(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt);
+  int luaL_error(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> fmt);
 
 
   // --- luaL_execresult functions ---
@@ -277,7 +276,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// This function produces the return values for process-related functions in the standard library (os.execute and io.close).
-  int luaL_execresult(ffi.Pointer<lua_State> L, int stat);
+  int luaL_execresult(ffi.Pointer<flb.lua_State> L, int stat);
 
 
   // --- luaL_fileresult functions ---
@@ -286,7 +285,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// This function produces the return values for file-related functions in the standard library (io.open, os.rename, file:seek, etc.).
-  int luaL_fileresult(ffi.Pointer<lua_State> L, int stat, ffi.Pointer<ffi.Char> fname);
+  int luaL_fileresult(ffi.Pointer<flb.lua_State> L, int stat, ffi.Pointer<ffi.Char> fname);
 
 
   // --- luaL_getmetafield functions ---
@@ -295,7 +294,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// Pushes onto the stack the field e from the metatable of the object at index obj and returns the type of the pushed value. If the object does not have a metatable, or if the metatable does not have this field, pushes nothing and returns LUA_TNIL.
-  int luaL_getmetafield(ffi.Pointer<lua_State> L, int obj, ffi.Pointer<ffi.Char> e);
+  int luaL_getmetafield(ffi.Pointer<flb.lua_State> L, int obj, ffi.Pointer<ffi.Char> e);
 
 
   // --- luaL_getmetatable functions ---
@@ -304,7 +303,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// Pushes onto the stack the metatable associated with the name tname in the registry (see luaL_newmetatable), or nil if there is no metatable associated with that name. Returns the type of the pushed value.
-  int luaL_getmetatable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> tname);
+  int luaL_getmetatable(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> tname);
 
 
   // --- luaL_getsubtable functions ---
@@ -313,7 +312,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// Ensures that the value t[fname], where t is the value at index idx, is a table, and pushes that table onto the stack. Returns true if it finds a previous table there and false if it creates a new table.
-  int luaL_getsubtable(ffi.Pointer<lua_State> L, int idx, ffi.Pointer<ffi.Char> fname);
+  int luaL_getsubtable(ffi.Pointer<flb.lua_State> L, int idx, ffi.Pointer<ffi.Char> fname);
 
 
   // --- luaL_gsub functions ---
@@ -322,7 +321,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, m]
   ///
   /// Creates a copy of string s, replacing any occurrence of the string p with the string r. Pushes the resulting string on the stack and returns it.
-  ffi.Pointer<ffi.Char> luaL_gsub(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r);
+  ffi.Pointer<ffi.Char> luaL_gsub(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> s, ffi.Pointer<ffi.Char> p, ffi.Pointer<ffi.Char> r);
 
 
   // --- luaL_len functions ---
@@ -331,7 +330,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// Returns the "length" of the value at the given index as a number; it is equivalent to the '#' operator in Lua (see &sect;3.4.7). Raises an error if the result of the operation is not an integer. (This case can only happen through metamethods.)
-  int luaL_len(ffi.Pointer<lua_State> L, int index);
+  int luaL_len(ffi.Pointer<flb.lua_State> L, int index);
 
 
   // --- luaL_loadbuffer functions ---
@@ -340,7 +339,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// Equivalent to luaL_loadbufferx with mode equal to NULL.
-  int luaL_loadbuffer(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> buff, int sz, ffi.Pointer<ffi.Char> name);
+  int luaL_loadbuffer(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> buff, int sz, ffi.Pointer<ffi.Char> name);
 
 
   // --- luaL_loadbufferx functions ---
@@ -349,7 +348,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// Loads a buffer as a Lua chunk. This function uses lua_load to load the chunk in the buffer pointed to by buff with size sz.
-  int luaL_loadbufferx(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> buff, int sz, ffi.Pointer<ffi.Char> name, ffi.Pointer<ffi.Char> mode);
+  int luaL_loadbufferx(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> buff, int sz, ffi.Pointer<ffi.Char> name, ffi.Pointer<ffi.Char> mode);
 
 
   // --- luaL_loadfile functions ---
@@ -358,7 +357,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// Equivalent to luaL_loadfilex with mode equal to NULL.
-  int luaL_loadfile(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> filename);
+  int luaL_loadfile(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> filename);
 
 
   // --- luaL_loadfilex functions ---
@@ -368,7 +367,7 @@ abstract class LuaAuxApi {
   ///
   /// Loads a file as a Lua chunk. This function uses lua_load to load the chunk in the file named filename. If filename is NULL, then it loads from the standard input. The first line in the file is ignored if it starts with a #.
   /// This function returns the same results as lua_load, or LUA_ERRFILE for file-related errors.
-  int luaL_loadfilex(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> filename, ffi.Pointer<ffi.Char> mode);
+  int luaL_loadfilex(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> filename, ffi.Pointer<ffi.Char> mode);
 
 
   // --- luaL_loadstring functions ---
@@ -378,7 +377,7 @@ abstract class LuaAuxApi {
   ///
   /// Loads a string as a Lua chunk. This function uses lua_load to load the chunk in the zero-terminated string s.
   /// Also as lua_load, this function only loads the chunk; it does not run it.
-  int luaL_loadstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s);
+  int luaL_loadstring(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> s);
 
 
   // --- luaL_makeseed functions ---
@@ -387,7 +386,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Returns a value with a weak attempt for randomness. The parameter L can be NULL if there is no Lua state available.
-  int luaL_makeseed(ffi.Pointer<lua_State> L);
+  int luaL_makeseed(ffi.Pointer<flb.lua_State> L);
 
 
   // --- luaL_newlib functions ---
@@ -397,7 +396,7 @@ abstract class LuaAuxApi {
   ///
   /// Creates a new table and registers there the functions in the list l.
   /// The array l must be the actual array, not a pointer to it.
-  void luaL_newlib(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Void> l);
+  void luaL_newlib(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Void> l);
 
 
   // --- luaL_newlibtable functions ---
@@ -406,7 +405,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, m]
   ///
   /// Creates a new table with a size optimized to store all entries in the array l (but does not actually store them). It is intended to be used in conjunction with luaL_setfuncs (see luaL_newlib).
-  void luaL_newlibtable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Void> l);
+  void luaL_newlibtable(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Void> l);
 
 
   // --- luaL_newmetatable functions ---
@@ -415,7 +414,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, m]
   ///
   /// If the registry already has the key tname, returns 0. Otherwise, creates a new table to be used as a metatable for userdata, adds to this new table the pair __name = tname, adds to the registry the pair [tname] = new table, and returns 1.
-  int luaL_newmetatable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> tname);
+  int luaL_newmetatable(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> tname);
 
 
   // --- luaL_newstate functions ---
@@ -424,14 +423,14 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Creates a new Lua state. It calls lua_newstate with luaL_alloc as the allocator function and the result of luaL_makeseed(NULL) as the seed, and then sets a warning function and a panic function (see &sect;4.4) that print messages to the standard error output.
-  ffi.Pointer<lua_State> luaL_newstate();
+  ffi.Pointer<flb.lua_State> luaL_newstate();
 
 
   // --- luaL_openlibs functions ---
   /// luaL_openlibs
   ///
   /// Opens all standard Lua libraries into the given state.
-  void luaL_openlibs(ffi.Pointer<lua_State> L);
+  void luaL_openlibs(ffi.Pointer<flb.lua_State> L);
 
 
   // --- luaL_openselectedlibs functions ---
@@ -439,7 +438,7 @@ abstract class LuaAuxApi {
   ///
   /// Opens (loads) and preloads selected standard libraries into the state L. (To preload means to add the library loader into the table package.preload, so that the library can be required later by the program. Keep in mind that require itself is provided by the package library. If a program does not load that library, it will be unable to require anything.)
   /// The basic library provides core functions to Lua. If you do not include this library in your application, you should check carefully whether you need to provide implementations for some of its facilities.
-  void luaL_openselectedlibs(ffi.Pointer<lua_State> L, int load, int preload);
+  void luaL_openselectedlibs(ffi.Pointer<flb.lua_State> L, int load, int preload);
 
 
   // --- luaL_opt functions ---
@@ -457,7 +456,7 @@ abstract class LuaAuxApi {
   /// ```dart
   /// final n = luaL_opt<double>(L, 1, 0.0, (state, idx) => luaL_checknumber(state, idx));
   /// ```
-  T luaL_opt<T>(ffi.Pointer<lua_State> L, int arg, T dflt, T Function(ffi.Pointer<lua_State> L, int arg) fetch);
+  T luaL_opt<T>(ffi.Pointer<flb.lua_State> L, int arg, T dflt, T Function(ffi.Pointer<flb.lua_State> L, int arg) fetch);
 
 
   // --- luaL_optinteger functions ---
@@ -466,7 +465,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// If the function argument arg is an integer (or it is convertible to an integer), returns this integer. If this argument is absent or is nil, returns d. Otherwise, raises an error.
-  int luaL_optinteger(ffi.Pointer<lua_State> L, int arg, int d);
+  int luaL_optinteger(ffi.Pointer<flb.lua_State> L, int arg, int d);
 
 
   // --- luaL_optlstring functions ---
@@ -476,7 +475,7 @@ abstract class LuaAuxApi {
   ///
   /// If the function argument arg is a string, returns this string. If this argument is absent or is nil, returns d. Otherwise, raises an error.
   /// This function uses lua_tolstring to get its result, so all conversions and caveats of that function apply here.
-  ffi.Pointer<ffi.Char> luaL_optlstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d, ffi.Pointer<ffi.Size> l);
+  ffi.Pointer<ffi.Char> luaL_optlstring(ffi.Pointer<flb.lua_State> L, int arg, ffi.Pointer<ffi.Char> d, ffi.Pointer<ffi.Size> l);
 
 
   // --- luaL_optnumber functions ---
@@ -485,7 +484,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// If the function argument arg is a number, returns this number as a lua_Number. If this argument is absent or is nil, returns d. Otherwise, raises an error.
-  double luaL_optnumber(ffi.Pointer<lua_State> L, int arg, double d);
+  double luaL_optnumber(ffi.Pointer<flb.lua_State> L, int arg, double d);
 
 
   // --- luaL_optstring functions ---
@@ -494,7 +493,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, v]
   ///
   /// If the function argument arg is a string, returns this string. If this argument is absent or is nil, returns d. Otherwise, raises an error.
-  ffi.Pointer<ffi.Char> luaL_optstring(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> d);
+  ffi.Pointer<ffi.Char> luaL_optstring(ffi.Pointer<flb.lua_State> L, int arg, ffi.Pointer<ffi.Char> d);
 
 
   // --- luaL_prepbuffer functions ---
@@ -521,7 +520,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, &ndash;]
   ///
   /// Pushes the fail value onto the stack (see &sect;6).
-  void luaL_pushfail(ffi.Pointer<lua_State> L);
+  void luaL_pushfail(ffi.Pointer<flb.lua_State> L);
 
 
   // --- luaL_pushresult functions ---
@@ -549,7 +548,7 @@ abstract class LuaAuxApi {
   ///
   /// Creates and returns a reference, in the table at index t, for the object on the top of the stack (and pops the object).
   /// You can retrieve an object referred by the reference r by calling lua_rawgeti(L,t,r) or lua_geti(L,t,r). The function luaL_unref frees a reference.
-  int luaL_ref(ffi.Pointer<lua_State> L, int t);
+  int luaL_ref(ffi.Pointer<flb.lua_State> L, int t);
 
 
   // --- luaL_requiref functions ---
@@ -559,7 +558,7 @@ abstract class LuaAuxApi {
   ///
   /// If package.loaded[modname] is not true, calls the function openf with the string modname as an argument and sets the call result to package.loaded[modname], as if that function has been called through require.
   /// Leaves a copy of the module on the stack.
-  void luaL_requiref(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> modname, lua_CFunction openf, int glb);
+  void luaL_requiref(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> modname, flb.lua_CFunction openf, int glb);
 
 
   // --- luaL_setfuncs functions ---
@@ -569,7 +568,7 @@ abstract class LuaAuxApi {
   ///
   /// Registers all functions in the array l (see luaL_Reg) into the table on the top of the stack (below optional upvalues, see next).
   /// A function with a NULL value represents a placeholder, which is filled with false.
-  void luaL_setfuncs(ffi.Pointer<lua_State> L, ffi.Pointer<flb.luaL_Reg> l, int nup);
+  void luaL_setfuncs(ffi.Pointer<flb.lua_State> L, ffi.Pointer<flb.luaL_Reg> l, int nup);
 
 
   // --- luaL_setmetatable functions ---
@@ -578,7 +577,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Sets the metatable of the object on the top of the stack as the metatable associated with name tname in the registry (see luaL_newmetatable).
-  void luaL_setmetatable(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> tname);
+  void luaL_setmetatable(ffi.Pointer<flb.lua_State> L, ffi.Pointer<ffi.Char> tname);
 
 
   // --- luaL_testudata functions ---
@@ -587,7 +586,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, m]
   ///
   /// This function works like luaL_checkudata, except that, when the test fails, it returns NULL instead of raising an error.
-  ffi.Pointer<ffi.Void> luaL_testudata(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
+  ffi.Pointer<ffi.Void> luaL_testudata(ffi.Pointer<flb.lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
 
 
   // --- luaL_tolstring functions ---
@@ -596,7 +595,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +1, e]
   ///
   /// Converts any Lua value at the given index to a C string in a reasonable format. The resulting string is pushed onto the stack and also returned by the function (see &sect;4.1.3). If len is not NULL, the function also sets *len with the string length.
-  ffi.Pointer<ffi.Char> luaL_tolstring(ffi.Pointer<lua_State> L, int idx, ffi.Pointer<ffi.Size> len);
+  ffi.Pointer<ffi.Char> luaL_tolstring(ffi.Pointer<flb.lua_State> L, int idx, ffi.Pointer<ffi.Size> len);
 
 
   // --- luaL_traceback functions ---
@@ -605,7 +604,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Creates and pushes a traceback of the stack L1. If msg is not NULL, it is appended at the beginning of the traceback. The level parameter tells at which level to start the traceback.
-  void luaL_traceback(ffi.Pointer<lua_State> L, ffi.Pointer<lua_State> L1, ffi.Pointer<ffi.Char> msg, int level);
+  void luaL_traceback(ffi.Pointer<flb.lua_State> L, ffi.Pointer<flb.lua_State> L1, ffi.Pointer<ffi.Char> msg, int level);
 
 
   // --- luaL_typeerror functions ---
@@ -614,7 +613,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Raises a type error for the argument arg of the C function that called it, using a standard message; tname is a "name" for the expected type. This function never returns.
-  int luaL_typeerror(ffi.Pointer<lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
+  int luaL_typeerror(ffi.Pointer<flb.lua_State> L, int arg, ffi.Pointer<ffi.Char> tname);
 
 
   // --- luaL_typename functions ---
@@ -623,7 +622,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Returns the name of the type of the value at the given index.
-  ffi.Pointer<ffi.Char> luaL_typename(ffi.Pointer<lua_State> L, int index);
+  ffi.Pointer<ffi.Char> luaL_typename(ffi.Pointer<flb.lua_State> L, int index);
 
 
   // --- luaL_unref functions ---
@@ -632,7 +631,7 @@ abstract class LuaAuxApi {
   /// Stack: [-0, +0, &ndash;]
   ///
   /// Releases a reference (see luaL_ref). The integer ref must be either LUA_NOREF, LUA_REFNIL, or a reference previously returned by luaL_ref and not already released. If ref is either LUA_NOREF or LUA_REFNIL this function does nothing. Otherwise, the entry is removed from the table, so that the referred object can be collected and the reference ref can be used again by luaL_ref.
-  void luaL_unref(ffi.Pointer<lua_State> L, int t, int ref);
+  void luaL_unref(ffi.Pointer<flb.lua_State> L, int t, int ref);
 
 
   // --- luaL_where functions ---
@@ -643,6 +642,6 @@ abstract class LuaAuxApi {
   /// All libraries are implemented through the official C API and are provided as separate C modules. Unless otherwise noted, these library functions do not adjust its number of arguments to its expected parameters. For instance, a function documented as foo(arg) should not be called without an argument.
   /// Currently, Lua has the following standard libraries: basic library (&sect;6.2); coroutine library (&sect;6.3); package library (&sect;6.4); string manipulation (&sect;6.5); basic UTF-8 support (&sect;6.6); table manipulation (&sect;6.7); mathematical functions (&sect;6.8) (sin, log, etc.); input and output (&sect;6.9); operating system facilities (&sect;6.10); debug facilities (&sect;6.11).
   /// A C host program must explicitly load the standard libraries into a state, if it wants its scripts to use them. For that, the host program can call the function luaL_openlibs. Alternatively, the host can select which libraries to open, by using luaL_openselectedlibs. Both functions are declared in the header file lualib.h.
-  void luaL_where(ffi.Pointer<lua_State> L, int lvl);
+  void luaL_where(ffi.Pointer<flb.lua_State> L, int lvl);
 
 }
