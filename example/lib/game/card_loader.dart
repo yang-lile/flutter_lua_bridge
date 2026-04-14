@@ -41,7 +41,7 @@ class CardLoader {
     final formulaCode = await rootBundle.loadString('assets/game/formulas.lua');
     final result = FlutterLuaBridge.auxApi.luaL_dostring(lua, formulaCode.toNativeUtf8().cast<Char>());
 
-    if (result != LUA_OK) {
+    if (result.asLuaStatus.isError) {
       final error = FlutterLuaBridge.auxApi.luaL_tolstring(lua, -1, nullptr);
       FlutterLuaBridge.cApi.lua_pop(lua, 1);
       throw Exception('Failed to load formulas: $error');
@@ -67,7 +67,7 @@ class CardLoader {
 
     // 执行卡牌配置脚本
     final result = FlutterLuaBridge.auxApi.luaL_dostring(lua, cardCode.toNativeUtf8().cast<Char>());
-    if (result != LUA_OK) {
+    if (result.asLuaStatus.isError) {
       final error = FlutterLuaBridge.auxApi.luaL_tolstring(lua, -1, nullptr);
       FlutterLuaBridge.cApi.lua_pop(lua, 1);
       throw Exception('Failed to load card from $assetPath: $error');

@@ -7,6 +7,9 @@ library;
 // Generated interfaces
 export 'src/gen/flutter_lua_bridge.g.dart';
 
+// Status helpers
+export 'src/lua_status.dart';
+
 // FlutterLuaBridge 主类
 export 'src/flutter_lua_bridge.dart';
 
