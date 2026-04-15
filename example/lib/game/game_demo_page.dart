@@ -1,7 +1,7 @@
 // 游戏演示页面
 import 'package:flutter/material.dart';
 
-
+import '../l10n/app_localizations.dart';
 import 'card_loader.dart';
 import 'card_editor_page.dart';
 import 'battle_arena_page.dart';
@@ -18,15 +18,26 @@ class _GameDemoPageState extends State<GameDemoPage> {
   final CardLoader _loader = CardLoader();
   BattleResult? _lastResult;
   bool _isLoading = true;
-  String _status = 'Initializing...';
-  
+  late String _status;
+  bool _didInit = false;
+
   // 预加载的卡牌模板
   final Map<String, MonsterCard> _cardTemplates = {};
 
   @override
   void initState() {
     super.initState();
-    _initGame();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final l10n = AppLocalizations.of(context)!;
+    if (!_didInit) {
+      _status = l10n.initializing;
+      _didInit = true;
+      _initGame();
+    }
   }
 
   @override
@@ -36,31 +47,32 @@ class _GameDemoPageState extends State<GameDemoPage> {
   }
 
   Future<void> _initGame() async {
+    final l10n = AppLocalizations.of(context)!;
     try {
-      setState(() => _status = 'Loading Lua...');
+      setState(() => _status = l10n.loadingLua);
       _loader.init();
 
-      setState(() => _status = 'Loading cards...');
-      
+      setState(() => _status = l10n.loadingCards);
+
       // 加载所有卡牌
       final warrior = await _loader.loadCard('assets/game/cards/warrior.lua');
       final mage = await _loader.loadCard('assets/game/cards/mage.lua');
       final healer = await _loader.loadCard('assets/game/cards/healer.lua');
       final assassin = await _loader.loadCard('assets/game/cards/assassin.lua');
-      
+
       setState(() {
         _cardTemplates['warrior'] = warrior;
         _cardTemplates['mage'] = mage;
         _cardTemplates['healer'] = healer;
         _cardTemplates['assassin'] = assassin;
         _isLoading = false;
-        _status = 'Ready!';
+        _status = l10n.ready;
       });
     } catch (e, stack) {
       debugPrint('Error loading game: $e');
       debugPrint('Stack: $stack');
       setState(() {
-        _status = 'Error: $e';
+        _status = '${l10n.errorPrefix}$e';
         _isLoading = false;
       });
     }
@@ -141,9 +153,10 @@ class _GameDemoPageState extends State<GameDemoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('抽卡战斗游戏 Demo'),
+        title: Text(l10n.gameDemoTitle),
       ),
       body: _isLoading
           ? Center(
@@ -156,7 +169,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
                 ],
               ),
             )
-          : _status.startsWith('Error')
+          : _status.startsWith(AppLocalizations.of(context)!.errorPrefix)
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -164,7 +177,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
                       const Icon(Icons.error_outline, color: Colors.red, size: 48),
                       const SizedBox(height: 16),
                       Text(
-                        '加载失败',
+                        l10n.loadFailed,
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
@@ -181,49 +194,50 @@ class _GameDemoPageState extends State<GameDemoPage> {
                         onPressed: () {
                           setState(() {
                             _isLoading = true;
-                            _status = 'Retrying...';
+                            _status = l10n.initializing;
                           });
                           _initGame();
                         },
                         icon: const Icon(Icons.refresh),
-                        label: const Text('重试'),
+                        label: Text(l10n.retry),
                       ),
                     ],
                   ),
                 )
               : SafeArea(
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height - 100,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 可用卡牌展示
-                      _buildCardSection(),
-                      const SizedBox(height: 24),
-                      
-                      // 战斗场景选择
-                      _buildBattleSection(),
-                      const SizedBox(height: 24),
-                      
-                      // 战斗结果
-                      if (_lastResult != null) _buildResultSection(),
-                      
-                      // 底部留白确保可滚动
-                      const SizedBox(height: 100),
-                    ],
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.of(context).size.height - 100,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 可用卡牌展示
+                          _buildCardSection(),
+                          const SizedBox(height: 24),
+
+                          // 战斗场景选择
+                          _buildBattleSection(),
+                          const SizedBox(height: 24),
+
+                          // 战斗结果
+                          if (_lastResult != null) _buildResultSection(),
+
+                          // 底部留白确保可滚动
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
     );
   }
 
   Widget _buildCardSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -231,7 +245,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '可用卡牌',
+              l10n.availableCards,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -312,7 +326,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
                 child: ElevatedButton.icon(
                   onPressed: () => _editCard(card),
                   icon: const Icon(Icons.edit, size: 14),
-                  label: const Text('编辑', style: TextStyle(fontSize: 12)),
+                  label: Text(AppLocalizations.of(context)!.edit, style: const TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: Size.zero,
@@ -348,6 +362,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
   }
 
   void _showCardDetailDialog(MonsterCard card) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -373,19 +388,19 @@ class _GameDemoPageState extends State<GameDemoPage> {
               Text(card.description),
               const Divider(),
               // 属性
-              _buildDetailStat('生命值', card.maxHp.toString(), Icons.favorite, Colors.red),
-              _buildDetailStat('物理攻击', card.attack.toString(), Icons.flash_on, Colors.orange),
-              _buildDetailStat('法术攻击', card.magicAttack.toString(), Icons.auto_fix_high, Colors.purple),
-              _buildDetailStat('物理防御', card.physicalDefense.toString(), Icons.shield, Colors.blue),
-              _buildDetailStat('法术防御', card.magicDefense.toString(), Icons.shield_moon, Colors.indigo),
-              _buildDetailStat('速度', card.speed.toString(), Icons.speed, Colors.green),
-              _buildDetailStat('暴击率', '${(card.critRate * 100).toInt()}%', Icons.add_alert, Colors.yellow.shade700),
-              _buildDetailStat('暴击伤害', '${card.critDamage}x', Icons.trending_up, Colors.redAccent),
+              _buildDetailStat(l10n.hp, card.maxHp.toString(), Icons.favorite, Colors.red),
+              _buildDetailStat(l10n.attack, card.attack.toString(), Icons.flash_on, Colors.orange),
+              _buildDetailStat(l10n.magicAttack, card.magicAttack.toString(), Icons.auto_fix_high, Colors.purple),
+              _buildDetailStat(l10n.physicalDefense, card.physicalDefense.toString(), Icons.shield, Colors.blue),
+              _buildDetailStat(l10n.magicDefense, card.magicDefense.toString(), Icons.shield_moon, Colors.indigo),
+              _buildDetailStat(l10n.speed, card.speed.toString(), Icons.speed, Colors.green),
+              _buildDetailStat(l10n.critRate, '${(card.critRate * 100).toInt()}%', Icons.add_alert, Colors.yellow.shade700),
+              _buildDetailStat(l10n.critDamage, '${card.critDamage}x', Icons.trending_up, Colors.redAccent),
               const Divider(),
               // 技能
-              const Text(
-                '技能',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Text(
+                l10n.skills,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 8),
               ListTile(
@@ -398,7 +413,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
               ListTile(
                 leading: const Icon(Icons.auto_fix_high, color: Colors.purple),
                 title: Text(card.skill.name),
-                subtitle: Text('${card.skill.description}\n冷却: ${card.skill.cooldown}回合'),
+                subtitle: Text('${card.skill.description}\n${l10n.cooldownTurns(card.skill.cooldown)}'),
                 trailing: Text('${(card.skill.multiplier * 100).toInt()}%'),
                 dense: true,
                 isThreeLine: true,
@@ -409,7 +424,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
+            child: Text(l10n.close),
           ),
           ElevatedButton.icon(
             onPressed: () {
@@ -417,7 +432,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
               _editCard(card);
             },
             icon: const Icon(Icons.edit),
-            label: const Text('编辑'),
+            label: Text(l10n.edit),
           ),
         ],
       ),
@@ -468,6 +483,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
   }
 
   Widget _buildBattleSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -475,7 +491,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '选择战斗场景',
+              l10n.selectBattleScene,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -483,10 +499,10 @@ class _GameDemoPageState extends State<GameDemoPage> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _buildBattleButton('平衡对战', 'balanced', Colors.blue),
-                _buildBattleButton('治疗测试', 'healer_test', Colors.green),
-                _buildBattleButton('速度测试', 'speed_test', Colors.orange),
-                _buildBattleButton('坦克测试', 'tank_test', Colors.purple),
+                _buildBattleButton(l10n.balancedBattle, 'balanced', Colors.blue),
+                _buildBattleButton(l10n.healerTest, 'healer_test', Colors.green),
+                _buildBattleButton(l10n.speedTest, 'speed_test', Colors.orange),
+                _buildBattleButton(l10n.tankTest, 'tank_test', Colors.purple),
               ],
             ),
           ],
@@ -525,8 +541,9 @@ class _GameDemoPageState extends State<GameDemoPage> {
   }
 
   Widget _buildResultSection() {
+    final l10n = AppLocalizations.of(context)!;
     final result = _lastResult!;
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -537,7 +554,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
               children: [
                 Expanded(
                   child: Text(
-                    '战斗结果',
+                    l10n.battleResult,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
@@ -553,10 +570,10 @@ class _GameDemoPageState extends State<GameDemoPage> {
                   ),
                   child: Text(
                     result.winner == 'TEAM_A'
-                        ? '蓝方胜利'
+                        ? l10n.teamAWins
                         : result.winner == 'TEAM_B'
-                            ? '红方胜利'
-                            : '平局',
+                            ? l10n.teamBWins
+                            : l10n.draw,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -566,27 +583,27 @@ class _GameDemoPageState extends State<GameDemoPage> {
               ],
             ),
             const SizedBox(height: 8),
-            Text('总回合数: ${result.totalTurns}'),
+            Text(l10n.totalTurns(result.totalTurns)),
             const SizedBox(height: 16),
-            
+
             // 最终状态
             Row(
               children: [
                 Expanded(
-                  child: _buildTeamStatus('蓝方 (Team A)', result.finalTeamA, Colors.blue),
+                  child: _buildTeamStatus(l10n.teamA, result.finalTeamA, Colors.blue),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: _buildTeamStatus('红方 (Team B)', result.finalTeamB, Colors.red),
+                  child: _buildTeamStatus(l10n.teamB, result.finalTeamB, Colors.red),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // 战斗日志
             ExpansionTile(
-              title: const Text('战斗日志'),
+              title: Text(l10n.battleLogs),
               children: [
                 Container(
                   height: 300,

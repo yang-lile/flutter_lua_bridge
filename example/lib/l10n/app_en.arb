@@ -1,0 +1,248 @@
+{
+  "@@locale": "en",
+  "appTitle": "Flutter Lua Bridge Demo",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "testListTitle": "Flutter Lua Bridge - Test List",
+  "testListSubtitle": "Tap an item below to run the corresponding test",
+  "bridgeBasicTest": "Bridge Basic Test",
+  "luaVersion": "Lua version",
+  "randomValueA": "Random value A",
+  "randomValueB": "Random value B",
+  "runBridgeTest": "Run Bridge Test",
+  "gameDemoTest": "Card Battle Game Test",
+  "gameDemoSubtitle": "Load Lua card configs and run battle simulation",
+  "gameDemo": "Game Demo",
+  "gameDemoTitle": "Card Battle Game Demo",
+  "availableCards": "Available Cards",
+  "selectBattleScene": "Select Battle Scene",
+  "balancedBattle": "Balanced Battle",
+  "healerTest": "Healer Test",
+  "speedTest": "Speed Test",
+  "tankTest": "Tank Test",
+  "initializing": "Initializing...",
+  "loadingLua": "Loading Lua...",
+  "loadingCards": "Loading cards...",
+  "ready": "Ready!",
+  "loadFailed": "Load Failed",
+  "retry": "Retry",
+  "close": "Close",
+  "edit": "Edit",
+  "save": "Save",
+  "cancel": "Cancel",
+  "reset": "Reset",
+  "skills": "Skills",
+  "hp": "HP",
+  "attack": "Attack",
+  "magicAttack": "Magic Attack",
+  "physicalDefense": "Physical Defense",
+  "magicDefense": "Magic Defense",
+  "speed": "Speed",
+  "critRate": "Crit Rate",
+  "critDamage": "Crit Damage",
+  "cooldownTurns": "Cooldown: {cd} turns",
+  "@cooldownTurns": {
+    "description": "Skill cooldown in turns",
+    "placeholders": {
+      "cd": {
+        "type": "int"
+      }
+    }
+  },
+  "battleResult": "Battle Result",
+  "teamAWins": "Team A Wins",
+  "teamBWins": "Team B Wins",
+  "draw": "Draw",
+  "totalTurns": "Total Turns: {turns}",
+  "@totalTurns": {
+    "description": "Total battle turns",
+    "placeholders": {
+      "turns": {
+        "type": "int"
+      }
+    }
+  },
+  "battleLogs": "Battle Logs",
+  "teamA": "Team A",
+  "teamB": "Team B",
+  "errorPrefix": "Error: ",
+  "battleArenaTitle": "Battle Arena",
+  "continueLabel": "Continue",
+  "pauseLabel": "Pause",
+  "preparingForBattle": "Preparing for battle",
+  "turnNumber": "Turn {turn}",
+  "@turnNumber": {
+    "placeholders": {
+      "turn": {
+        "type": "int"
+      }
+    }
+  },
+  "battlePaused": "Battle Paused",
+  "battleResumed": "Battle Resumed",
+  "battleEndedNoAction": "Battle Ended - No Action Units",
+  "stunnedCannotAct": "{name} is stunned and cannot act",
+  "@stunnedCannotAct": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "preparingAttack": "{name} is preparing to attack",
+  "@preparingAttack": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "attackArrow": "{attacker} → {target}",
+  "@attackArrow": {
+    "placeholders": {
+      "attacker": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "usesSkill": "{name} uses {skill}!",
+  "@usesSkill": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "skill": {
+        "type": "String"
+      }
+    }
+  },
+  "normalAttackAction": "{name} Normal Attack",
+  "@normalAttackAction": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "fallenDown": "{name} has fallen!",
+  "@fallenDown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "teamBlue": "Blue Team",
+  "teamRed": "Red Team",
+  "startBattle": "Start",
+  "vsLabel": "VS",
+  "critLabel": "CRIT! ",
+  "battleRecord": "Battle Record",
+  "turnLabel": "T{turn}",
+  "@turnLabel": {
+    "placeholders": {
+      "turn": {
+        "type": "int"
+      }
+    }
+  },
+  "battleLogEntry": "{attacker} {action} → {target}",
+  "@battleLogEntry": {
+    "placeholders": {
+      "attacker": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "damageLabel": "-{damage}{crit}",
+  "@damageLabel": {
+    "placeholders": {
+      "damage": {
+        "type": "int"
+      },
+      "crit": {
+        "type": "String"
+      }
+    }
+  },
+  "hpLeftLabel": "({hp}HP)",
+  "@hpLeftLabel": {
+    "placeholders": {
+      "hp": {
+        "type": "int"
+      }
+    }
+  },
+  "cooldownTurnsShort": "CD {cd}",
+  "@cooldownTurnsShort": {
+    "placeholders": {
+      "cd": {
+        "type": "int"
+      }
+    }
+  },
+  "editCardTitle": "Edit {name}",
+  "@editCardTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "saveChanges": "Save",
+  "resetToDefault": "Reset to Default",
+  "basicInfo": "Basic Info",
+  "nameLabel": "Name",
+  "descriptionLabel": "Description",
+  "basicAttributes": "Basic Attributes",
+  "hpFull": "HP (Health)",
+  "physicalAttack": "Physical Attack",
+  "magicAttackLabel": "Magic Attack",
+  "physicalDefenseLabel": "Physical Defense",
+  "magicDefenseLabel": "Magic Defense",
+  "speedLabelFull": "Speed",
+  "critAttributes": "Critical Attributes",
+  "critRateLabel": "Crit Rate",
+  "critDamageLabel": "Crit Damage",
+  "unitPoint": "pts",
+  "unitPercent": "%",
+  "unitMultiplier": "x",
+  "powerEvaluation": "Power Evaluation",
+  "powerLevelCommon": "Common",
+  "powerLevelExcellent": "Excellent",
+  "powerLevelRare": "Rare",
+  "powerLevelEpic": "Epic",
+  "powerLevelLegendary": "Legendary",
+  "resetChangesTitle": "Reset Changes",
+  "resetChangesMessage": "Are you sure you want to reset all changes? This action cannot be undone.",
+  "cardSavedMessage": "{name} saved",
+  "@cardSavedMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pleaseEnter": "Please enter {field}",
+  "@pleaseEnter": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "requiredField": "Required",
+  "pleaseEnterNumber": "Please enter a number",
+  "pleaseEnterInteger": "Please enter an integer",
+  "switchLanguage": "Switch Language"
+}

@@ -7,10 +7,14 @@ import 'package:flutter_lua_bridge_example/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  setUpAll(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+  });
+
   group('HomePage Tests', () {
     testWidgets('App displays correct title and initial state', (WidgetTester tester) async {
-      // Build our app and trigger a frame.
       await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
 
       // Verify that the app title is displayed.
       expect(find.text('Flutter Lua Bridge Demo'), findsOneWidget);
@@ -28,8 +32,8 @@ void main() {
     });
 
     testWidgets('Bridge test list tile executes Lua code and updates UI', (WidgetTester tester) async {
-      // Build our app and trigger a frame.
       await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
 
       // Initially Lua version text is null inside the list tile.
       expect(find.text('Lua version = null'), findsOneWidget);
@@ -46,8 +50,8 @@ void main() {
     });
 
     testWidgets('Game demo list tile navigates to GameDemoPage', (WidgetTester tester) async {
-      // Build our app and trigger a frame.
       await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
 
       // Tap the 抽卡战斗游戏测试 list tile.
       await tester.tap(find.text('抽卡战斗游戏测试'));

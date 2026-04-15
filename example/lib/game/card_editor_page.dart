@@ -1,6 +1,7 @@
 // 卡牌编辑器页面
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import 'models.dart';
 
 class CardEditorPage extends StatefulWidget {
@@ -66,6 +67,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
   }
 
   void _saveChanges() {
+    final l10n = AppLocalizations.of(context)!;
     if (_formKey.currentState?.validate() ?? false) {
       setState(() {
         _editableCard.name = _nameController.text;
@@ -85,21 +87,22 @@ class _CardEditorPageState extends State<CardEditorPage> {
       Navigator.pop(context);
       
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${_editableCard.name} 已保存')),
+        SnackBar(content: Text(l10n.cardSavedMessage(_editableCard.name))),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('编辑 ${widget.card.name}'),
+        title: Text(l10n.editCardTitle(widget.card.name)),
         actions: [
           TextButton.icon(
             onPressed: _saveChanges,
             icon: const Icon(Icons.save, color: Colors.white),
-            label: const Text('保存', style: TextStyle(color: Colors.white)),
+            label: Text(l10n.save, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -115,25 +118,25 @@ class _CardEditorPageState extends State<CardEditorPage> {
               const SizedBox(height: 24),
               
               // 基础信息
-              _buildSectionTitle('基础信息'),
-              _buildTextField('名称', _nameController, required: true),
-              _buildTextField('描述', _descController, maxLines: 2),
+              _buildSectionTitle(l10n.basicInfo),
+              _buildTextField(l10n.nameLabel, _nameController, required: true),
+              _buildTextField(l10n.descriptionLabel, _descController, maxLines: 2),
               const SizedBox(height: 16),
               
               // 属性编辑
-              _buildSectionTitle('基础属性'),
-              _buildStatRow('生命值 (HP)', _hpController, '点'),
-              _buildStatRow('物理攻击', _attackController, '点'),
-              _buildStatRow('法术攻击', _magicAttackController, '点'),
-              _buildStatRow('物理防御', _physicalDefController, '点'),
-              _buildStatRow('法术防御', _magicDefController, '点'),
-              _buildStatRow('速度', _speedController, '点'),
+              _buildSectionTitle(l10n.basicAttributes),
+              _buildStatRow(l10n.hpFull, _hpController, l10n.unitPoint),
+              _buildStatRow(l10n.physicalAttack, _attackController, l10n.unitPoint),
+              _buildStatRow(l10n.magicAttackLabel, _magicAttackController, l10n.unitPoint),
+              _buildStatRow(l10n.physicalDefenseLabel, _physicalDefController, l10n.unitPoint),
+              _buildStatRow(l10n.magicDefenseLabel, _magicDefController, l10n.unitPoint),
+              _buildStatRow(l10n.speedLabelFull, _speedController, l10n.unitPoint),
               const SizedBox(height: 16),
               
               // 暴击属性
-              _buildSectionTitle('暴击属性'),
-              _buildStatRow('暴击率', _critRateController, '%', isDouble: true),
-              _buildStatRow('暴击伤害', _critDamageController, '倍', isDouble: true),
+              _buildSectionTitle(l10n.critAttributes),
+              _buildStatRow(l10n.critRateLabel, _critRateController, l10n.unitPercent, isDouble: true),
+              _buildStatRow(l10n.critDamageLabel, _critDamageController, l10n.unitMultiplier, isDouble: true),
               const SizedBox(height: 24),
               
               // 技能展示
@@ -150,6 +153,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
   }
 
   Widget _buildCardPreview() {
+    final l10n = AppLocalizations.of(context)!;
     final rarityColor = {
       'N': Colors.grey,
       'R': Colors.blue,
@@ -202,7 +206,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
                 IconButton(
                   onPressed: () => _showResetDialog(),
                   icon: const Icon(Icons.restore, color: Colors.grey),
-                  tooltip: '重置为默认值',
+                  tooltip: l10n.resetToDefault,
                 ),
               ],
             ),
@@ -223,10 +227,10 @@ class _CardEditorPageState extends State<CardEditorPage> {
               ),
             ),
             const Divider(height: 24),
-            _buildPreviewStatRow(Icons.favorite, Colors.red, 'HP', _hpController.text),
-            _buildPreviewStatRow(Icons.flash_on, Colors.orange, '攻击', _attackController.text),
-            _buildPreviewStatRow(Icons.shield, Colors.blue, '防御', _physicalDefController.text),
-            _buildPreviewStatRow(Icons.speed, Colors.green, '速度', _speedController.text),
+            _buildPreviewStatRow(Icons.favorite, Colors.red, l10n.hp, _hpController.text),
+            _buildPreviewStatRow(Icons.flash_on, Colors.orange, l10n.attack, _attackController.text),
+            _buildPreviewStatRow(Icons.shield, Colors.blue, l10n.physicalDefense, _physicalDefController.text),
+            _buildPreviewStatRow(Icons.speed, Colors.green, l10n.speed, _speedController.text),
           ],
         ),
       ),
@@ -273,6 +277,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
     bool required = false,
     int maxLines = 1,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
@@ -285,7 +290,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
         validator: required
             ? (value) {
                 if (value == null || value.isEmpty) {
-                  return '请输入$label';
+                  return l10n.pleaseEnter(label);
                 }
                 return null;
               }
@@ -300,6 +305,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
     String unit, {
     bool isDouble = false,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -320,15 +326,15 @@ class _CardEditorPageState extends State<CardEditorPage> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return '必填';
+                  return l10n.requiredField;
                 }
                 if (isDouble) {
                   if (double.tryParse(value) == null) {
-                    return '请输入数字';
+                    return l10n.pleaseEnterNumber;
                   }
                 } else {
                   if (int.tryParse(value) == null) {
-                    return '请输入整数';
+                    return l10n.pleaseEnterInteger;
                   }
                 }
                 return null;
@@ -341,10 +347,11 @@ class _CardEditorPageState extends State<CardEditorPage> {
   }
 
   Widget _buildSkillSection() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('技能'),
+        _buildSectionTitle(l10n.skills),
         Card(
           child: ListTile(
             leading: const Icon(Icons.sports_martial_arts, color: Colors.orange),
@@ -362,7 +369,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
             leading: const Icon(Icons.auto_fix_high, color: Colors.purple),
             title: Text(_editableCard.skill.name),
             subtitle: Text(
-              '${_editableCard.skill.description}\n冷却: ${_editableCard.skill.cooldown}回合',
+              '${_editableCard.skill.description}\n${l10n.cooldownTurns(_editableCard.skill.cooldown)}',
             ),
             trailing: Chip(
               label: Text('${(_editableCard.skill.multiplier * 100).toInt()}%'),
@@ -376,6 +383,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
   }
 
   Widget _buildPowerEvaluation() {
+    final l10n = AppLocalizations.of(context)!;
     // 计算战斗力
     final hp = int.tryParse(_hpController.text) ?? 0;
     final attack = int.tryParse(_attackController.text) ?? 0;
@@ -397,19 +405,19 @@ class _CardEditorPageState extends State<CardEditorPage> {
     String powerLevel;
     Color powerColor;
     if (powerScore < 1000) {
-      powerLevel = '普通';
+      powerLevel = l10n.powerLevelCommon;
       powerColor = Colors.grey;
     } else if (powerScore < 2000) {
-      powerLevel = '优秀';
+      powerLevel = l10n.powerLevelExcellent;
       powerColor = Colors.blue;
     } else if (powerScore < 3500) {
-      powerLevel = '稀有';
+      powerLevel = l10n.powerLevelRare;
       powerColor = Colors.purple;
     } else if (powerScore < 5000) {
-      powerLevel = '史诗';
+      powerLevel = l10n.powerLevelEpic;
       powerColor = Colors.orange;
     } else {
-      powerLevel = '传说';
+      powerLevel = l10n.powerLevelLegendary;
       powerColor = Colors.red;
     }
 
@@ -419,9 +427,9 @@ class _CardEditorPageState extends State<CardEditorPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Text(
-              '战斗力评估',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              l10n.powerEvaluation,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
@@ -455,15 +463,16 @@ class _CardEditorPageState extends State<CardEditorPage> {
   }
 
   void _showResetDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('重置修改'),
-        content: const Text('确定要重置所有修改吗？此操作不可撤销。'),
+        title: Text(l10n.resetChangesTitle),
+        content: Text(l10n.resetChangesMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -471,7 +480,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
               _resetToOriginal();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('重置'),
+            child: Text(l10n.reset),
           ),
         ],
       ),

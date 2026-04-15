@@ -1,24 +1,46 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 import 'bridge/basic_bridge_demo.dart';
 import 'game/game_demo_page.dart';
+import 'l10n/app_localizations.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  static const List<Locale> _localeOptions = [Locale('zh'), Locale('en')];
+
+  Locale _locale = const Locale('zh');
+
+  void _setLocale(Locale locale) {
+    setState(() => _locale = locale);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: HomePage());
+    return MaterialApp(
+      locale: _locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: HomePage(localeOptions: _localeOptions, currentLocale: _locale, onLocaleChanged: _setLocale),
+    );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final List<Locale> localeOptions;
+  final Locale currentLocale;
+  final ValueChanged<Locale> onLocaleChanged;
+
+  const HomePage({super.key, required this.localeOptions, required this.currentLocale, required this.onLocaleChanged});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -42,18 +64,30 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  static String _localeLabel(Locale locale) {
+    return switch (locale.languageCode) {
+      'zh' => '中文',
+      'en' => 'English',
+      _ => locale.languageCode,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const textStyle = TextStyle(fontSize: 25);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter Lua Bridge Demo'),
+        title: Text(l10n.appTitle),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const GameDemoPage()));
-            },
-            child: const Text('游戏Demo', style: TextStyle(color: Colors.white)),
+          PopupMenuButton<Locale>(
+            icon: const Icon(Icons.language, color: Colors.black),
+            tooltip: l10n.switchLanguage,
+            initialValue: widget.currentLocale,
+            onSelected: widget.onLocaleChanged,
+            itemBuilder: (context) => widget.localeOptions
+                .map((locale) => PopupMenuItem(value: locale, child: Text(_localeLabel(locale))))
+                .toList(),
           ),
         ],
       ),
@@ -61,48 +95,44 @@ class _HomePageState extends State<HomePage> {
         child: Container(
           padding: const EdgeInsets.all(10),
           child: Column(
-              spacing: 10,
-              children: [
-                const Text('Flutter Lua Bridge - 测试列表', style: textStyle, textAlign: TextAlign.center),
-                const Text(
-                  '点击下方列表项运行对应测试',
-                  style: TextStyle(fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-                const Divider(),
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.code, color: Colors.blue),
-                    title: const Text('Bridge 基础测试'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Lua version = $luaVersion'),
-                        Text('Random value A: $fetchAValue'),
-                        Text('Random value B: $bValue'),
-                      ],
-                    ),
-                    isThreeLine: true,
-                    trailing: IconButton(
-                      icon: const Icon(Icons.play_arrow, color: Colors.green),
-                      onPressed: onPressed,
-                      tooltip: '运行 Bridge 测试',
-                    ),
+            spacing: 10,
+            children: [
+              Text(l10n.testListTitle, style: textStyle, textAlign: TextAlign.center),
+              Text(l10n.testListSubtitle, style: const TextStyle(fontSize: 16), textAlign: TextAlign.center),
+              const Divider(),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.code, color: Colors.blue),
+                  title: Text(l10n.bridgeBasicTest),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${l10n.luaVersion} = $luaVersion'),
+                      Text('${l10n.randomValueA}: $fetchAValue'),
+                      Text('${l10n.randomValueB}: $bValue'),
+                    ],
+                  ),
+                  isThreeLine: true,
+                  trailing: IconButton(
+                    icon: const Icon(Icons.play_arrow, color: Colors.green),
+                    onPressed: onPressed,
+                    tooltip: l10n.runBridgeTest,
                   ),
                 ),
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.gamepad, color: Colors.orange),
-                    title: const Text('抽卡战斗游戏测试'),
-                    subtitle: const Text('加载 Lua 卡牌配置并运行战斗模拟'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const GameDemoPage()));
-                    },
-                  ),
+              ),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.gamepad, color: Colors.orange),
+                  title: Text(l10n.gameDemoTest),
+                  subtitle: Text(l10n.gameDemoSubtitle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const GameDemoPage()));
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
         ),
       ),
     );
