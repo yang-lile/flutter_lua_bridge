@@ -1,68 +1,11 @@
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
-
 import 'package:flutter/material.dart';
 
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+import 'bridge/basic_bridge_demo.dart';
 import 'game/game_demo_page.dart';
 
 void main() {
   runApp(const MyApp());
-}
-
-/// 基础 FFI 调用示例
-int safeLoader(Pointer<lua_State> l) {
-  FlutterLuaBridge.auxApi.luaL_openlibs(l);
-  final luaVersion = FlutterLuaBridge.cApi.lua_version(l);
-
-  String code = '''
-function functionalRandom()
-    local seed = tonumber(tostring(os.time()):reverse():sub(1,6))
-    return function(low, up)
-        math.randomseed(tonumber(tostring(os.time()):reverse():sub(1,6)) )
-        seed = math.random(low, up)
-        return seed
-    end
-end
-r = functionalRandom()
-      a = r(1, 1024)
-      b = r(1, 1024)
-      print(a,b)
-      ''';
-
-  // 执行 Lua 代码
-  final result = FlutterLuaBridge.auxApi.luaL_dostring(l, code.toNativeUtf8().cast<Char>());
-  if (LuaStatusCode(result).isError) {
-    final error = FlutterLuaBridge.auxApi.luaL_tolstring(l, -1, nullptr);
-    FlutterLuaBridge.cApi.lua_pop(l, 1);
-    debugPrint('Lua error: $error');
-    return result;
-  }
-
-  FlutterLuaBridge.cApi.lua_pushnumber(l, luaVersion);
-
-  // 获取全局变量
-  final ptrA = 'a'.toNativeUtf8().cast<Char>();
-  try {
-    FlutterLuaBridge.cApi.lua_getglobal(l, ptrA);
-    final luaResult = FlutterLuaBridge.auxApi.luaL_optinteger(l, -1, -1);
-    FlutterLuaBridge.cApi.lua_pop(l, 1);
-    FlutterLuaBridge.cApi.lua_pushinteger(l, luaResult);
-  } finally {
-    calloc.free(ptrA);
-  }
-
-  final ptrB = 'b'.toNativeUtf8().cast<Char>();
-  try {
-    FlutterLuaBridge.cApi.lua_getglobal(l, ptrB);
-    final luaResultb = FlutterLuaBridge.auxApi.luaL_optinteger(l, -1, -1);
-    FlutterLuaBridge.cApi.lua_pop(l, 1);
-    FlutterLuaBridge.cApi.lua_pushinteger(l, luaResultb);
-  } finally {
-    calloc.free(ptrB);
-  }
-
-  return 3;
 }
 
 class MyApp extends StatelessWidget {
@@ -87,29 +30,16 @@ class _HomePageState extends State<HomePage> {
   int? bValue;
 
   void onPressed() {
-    final l = FlutterLuaBridge.auxApi.luaL_newstate();
-
-    var dartFunction = Pointer.fromFunction<lua_CFunctionFunction>(safeLoader, 0);
-    FlutterLuaBridge.cApi.lua_pushcclosure(l, dartFunction, 0);
-
-    final stateCode = FlutterLuaBridge.cApi.lua_pcallk(l, 0, 3, 0, 0, nullptr);
-    if (LuaStatusCode(stateCode).isError) {
-      final error = FlutterLuaBridge.auxApi.luaL_tolstring(l, -1, nullptr);
-      FlutterLuaBridge.cApi.lua_pop(l, 1);
-      debugPrint('Error: $error');
-      return;
+    try {
+      final result = BasicBridgeDemo.run();
+      setState(() {
+        luaVersion = result.luaVersion;
+        fetchAValue = result.a;
+        bValue = result.b;
+      });
+    } catch (e) {
+      debugPrint('Bridge demo error: $e');
     }
-
-    final luaResultb = FlutterLuaBridge.cApi.lua_isinteger(l, -3 + 2) != 0 ? FlutterLuaBridge.cApi.lua_tointegerx(l, -3 + 2, nullptr) : 0;
-    final luaResult = FlutterLuaBridge.cApi.lua_isinteger(l, -3 + 1) != 0 ? FlutterLuaBridge.cApi.lua_tointegerx(l, -3 + 1, nullptr) : 0;
-    final v = FlutterLuaBridge.cApi.lua_isnumber(l, -3 + 0) != 0 ? FlutterLuaBridge.cApi.lua_tonumberx(l, -3 + 0, nullptr) : 0;
-
-    setState(() {
-      luaVersion = v;
-      fetchAValue = luaResult;
-      bValue = luaResultb;
-    });
-    FlutterLuaBridge.cApi.lua_close(l);
   }
 
   @override
@@ -131,31 +61,50 @@ class _HomePageState extends State<HomePage> {
         child: Container(
           padding: const EdgeInsets.all(10),
           child: Column(
-            spacing: 10,
-            children: [
-              const Text('Flutter Lua Bridge - FFI Example', style: textStyle, textAlign: TextAlign.center),
-              const Text(
-                'This example demonstrates FFI integration with Lua',
-                style: TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              const Divider(),
-              Text('Lua version = $luaVersion', style: textStyle, textAlign: TextAlign.center),
-              Text('Random value A: $fetchAValue', style: textStyle, textAlign: TextAlign.center),
-              Text('Random value B: $bValue', style: textStyle, textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const GameDemoPage()));
-                },
-                icon: const Icon(Icons.gamepad),
-                label: const Text('打开抽卡战斗游戏 Demo'),
-              ),
-            ],
-          ),
+              spacing: 10,
+              children: [
+                const Text('Flutter Lua Bridge - 测试列表', style: textStyle, textAlign: TextAlign.center),
+                const Text(
+                  '点击下方列表项运行对应测试',
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                const Divider(),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.code, color: Colors.blue),
+                    title: const Text('Bridge 基础测试'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Lua version = $luaVersion'),
+                        Text('Random value A: $fetchAValue'),
+                        Text('Random value B: $bValue'),
+                      ],
+                    ),
+                    isThreeLine: true,
+                    trailing: IconButton(
+                      icon: const Icon(Icons.play_arrow, color: Colors.green),
+                      onPressed: onPressed,
+                      tooltip: '运行 Bridge 测试',
+                    ),
+                  ),
+                ),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.gamepad, color: Colors.orange),
+                    title: const Text('抽卡战斗游戏测试'),
+                    subtitle: const Text('加载 Lua 卡牌配置并运行战斗模拟'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const GameDemoPage()));
+                    },
+                  ),
+                ),
+              ],
+            ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(onPressed: onPressed, child: const Icon(Icons.play_arrow)),
     );
   }
 }

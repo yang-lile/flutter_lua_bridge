@@ -15,56 +15,46 @@ void main() {
       // Verify that the app title is displayed.
       expect(find.text('Flutter Lua Bridge Demo'), findsOneWidget);
 
-      // Verify initial UI elements are present.
-      expect(find.text('Flutter Lua Bridge - FFI Example'), findsOneWidget);
-      expect(find.text('Lua version = null'), findsOneWidget);
-      expect(find.text('Random value A: null'), findsOneWidget);
-      expect(find.text('Random value B: null'), findsOneWidget);
+      // Verify list title and description.
+      expect(find.text('Flutter Lua Bridge - 测试列表'), findsOneWidget);
+      expect(find.text('点击下方列表项运行对应测试'), findsOneWidget);
 
-      // Verify the floating action button is present.
+      // Verify both test list tiles are present.
+      expect(find.text('Bridge 基础测试'), findsOneWidget);
+      expect(find.text('抽卡战斗游戏测试'), findsOneWidget);
+
+      // Verify the play icon for bridge test is present.
       expect(find.byIcon(Icons.play_arrow), findsOneWidget);
-
-      // Verify the game demo button is present.
-      expect(find.text('打开抽卡战斗游戏 Demo'), findsOneWidget);
     });
 
-    testWidgets('Floating action button executes Lua code', (WidgetTester tester) async {
+    testWidgets('Bridge test list tile executes Lua code and updates UI', (WidgetTester tester) async {
       // Build our app and trigger a frame.
       await tester.pumpWidget(const MyApp());
 
-      // Initially Lua values are null.
+      // Initially Lua version text is null inside the list tile.
       expect(find.text('Lua version = null'), findsOneWidget);
 
-      // Tap the floating action button (play arrow).
+      // Tap the play arrow icon button inside the Bridge 基础测试 list tile.
       await tester.tap(find.byIcon(Icons.play_arrow));
       await tester.pump();
 
       // After tapping, the values should be updated (no longer null).
-      // Note: The actual values are random, so we just verify the button works.
-      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      expect(find.text('Lua version = null'), findsNothing);
+      expect(find.textContaining('Lua version ='), findsOneWidget);
+      expect(find.textContaining('Random value A:'), findsOneWidget);
+      expect(find.textContaining('Random value B:'), findsOneWidget);
     });
 
-    testWidgets('Game Demo button exists and is tappable', (WidgetTester tester) async {
+    testWidgets('Game demo list tile navigates to GameDemoPage', (WidgetTester tester) async {
       // Build our app and trigger a frame.
       await tester.pumpWidget(const MyApp());
 
-      // Verify the game demo button text is present.
-      expect(find.text('打开抽卡战斗游戏 Demo'), findsOneWidget);
+      // Tap the 抽卡战斗游戏测试 list tile.
+      await tester.tap(find.text('抽卡战斗游戏测试'));
+      await tester.pumpAndSettle();
 
-      // Verify the button has the correct icon.
-      expect(find.byIcon(Icons.gamepad), findsOneWidget);
-
-      // Note: We don't tap the button because it navigates to GameDemoPage
-      // which requires Lua assets that aren't available in test environment.
-    });
-
-    testWidgets('Game Demo menu item exists in AppBar', (WidgetTester tester) async {
-      // Build our app and trigger a frame.
-      await tester.pumpWidget(const MyApp());
-
-      // Verify the AppBar has the game demo menu button.
-      final menuButtonFinder = find.widgetWithText(TextButton, '游戏Demo');
-      expect(menuButtonFinder, findsOneWidget);
+      // Verify navigation occurred by checking the GameDemoPage app bar title.
+      expect(find.text('抽卡战斗游戏 Demo'), findsOneWidget);
     });
   });
 }
