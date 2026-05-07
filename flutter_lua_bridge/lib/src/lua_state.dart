@@ -2,8 +2,8 @@ import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as pkg_ffi;
 
 import 'gen/flutter_lua_bridge.g.dart' as flb;
-import 'gen/lua_c_api.dart';
-import 'gen/lua_aux_api.dart';
+import 'raw/lua_c_api.dart';
+import 'raw/lua_aux_api.dart';
 import 'flutter_lua_bridge.dart';
 import 'lua_status.dart';
 

@@ -7,4 +7,5 @@ environment:
 
 workspace:
   - flutter_lua_bridge
+  - flutter_lua_shim
   - example

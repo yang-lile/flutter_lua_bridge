@@ -1,9 +1,9 @@
 // ignore_for_file: non_constant_identifier_names
 
 import 'dart:ffi' as ffi;
-import 'gen/flutter_lua_bridge.g.dart' as flb;
-import 'gen/lua_aux_api.dart';
-import 'gen/lua_c_api.dart';
+import '../gen/flutter_lua_bridge.g.dart' as flb;
+import 'lua_aux_api.dart';
+import 'lua_c_api.dart';
 
 /// Lua 辅助库 API 实现
 /// 

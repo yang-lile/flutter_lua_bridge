@@ -1,8 +1,8 @@
 // ignore_for_file: non_constant_identifier_names, camel_case_types
 
 import 'dart:ffi' as ffi;
-import 'gen/flutter_lua_bridge.g.dart' as flb;
-import 'gen/lua_c_api.dart';
+import '../gen/flutter_lua_bridge.g.dart' as flb;
+import 'lua_c_api.dart';
 
 class LuaCApiImpl implements LuaCApi {
   @override
