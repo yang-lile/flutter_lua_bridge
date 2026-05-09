@@ -206,4 +206,10 @@ class LuaState {
 
   // 获取底层指针（用于高级 FFI 场景）
   Pointer<generated.lua_State> get ptr => _ptr;
+
+  /// 获取最后一次 shim 层错误信息（如调用了版本不支持的 API）。
+  String lastError() {
+    final ptr = generated.lua_shim_lasterror();
+    return ptr.cast<Utf8>().toDartString();
+  }
 }

@@ -12,147 +12,141 @@ library flutter_lua_shim;
 // ignore_for_file: type=lint, unused_import
 import 'dart:ffi' as ffi;
 
-/// ================================================================
-/// 状态管理
-/// ================================================================
-@ffi.Native<ffi.Pointer<lua_State> Function()>()
-external ffi.Pointer<lua_State> lua_shim_newstate();
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_close(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<lua_State>)>(
-  symbol: 'lua_shim_status',
-)
-external int _lua_shim_status$1(ffi.Pointer<lua_State> L);
-
-lua_shim_status lua_shim_status$1(ffi.Pointer<lua_State> L) =>
-    lua_shim_status.fromValue(_lua_shim_status$1(L));
-
-/// ================================================================
-/// 栈操作
-/// ================================================================
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int lua_shim_gettop(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_settop(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_pushvalue(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void lua_shim_copy(ffi.Pointer<lua_State> L, int fromidx, int toidx);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_shim_checkstack(ffi.Pointer<lua_State> L, int n);
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Char)>()
+external void lua_shimL_addchar(ffi.Pointer<ffi.Void> B, int c);
 
 @ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_State>, ffi.Int)
+  ffi.Void Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+  )
 >()
-external void lua_shim_xmove(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<lua_State> to,
-  int n,
-);
-
-/// 弹出栈顶 n 个元素。
-/// Lua 宏: lua_pop(L,n) => lua_settop(L, -(n)-1)
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_pop(ffi.Pointer<lua_State> L, int n);
-
-/// 移除指定索引处的元素。
-/// Lua 5.3+ 宏: lua_remove(L,idx) => (lua_rotate(L, (idx), -1), lua_pop(L, 1))
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_remove(ffi.Pointer<lua_State> L, int idx);
-
-/// 将栈顶元素插入到指定索引处。
-/// Lua 5.3+ 宏: lua_insert(L,idx) => lua_rotate(L, (idx), 1)
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_insert(ffi.Pointer<lua_State> L, int idx);
-
-/// 用栈顶元素替换指定索引处的值，并弹出栈顶。
-/// Lua 5.3+ 宏: lua_replace(L,idx) => (lua_copy(L, -1, (idx)), lua_pop(L, 1))
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_replace(ffi.Pointer<lua_State> L, int idx);
-
-/// ================================================================
-/// 类型检查
-/// ================================================================
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_isnil(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_isboolean(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_isnumber(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_isstring(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_istable(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_isfunction(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_iscfunction(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_isuserdata(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_islightuserdata(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_isthread(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>(
-  symbol: 'lua_shim_type',
-)
-external int _lua_shim_type$1(ffi.Pointer<lua_State> L, int idx);
-
-lua_shim_type lua_shim_type$1(ffi.Pointer<lua_State> L, int idx) =>
-    lua_shim_type.fromValue(_lua_shim_type$1(L, idx));
-
-@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>(
-  symbol: 'lua_shim_typename',
-)
-external ffi.Pointer<ffi.Char> _lua_shim_typename(
-  ffi.Pointer<lua_State> L,
-  int tp,
-);
-
-ffi.Pointer<ffi.Char> lua_shim_typename(
-  ffi.Pointer<lua_State> L,
-  lua_shim_type tp,
-) => _lua_shim_typename(L, tp.value);
-
-/// ================================================================
-/// 转换
-/// ================================================================
-@ffi.Native<
-  ffi.Double Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Bool>)
->()
-external double lua_shim_tonumberx(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Bool> isnum,
+external void lua_shimL_addgsub(
+  ffi.Pointer<ffi.Void> B,
+  ffi.Pointer<ffi.Char> s,
+  ffi.Pointer<ffi.Char> p,
+  ffi.Pointer<ffi.Char> r,
 );
 
 @ffi.Native<
-  ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Bool>)
+  ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Size)
 >()
-external int lua_shim_tointegerx(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Bool> isnum,
+external void lua_shimL_addlstring(
+  ffi.Pointer<ffi.Void> B,
+  ffi.Pointer<ffi.Char> s,
+  int l,
 );
 
-@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external bool lua_shim_toboolean(ffi.Pointer<lua_State> L, int idx);
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Size)>()
+external void lua_shimL_addsize(ffi.Pointer<ffi.Void> B, int n);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>)>()
+external void lua_shimL_addstring(
+  ffi.Pointer<ffi.Void> B,
+  ffi.Pointer<ffi.Char> s,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
+external void lua_shimL_addvalue(ffi.Pointer<ffi.Void> B);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Size,
+    ffi.Size,
+  )
+>()
+external ffi.Pointer<ffi.Void> lua_shimL_alloc(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> ptr,
+  int osize,
+  int nsize,
+);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external void lua_shimL_argcheck(
+  ffi.Pointer<lua_State> L,
+  int cond,
+  int arg,
+  ffi.Pointer<ffi.Char> extramsg,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int lua_shimL_argerror(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  ffi.Pointer<ffi.Char> extramsg,
+);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external void lua_shimL_argexpected(
+  ffi.Pointer<lua_State> L,
+  int cond,
+  int arg,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Void>)>()
+external ffi.Pointer<ffi.Char> lua_shimL_buffaddr(ffi.Pointer<ffi.Void> B);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)>()
+external void lua_shimL_buffinit(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> B,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Size,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shimL_buffinitsize(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> B,
+  int sz,
+);
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<ffi.Void>)>()
+external int lua_shimL_bufflen(ffi.Pointer<ffi.Void> B);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Int)>()
+external void lua_shimL_buffsub(ffi.Pointer<ffi.Void> B, int n);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int lua_shimL_callmeta(
+  ffi.Pointer<lua_State> L,
+  int obj,
+  ffi.Pointer<ffi.Char> e,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shimL_checkany(ffi.Pointer<lua_State> L, int arg);
+
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shimL_checkinteger(ffi.Pointer<lua_State> L, int arg);
 
 @ffi.Native<
   ffi.Pointer<ffi.Char> Function(
@@ -161,79 +155,521 @@ external bool lua_shim_toboolean(ffi.Pointer<lua_State> L, int idx);
     ffi.Pointer<ffi.Size>,
   )
 >()
-external ffi.Pointer<ffi.Char> lua_shim_tolstring(
+external ffi.Pointer<ffi.Char> lua_shimL_checklstring(
   ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Size> len,
+  int arg,
+  ffi.Pointer<ffi.Size> l,
 );
 
-@ffi.Native<ffi.Size Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_shim_rawlen(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external ffi.Pointer<ffi.Void> lua_shim_touserdata(
-  ffi.Pointer<lua_State> L,
-  int idx,
-);
-
-@ffi.Native<ffi.Pointer<lua_State> Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external ffi.Pointer<lua_State> lua_shim_tothread(
-  ffi.Pointer<lua_State> L,
-  int idx,
-);
-
-/// ================================================================
-/// 压栈
-/// ================================================================
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_pushnil(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Double)>()
-external void lua_shim_pushnumber(ffi.Pointer<lua_State> L, double n);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int64)>()
-external void lua_shim_pushinteger(ffi.Pointer<lua_State> L, int n);
+@ffi.Native<ffi.Double Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external double lua_shimL_checknumber(ffi.Pointer<lua_State> L, int arg);
 
 @ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>, ffi.Size)
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+  )
 >()
-external void lua_shim_pushlstring(
+external int lua_shimL_checkoption(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  ffi.Pointer<ffi.Char> def,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> lst,
+);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external void lua_shimL_checkstack(
+  ffi.Pointer<lua_State> L,
+  int sz,
+  ffi.Pointer<ffi.Char> msg,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Char> lua_shimL_checkstring(
+  ffi.Pointer<lua_State> L,
+  int arg,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void lua_shimL_checktype(ffi.Pointer<lua_State> L, int arg, int t);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external ffi.Pointer<ffi.Void> lua_shimL_checkudata(
+  ffi.Pointer<lua_State> L,
+  int ud,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shimL_checkversion(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int lua_shimL_dofile(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> fn,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int lua_shimL_dostring(
   ffi.Pointer<lua_State> L,
   ffi.Pointer<ffi.Char> s,
-  int len,
 );
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int lua_shimL_error(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> fmt,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shimL_execresult(ffi.Pointer<lua_State> L, int stat);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int lua_shimL_fileresult(
+  ffi.Pointer<lua_State> L,
+  int stat,
+  ffi.Pointer<ffi.Char> fname,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int lua_shimL_getmetafield(
+  ffi.Pointer<lua_State> L,
+  int obj,
+  ffi.Pointer<ffi.Char> e,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int lua_shimL_getmetatable(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int lua_shimL_getsubtable(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Char> fname,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shimL_gsub(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+  ffi.Pointer<ffi.Char> p,
+  ffi.Pointer<ffi.Char> r,
+);
+
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shimL_len(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Size,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external int lua_shimL_loadbuffer(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> buff,
+  int sz,
+  ffi.Pointer<ffi.Char> name,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Size,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external int lua_shimL_loadbufferx(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> buff,
+  int sz,
+  ffi.Pointer<ffi.Char> name,
+  ffi.Pointer<ffi.Char> mode,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int lua_shimL_loadfile(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> filename,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external int lua_shimL_loadfilex(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> filename,
+  ffi.Pointer<ffi.Char> mode,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int lua_shimL_loadstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+@ffi.Native<ffi.Uint64 Function(ffi.Pointer<lua_State>)>()
+external int lua_shimL_makeseed(ffi.Pointer<lua_State> L);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>, ffi.Int)
+>()
+external void lua_shimL_newlib(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> l,
+  int nrec,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shimL_newlibtable(ffi.Pointer<lua_State> L, int nrec);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int lua_shimL_newmetatable(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+@ffi.Native<ffi.Pointer<lua_State> Function()>()
+external ffi.Pointer<lua_State> lua_shimL_newstate();
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shimL_openlibs(ffi.Pointer<lua_State> L);
 
 @ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
-external void lua_shim_pushstring(
+external void lua_shimL_openselectedlibs(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> s,
+  ffi.Pointer<ffi.Char> libs,
 );
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Bool)>()
-external void lua_shim_pushboolean(ffi.Pointer<lua_State> L, bool b);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)>()
-external void lua_shim_pushlightuserdata(
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external ffi.Pointer<ffi.Void> lua_shimL_opt(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Void> p,
+  ffi.Pointer<ffi.Void> f,
+  int n,
+  ffi.Pointer<ffi.Void> d,
+);
+
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external int lua_shimL_optinteger(ffi.Pointer<lua_State> L, int arg, int def);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Size>,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shimL_optlstring(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  ffi.Pointer<ffi.Char> def,
+  ffi.Pointer<ffi.Size> l,
+);
+
+@ffi.Native<ffi.Double Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Double)>()
+external double lua_shimL_optnumber(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  double def,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shimL_optstring(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  ffi.Pointer<ffi.Char> def,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Void>)>()
+external ffi.Pointer<ffi.Char> lua_shimL_prepbuffer(ffi.Pointer<ffi.Void> B);
+
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Void>, ffi.Size)>()
+external ffi.Pointer<ffi.Char> lua_shimL_prepbuffsize(
+  ffi.Pointer<ffi.Void> B,
+  int sz,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shimL_pushfail(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
+external void lua_shimL_pushresult(ffi.Pointer<ffi.Void> B);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Size)>()
+external void lua_shimL_pushresultsize(ffi.Pointer<ffi.Void> B, int sz);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shimL_ref(ffi.Pointer<lua_State> L, int t);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+  )
+>()
+external void lua_shimL_requiref(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> modname,
+  ffi.Pointer<ffi.Void> openf,
+  int glb,
 );
 
 @ffi.Native<
   ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>, ffi.Int)
 >()
-external void lua_shim_pushcclosure(
+external void lua_shimL_setfuncs(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Void> fn,
-  int n,
+  ffi.Pointer<ffi.Void> l,
+  int nup,
 );
 
-/// ================================================================
-/// 获取操作
-/// ================================================================
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_gettable(ffi.Pointer<lua_State> L, int idx);
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external void lua_shimL_setmetatable(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> tname,
+);
 
-/// 返回字段值的类型（Lua 5.3+ 中 lua_getfield 返回 int 类型码）。
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external ffi.Pointer<ffi.Void> lua_shimL_testudata(
+  ffi.Pointer<lua_State> L,
+  int ud,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Size>,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shimL_tolstring(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Size> len,
+);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Int,
+  )
+>()
+external void lua_shimL_traceback(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<lua_State> L1,
+  ffi.Pointer<ffi.Char> msg,
+  int level,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int lua_shimL_typeerror(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Char> lua_shimL_typename(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void lua_shimL_unref(ffi.Pointer<lua_State> L, int t, int ref);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shimL_where(ffi.Pointer<lua_State> L, int lvl);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_absindex(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.UnsignedInt)>(
+  symbol: 'lua_shim_arith',
+)
+external void _lua_shim_arith$1(ffi.Pointer<lua_State> L, int op);
+
+void lua_shim_arith$1(ffi.Pointer<lua_State> L, lua_shim_arith op) =>
+    _lua_shim_arith$1(L, op.value);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)
+>()
+external ffi.Pointer<ffi.Void> lua_shim_atpanic(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> panicf,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void lua_shim_call(ffi.Pointer<lua_State> L, int nargs, int nresults);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int64,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external void lua_shim_callk(
+  ffi.Pointer<lua_State> L,
+  int nargs,
+  int nresults,
+  int ctx,
+  ffi.Pointer<ffi.Void> k,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_checkstack(ffi.Pointer<lua_State> L, int n);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_close(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_closeslot(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_State>)>()
+external int lua_shim_closethread(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<lua_State> from,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int, ffi.UnsignedInt)
+>(symbol: 'lua_shim_compare')
+external int _lua_shim_compare$1(
+  ffi.Pointer<lua_State> L,
+  int idx1,
+  int idx2,
+  int op,
+);
+
+int lua_shim_compare$1(
+  ffi.Pointer<lua_State> L,
+  int idx1,
+  int idx2,
+  lua_shim_compare op,
+) => _lua_shim_compare$1(L, idx1, idx2, op.value);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_concat(ffi.Pointer<lua_State> L, int n);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void lua_shim_copy(ffi.Pointer<lua_State> L, int fromidx, int toidx);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void lua_shim_createtable(
+  ffi.Pointer<lua_State> L,
+  int narr,
+  int nrec,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+  )
+>()
+external int lua_shim_dump(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> writer,
+  ffi.Pointer<ffi.Void> data,
+  int strip,
+);
+
+@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<lua_State>)>(
+  symbol: 'lua_shim_error',
+)
+external int _lua_shim_error(ffi.Pointer<lua_State> L);
+
+lua_shim_status lua_shim_error(ffi.Pointer<lua_State> L) =>
+    lua_shim_status.fromValue(_lua_shim_error(L));
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.UnsignedInt, ffi.Int)>(
+  symbol: 'lua_shim_gc',
+)
+external int _lua_shim_gc$1(ffi.Pointer<lua_State> L, int what, int data);
+
+int lua_shim_gc$1(ffi.Pointer<lua_State> L, lua_shim_gc what, int data) =>
+    _lua_shim_gc$1(L, what.value, data);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Pointer<ffi.Void>>,
+  )
+>()
+external ffi.Pointer<ffi.Void> lua_shim_getallocf(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Pointer<ffi.Void>> ud,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>)>()
+external ffi.Pointer<ffi.Void> lua_shim_getextraspace(ffi.Pointer<lua_State> L);
+
 @ffi.Native<
   ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
 >(symbol: 'lua_shim_getfield')
@@ -249,86 +685,6 @@ lua_shim_type lua_shim_getfield(
   ffi.Pointer<ffi.Char> k,
 ) => lua_shim_type.fromValue(_lua_shim_getfield(L, idx, k));
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_rawget(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
-external void lua_shim_rawgeti(ffi.Pointer<lua_State> L, int idx, int n);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
->()
-external void lua_shim_rawgetp(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Void> p,
-);
-
-/// 创建新表。
-/// Lua 宏: lua_newtable(L) => lua_createtable(L, 0, 0)
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_newtable(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void lua_shim_createtable(
-  ffi.Pointer<lua_State> L,
-  int narr,
-  int nrec,
-);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Size, ffi.Int)
->()
-external ffi.Pointer<ffi.Void> lua_shim_newuserdatauv(
-  ffi.Pointer<lua_State> L,
-  int sz,
-  int nuvalue,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_shim_getmetatable(ffi.Pointer<lua_State> L, int objindex);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void lua_shim_getiuservalue(ffi.Pointer<lua_State> L, int idx, int n);
-
-/// ================================================================
-/// 设置操作
-/// ================================================================
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_settable(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external void lua_shim_setfield(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Char> k,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_rawset(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
-external void lua_shim_rawseti(ffi.Pointer<lua_State> L, int idx, int n);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
->()
-external void lua_shim_rawsetp(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Void> p,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_setmetatable(ffi.Pointer<lua_State> L, int objindex);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void lua_shim_setiuservalue(ffi.Pointer<lua_State> L, int idx, int n);
-
-/// 将全局变量 name 的值压入栈。
-/// Lua 5.3+ 中 lua_getglobal 返回 int 类型码。
 @ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>(
   symbol: 'lua_shim_getglobal',
 )
@@ -342,15 +698,248 @@ lua_shim_type lua_shim_getglobal(
   ffi.Pointer<ffi.Char> name,
 ) => lua_shim_type.fromValue(_lua_shim_getglobal(L, name));
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
-external void lua_shim_setglobal(
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>)>()
+external ffi.Pointer<ffi.Void> lua_shim_gethook(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int lua_shim_gethookcount(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int lua_shim_gethookmask(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external int lua_shim_geti(ffi.Pointer<lua_State> L, int idx, int n);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external int lua_shim_getinfo(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> name,
+  ffi.Pointer<ffi.Char> what,
+  ffi.Pointer<ffi.Void> ar,
 );
 
-/// ================================================================
-/// 调用
-/// ================================================================
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void lua_shim_getiuservalue(ffi.Pointer<lua_State> L, int idx, int n);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shim_getlocal(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> ar,
+  int n,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_getmetatable(ffi.Pointer<lua_State> L, int objindex);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
+>()
+external int lua_shim_getstack(
+  ffi.Pointer<lua_State> L,
+  int level,
+  ffi.Pointer<ffi.Void> ar,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_gettable(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int lua_shim_gettop(ffi.Pointer<lua_State> L);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
+>()
+external ffi.Pointer<ffi.Char> lua_shim_getupvalue(
+  ffi.Pointer<lua_State> L,
+  int funcindex,
+  int n,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_getuservalue(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_insert(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_isboolean(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_iscfunction(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_isfunction(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_isinteger(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_islightuserdata(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_isnil(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_isnone(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_isnoneornil(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_isnumber(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_isstring(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_istable(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_isthread(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_isuserdata(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int lua_shim_isyieldable(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Pointer<ffi.Char> Function()>()
+external ffi.Pointer<ffi.Char> lua_shim_lasterror();
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_len(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external int lua_shim_load(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> reader,
+  ffi.Pointer<ffi.Void> dt,
+  ffi.Pointer<ffi.Char> chunkname,
+  ffi.Pointer<ffi.Char> mode,
+);
+
+@ffi.Native<
+  ffi.UnsignedInt Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+>(symbol: 'lua_shim_loadstring')
+external int _lua_shim_loadstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+lua_shim_status lua_shim_loadstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+) => lua_shim_status.fromValue(_lua_shim_loadstring(L, s));
+
+@ffi.Native<ffi.Pointer<lua_State> Function()>()
+external ffi.Pointer<lua_State> lua_shim_newstate();
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_newtable(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Pointer<lua_State> Function(ffi.Pointer<lua_State>)>()
+external ffi.Pointer<lua_State> lua_shim_newthread(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Size)>()
+external ffi.Pointer<ffi.Void> lua_shim_newuserdata(
+  ffi.Pointer<lua_State> L,
+  int sz,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Size, ffi.Int)
+>()
+external ffi.Pointer<ffi.Void> lua_shim_newuserdatauv(
+  ffi.Pointer<lua_State> L,
+  int sz,
+  int nuvalue,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_next(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Double,
+    ffi.Pointer<ffi.Size>,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shim_numbertocstring(
+  ffi.Pointer<lua_State> L,
+  double n,
+  ffi.Pointer<ffi.Size> len,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Double, ffi.Pointer<ffi.Int64>)>()
+external int lua_shim_numbertointeger(double n, ffi.Pointer<ffi.Int64> p);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_open_base(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_open_debug(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_open_io(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_open_math(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_open_os(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_open_package(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_open_string(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_open_table(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_open_utf8(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_openlibs(ffi.Pointer<lua_State> L);
+
+@ffi.Native<
+  ffi.UnsignedInt Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int, ffi.Int)
+>(symbol: 'lua_shim_pcall')
+external int _lua_shim_pcall(
+  ffi.Pointer<lua_State> L,
+  int nargs,
+  int nresults,
+  int errfunc,
+);
+
+lua_shim_status lua_shim_pcall(
+  ffi.Pointer<lua_State> L,
+  int nargs,
+  int nresults,
+  int errfunc,
+) => lua_shim_status.fromValue(_lua_shim_pcall(L, nargs, nresults, errfunc));
+
 @ffi.Native<
   ffi.UnsignedInt Function(
     ffi.Pointer<lua_State>,
@@ -381,6 +970,177 @@ lua_shim_status lua_shim_pcallk(
   _lua_shim_pcallk(L, nargs, nresults, errfunc, ctx, k),
 );
 
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_pop(ffi.Pointer<lua_State> L, int n);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Bool)>()
+external void lua_shim_pushboolean(ffi.Pointer<lua_State> L, bool b);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>, ffi.Int)
+>()
+external void lua_shim_pushcclosure(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> fn,
+  int n,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)>()
+external void lua_shim_pushcfunction(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> f,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, DartCFunction)>()
+external void lua_shim_pushdartfunction(
+  ffi.Pointer<lua_State> L,
+  DartCFunction f,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Size,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shim_pushexternalstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+  int len,
+  ffi.Pointer<ffi.Void> ud,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+>()
+external ffi.Pointer<ffi.Char> lua_shim_pushfstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> fmt,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_pushglobaltable(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int64)>()
+external void lua_shim_pushinteger(ffi.Pointer<lua_State> L, int n);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)>()
+external void lua_shim_pushlightuserdata(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> p,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+>()
+external ffi.Pointer<ffi.Char> lua_shim_pushliteral(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>, ffi.Size)
+>()
+external void lua_shim_pushlstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+  int len,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void lua_shim_pushnil(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Double)>()
+external void lua_shim_pushnumber(ffi.Pointer<lua_State> L, double n);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external void lua_shim_pushstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int lua_shim_pushthread(ffi.Pointer<lua_State> L);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_pushvalue(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shim_pushvfstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> fmt,
+  ffi.Pointer<ffi.Void> argp,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external int lua_shim_rawequal(ffi.Pointer<lua_State> L, int idx1, int idx2);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_rawget(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external void lua_shim_rawgeti(ffi.Pointer<lua_State> L, int idx, int n);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
+>()
+external void lua_shim_rawgetp(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Void> p,
+);
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_rawlen(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_rawset(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external void lua_shim_rawseti(ffi.Pointer<lua_State> L, int idx, int n);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
+>()
+external void lua_shim_rawsetp(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Void> p,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_ref(ffi.Pointer<lua_State> L, int t);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external void lua_shim_register(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> n,
+  ffi.Pointer<ffi.Void> f,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_remove(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_replace(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int lua_shim_resetthread(ffi.Pointer<lua_State> L);
+
 @ffi.Native<
   ffi.UnsignedInt Function(
     ffi.Pointer<lua_State>,
@@ -403,6 +1163,276 @@ lua_shim_status lua_shim_resume(
   ffi.Pointer<ffi.Int> nres,
 ) => lua_shim_status.fromValue(_lua_shim_resume(L, from, narg, nres));
 
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void lua_shim_rotate(ffi.Pointer<lua_State> L, int idx, int n);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external void lua_shim_setallocf(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> f,
+  ffi.Pointer<ffi.Void> ud,
+);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external void lua_shim_setfield(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Char> k,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external void lua_shim_setglobal(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> name,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+    ffi.Int,
+  )
+>()
+external int lua_shim_sethook(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> func,
+  int mask,
+  int count,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external void lua_shim_seti(ffi.Pointer<lua_State> L, int idx, int n);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void lua_shim_setiuservalue(ffi.Pointer<lua_State> L, int idx, int n);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shim_setlocal(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> ar,
+  int n,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_setmetatable(ffi.Pointer<lua_State> L, int objindex);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_settable(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_settop(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
+>()
+external ffi.Pointer<ffi.Char> lua_shim_setupvalue(
+  ffi.Pointer<lua_State> L,
+  int funcindex,
+  int n,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_setuservalue(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external void lua_shim_setwarnf(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> f,
+  ffi.Pointer<ffi.Void> ud,
+);
+
+@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<lua_State>)>(
+  symbol: 'lua_shim_status',
+)
+external int _lua_shim_status$1(ffi.Pointer<lua_State> L);
+
+lua_shim_status lua_shim_status$1(ffi.Pointer<lua_State> L) =>
+    lua_shim_status.fromValue(_lua_shim_status$1(L));
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int lua_shim_stringtonumber(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+@ffi.Native<
+  ffi.UnsignedInt Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+>(symbol: 'lua_shim_throwstring')
+external int _lua_shim_throwstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+lua_shim_status lua_shim_throwstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+) => lua_shim_status.fromValue(_lua_shim_throwstring(L, s));
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external bool lua_shim_toboolean(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Void> lua_shim_tocfunction(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void lua_shim_toclose(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_tointeger(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<
+  ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Bool>)
+>()
+external int lua_shim_tointegerx(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Bool> isnum,
+);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Size>,
+  )
+>()
+external ffi.Pointer<ffi.Char> lua_shim_tolstring(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Size> len,
+);
+
+@ffi.Native<ffi.Double Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external double lua_shim_tonumber(ffi.Pointer<lua_State> L, int idx);
+
+@ffi.Native<
+  ffi.Double Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Bool>)
+>()
+external double lua_shim_tonumberx(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Bool> isnum,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Void> lua_shim_topointer(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Char> lua_shim_tostring(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+@ffi.Native<ffi.Pointer<lua_State> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<lua_State> lua_shim_tothread(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Void> lua_shim_touserdata(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>(
+  symbol: 'lua_shim_type',
+)
+external int _lua_shim_type$1(ffi.Pointer<lua_State> L, int idx);
+
+lua_shim_type lua_shim_type$1(ffi.Pointer<lua_State> L, int idx) =>
+    lua_shim_type.fromValue(_lua_shim_type$1(L, idx));
+
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>(
+  symbol: 'lua_shim_typename',
+)
+external ffi.Pointer<ffi.Char> _lua_shim_typename(
+  ffi.Pointer<lua_State> L,
+  int tp,
+);
+
+ffi.Pointer<ffi.Char> lua_shim_typename(
+  ffi.Pointer<lua_State> L,
+  lua_shim_type tp,
+) => _lua_shim_typename(L, tp.value);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void lua_shim_unref(ffi.Pointer<lua_State> L, int t, int ref);
+
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
+>()
+external ffi.Pointer<ffi.Void> lua_shim_upvalueid(
+  ffi.Pointer<lua_State> L,
+  int fidx,
+  int n,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Int)>()
+external int lua_shim_upvalueindex(int i);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int, ffi.Int, ffi.Int)
+>()
+external void lua_shim_upvaluejoin(
+  ffi.Pointer<lua_State> L,
+  int fidx1,
+  int n1,
+  int fidx2,
+  int n2,
+);
+
+@ffi.Native<ffi.Double Function(ffi.Pointer<lua_State>)>()
+external double lua_shim_version(ffi.Pointer<lua_State> L);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>, ffi.Int)
+>()
+external void lua_shim_warning(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> msg,
+  int tocont,
+);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_State>, ffi.Int)
+>()
+external void lua_shim_xmove(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<lua_State> to,
+  int n,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int lua_shim_yield(ffi.Pointer<lua_State> L, int nresults);
+
 @ffi.Native<
   ffi.UnsignedInt Function(
     ffi.Pointer<lua_State>,
@@ -424,170 +1454,6 @@ lua_shim_status lua_shim_yieldk(
   int ctx,
   ffi.Pointer<ffi.Void> k,
 ) => lua_shim_status.fromValue(_lua_shim_yieldk(L, nresults, ctx, k));
-
-@ffi.Native<
-  ffi.UnsignedInt Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
->(symbol: 'lua_shim_loadstring')
-external int _lua_shim_loadstring(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> s,
-);
-
-lua_shim_status lua_shim_loadstring(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> s,
-) => lua_shim_status.fromValue(_lua_shim_loadstring(L, s));
-
-/// ================================================================
-/// 算术与比较
-/// ================================================================
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.UnsignedInt)>(
-  symbol: 'lua_shim_arith',
-)
-external void _lua_shim_arith$1(ffi.Pointer<lua_State> L, int op);
-
-void lua_shim_arith$1(ffi.Pointer<lua_State> L, lua_shim_arith op) =>
-    _lua_shim_arith$1(L, op.value);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int, ffi.UnsignedInt)
->(symbol: 'lua_shim_compare')
-external int _lua_shim_compare$1(
-  ffi.Pointer<lua_State> L,
-  int idx1,
-  int idx2,
-  int op,
-);
-
-int lua_shim_compare$1(
-  ffi.Pointer<lua_State> L,
-  int idx1,
-  int idx2,
-  lua_shim_compare op,
-) => _lua_shim_compare$1(L, idx1, idx2, op.value);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_len(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_shim_concat(ffi.Pointer<lua_State> L, int n);
-
-/// ================================================================
-/// 垃圾回收
-/// ================================================================
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.UnsignedInt, ffi.Int)>(
-  symbol: 'lua_shim_gc',
-)
-external int _lua_shim_gc$1(ffi.Pointer<lua_State> L, int what, int data);
-
-int lua_shim_gc$1(ffi.Pointer<lua_State> L, lua_shim_gc what, int data) =>
-    _lua_shim_gc$1(L, what.value, data);
-
-/// ================================================================
-/// 错误处理
-/// ================================================================
-@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<lua_State>)>(
-  symbol: 'lua_shim_error',
-)
-external int _lua_shim_error(ffi.Pointer<lua_State> L);
-
-lua_shim_status lua_shim_error(ffi.Pointer<lua_State> L) =>
-    lua_shim_status.fromValue(_lua_shim_error(L));
-
-@ffi.Native<
-  ffi.UnsignedInt Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
->(symbol: 'lua_shim_throwstring')
-external int _lua_shim_throwstring(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> s,
-);
-
-lua_shim_status lua_shim_throwstring(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> s,
-) => lua_shim_status.fromValue(_lua_shim_throwstring(L, s));
-
-/// ================================================================
-/// 标准库
-/// ================================================================
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_openlibs(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_open_base(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_open_table(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_open_io(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_open_os(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_open_string(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_open_math(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_open_utf8(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_open_debug(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_shim_open_package(ffi.Pointer<lua_State> L);
-
-/// ================================================================
-/// 协程
-/// ================================================================
-@ffi.Native<ffi.Pointer<lua_State> Function(ffi.Pointer<lua_State>)>()
-external ffi.Pointer<lua_State> lua_shim_newthread(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_State>)>()
-external int lua_shim_closethread(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<lua_State> from,
-);
-
-/// ================================================================
-/// 辅助函数
-/// ================================================================
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_shim_ref(ffi.Pointer<lua_State> L, int t);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void lua_shim_unref(ffi.Pointer<lua_State> L, int t, int ref);
-
-/// ================================================================
-/// 内存分配器
-/// ================================================================
-@ffi.Native<
-  ffi.Void Function(
-    ffi.Pointer<lua_State>,
-    ffi.Pointer<ffi.Void>,
-    ffi.Pointer<ffi.Void>,
-  )
->()
-external void lua_shim_setallocf(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Void> f,
-  ffi.Pointer<ffi.Void> ud,
-);
-
-/// ================================================================
-/// 版本
-/// ================================================================
-@ffi.Native<ffi.Double Function(ffi.Pointer<lua_State>)>()
-external double lua_shim_version(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, DartCFunction)>()
-external void lua_shim_pushdartfunction(
-  ffi.Pointer<lua_State> L,
-  DartCFunction f,
-);
 
 typedef __int8_t = ffi.SignedChar;
 typedef Dart__int8_t = int;
@@ -630,14 +1496,7 @@ typedef Dart__darwin_ct_rune_t = int;
 
 /// mbstate_t is an opaque object to keep conversion state, during multibyte
 /// stream conversions.  The content must not be referenced by user programs.
-final class __mbstate_t extends ffi.Union {
-  @ffi.Array.multi([128])
-  external ffi.Array<ffi.Char> __mbstate8;
-
-  /// for alignment
-  @ffi.LongLong()
-  external int _mbstateL;
-}
+final class __mbstate_t extends ffi.Opaque {}
 
 typedef __darwin_mbstate_t = __mbstate_t;
 typedef __darwin_ptrdiff_t = ffi.Long;
@@ -893,7 +1752,8 @@ enum lua_shim_status {
   LUA_SHIM_ERRSYNTAX(3),
   LUA_SHIM_ERRMEM(4),
   LUA_SHIM_ERRGCMM(5),
-  LUA_SHIM_ERRERR(6);
+  LUA_SHIM_ERRERR(6),
+  LUA_SHIM_ERRNOTSUP(7);
 
   final int value;
   const lua_shim_status(this.value);
@@ -906,6 +1766,7 @@ enum lua_shim_status {
     4 => LUA_SHIM_ERRMEM,
     5 => LUA_SHIM_ERRGCMM,
     6 => LUA_SHIM_ERRERR,
+    7 => LUA_SHIM_ERRNOTSUP,
     _ => throw ArgumentError('Unknown value for lua_shim_status: $value'),
   };
 }
@@ -1050,194 +1911,4 @@ final class lua_shim_result extends ffi.Struct {
 typedef lua_shim_result_t = lua_shim_result;
 typedef DartCFunctionFunction = ffi.Int Function(ffi.Pointer<lua_State> L);
 typedef DartDartCFunctionFunction = int Function(ffi.Pointer<lua_State> L);
-
-/// ================================================================
-/// 注册 Dart 回调（特殊）
-/// ================================================================
 typedef DartCFunction = ffi.Pointer<ffi.NativeFunction<DartCFunctionFunction>>;
-
-const int __has_safe_buffers = 1;
-
-const int __DARWIN_ONLY_64_BIT_INO_T = 1;
-
-const int __DARWIN_ONLY_UNIX_CONFORMANCE = 1;
-
-const int __DARWIN_ONLY_VERS_1050 = 1;
-
-const int __DARWIN_UNIX03 = 1;
-
-const int __DARWIN_64_BIT_INO_T = 1;
-
-const int __DARWIN_VERS_1050 = 1;
-
-const int __DARWIN_NON_CANCELABLE = 0;
-
-const String __DARWIN_SUF_EXTSN = '\$DARWIN_EXTSN';
-
-const int __DARWIN_C_ANSI = 4096;
-
-const int __DARWIN_C_FULL = 900000;
-
-const int __DARWIN_C_LEVEL = 900000;
-
-const int __STDC_WANT_LIB_EXT1__ = 1;
-
-const int __DARWIN_NO_LONG_LONG = 0;
-
-const int _DARWIN_FEATURE_64_BIT_INODE = 1;
-
-const int _DARWIN_FEATURE_ONLY_64_BIT_INODE = 1;
-
-const int _DARWIN_FEATURE_ONLY_VERS_1050 = 1;
-
-const int _DARWIN_FEATURE_ONLY_UNIX_CONFORMANCE = 1;
-
-const int _DARWIN_FEATURE_UNIX_CONFORMANCE = 3;
-
-const int __has_ptrcheck = 0;
-
-const int __has_bounds_safety_attributes = 0;
-
-const int __DARWIN_NULL = 0;
-
-const int __PTHREAD_SIZE__ = 8176;
-
-const int __PTHREAD_ATTR_SIZE__ = 56;
-
-const int __PTHREAD_MUTEXATTR_SIZE__ = 8;
-
-const int __PTHREAD_MUTEX_SIZE__ = 56;
-
-const int __PTHREAD_CONDATTR_SIZE__ = 8;
-
-const int __PTHREAD_COND_SIZE__ = 40;
-
-const int __PTHREAD_ONCE_SIZE__ = 8;
-
-const int __PTHREAD_RWLOCK_SIZE__ = 192;
-
-const int __PTHREAD_RWLOCKATTR_SIZE__ = 16;
-
-const int __DARWIN_WCHAR_MAX = 2147483647;
-
-const int __DARWIN_WCHAR_MIN = -2147483648;
-
-const int __DARWIN_WEOF = -1;
-
-const int _FORTIFY_SOURCE = 2;
-
-const int NULL = 0;
-
-const int USER_ADDR_NULL = 0;
-
-const int __bool_true_false_are_defined = 1;
-
-const int true$ = 1;
-
-const int false$ = 0;
-
-const int __WORDSIZE = 64;
-
-const int INT8_MAX = 127;
-
-const int INT16_MAX = 32767;
-
-const int INT32_MAX = 2147483647;
-
-const int INT64_MAX = 9223372036854775807;
-
-const int INT8_MIN = -128;
-
-const int INT16_MIN = -32768;
-
-const int INT32_MIN = -2147483648;
-
-const int INT64_MIN = -9223372036854775808;
-
-const int UINT8_MAX = 255;
-
-const int UINT16_MAX = 65535;
-
-const int UINT32_MAX = 4294967295;
-
-const int UINT64_MAX = -1;
-
-const int INT_LEAST8_MIN = -128;
-
-const int INT_LEAST16_MIN = -32768;
-
-const int INT_LEAST32_MIN = -2147483648;
-
-const int INT_LEAST64_MIN = -9223372036854775808;
-
-const int INT_LEAST8_MAX = 127;
-
-const int INT_LEAST16_MAX = 32767;
-
-const int INT_LEAST32_MAX = 2147483647;
-
-const int INT_LEAST64_MAX = 9223372036854775807;
-
-const int UINT_LEAST8_MAX = 255;
-
-const int UINT_LEAST16_MAX = 65535;
-
-const int UINT_LEAST32_MAX = 4294967295;
-
-const int UINT_LEAST64_MAX = -1;
-
-const int INT_FAST8_MIN = -128;
-
-const int INT_FAST16_MIN = -32768;
-
-const int INT_FAST32_MIN = -2147483648;
-
-const int INT_FAST64_MIN = -9223372036854775808;
-
-const int INT_FAST8_MAX = 127;
-
-const int INT_FAST16_MAX = 32767;
-
-const int INT_FAST32_MAX = 2147483647;
-
-const int INT_FAST64_MAX = 9223372036854775807;
-
-const int UINT_FAST8_MAX = 255;
-
-const int UINT_FAST16_MAX = 65535;
-
-const int UINT_FAST32_MAX = 4294967295;
-
-const int UINT_FAST64_MAX = -1;
-
-const int INTPTR_MAX = 9223372036854775807;
-
-const int INTPTR_MIN = -9223372036854775808;
-
-const int UINTPTR_MAX = -1;
-
-const int INTMAX_MAX = 9223372036854775807;
-
-const int UINTMAX_MAX = -1;
-
-const int INTMAX_MIN = -9223372036854775808;
-
-const int PTRDIFF_MIN = -9223372036854775808;
-
-const int PTRDIFF_MAX = 9223372036854775807;
-
-const int SIZE_MAX = -1;
-
-const int RSIZE_MAX = 9223372036854775807;
-
-const int WCHAR_MAX = 2147483647;
-
-const int WCHAR_MIN = -2147483648;
-
-const int WINT_MIN = -2147483648;
-
-const int WINT_MAX = 2147483647;
-
-const int SIG_ATOMIC_MIN = -2147483648;
-
-const int SIG_ATOMIC_MAX = 2147483647;

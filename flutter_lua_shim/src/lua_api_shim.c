@@ -231,3 +231,403 @@ double lua_shim_version(lua_State* L) { (void)L; return (double)LUA_VERSION_NUM;
 void lua_shim_pushdartfunction(lua_State* L, DartCFunction f) {
     lua_pushcfunction(L, (lua_CFunction)f);
 }
+
+/* ================================================================
+ * 错误信息存储
+ * ================================================================ */
+
+static _Thread_local const char* _shim_lasterror = NULL;
+
+static void _shim_seterror(const char* msg) {
+    _shim_lasterror = msg;
+}
+
+const char* lua_shim_lasterror(void) {
+    return _shim_lasterror ? _shim_lasterror : "";
+}
+
+/* ================================================================
+ * C API 补全实现
+ * ================================================================ */
+
+int lua_shim_absindex(lua_State* L, int idx) { return lua_absindex(L, idx); }
+
+void* lua_shim_atpanic(lua_State* L, void* panicf) { (void)L; (void)panicf; _shim_seterror("lua_shim_atpanic: C callback not supported in shim layer"); return NULL; }
+
+void lua_shim_call(lua_State* L, int nargs, int nresults) { lua_callk(L, nargs, nresults, 0, NULL); }
+
+void lua_shim_callk(lua_State* L, int nargs, int nresults, int64_t ctx, void* k) { lua_callk(L, nargs, nresults, (lua_KContext)ctx, (lua_KFunction)k); }
+
+void lua_shim_closeslot(lua_State* L, int idx) {
+#if SHIM_LUA_54
+    lua_closeslot(L, idx);
+#else
+    (void)L; (void)idx;
+    _shim_seterror("lua_closeslot: not supported in Lua 5.3");
+#endif
+}
+
+int lua_shim_dump(lua_State* L, void* writer, void* data, int strip) { (void)L; (void)writer; (void)data; (void)strip; _shim_seterror("lua_shim_dump: lua_Writer callback not supported"); return (int)LUA_SHIM_ERRNOTSUP; }
+
+void* lua_shim_getallocf(lua_State* L, void** ud) { return (void*)lua_getallocf(L, ud); }
+
+void* lua_shim_getextraspace(lua_State* L) { return lua_getextraspace(L); }
+
+void* lua_shim_gethook(lua_State* L) { (void)L; _shim_seterror("lua_shim_gethook: lua_Hook not supported"); return NULL; }
+
+int lua_shim_gethookcount(lua_State* L) { (void)L; _shim_seterror("lua_shim_gethookcount: hook system not supported"); return (int)LUA_SHIM_ERRNOTSUP; }
+
+int lua_shim_gethookmask(lua_State* L) { (void)L; _shim_seterror("lua_shim_gethookmask: hook system not supported"); return (int)LUA_SHIM_ERRNOTSUP; }
+
+int lua_shim_geti(lua_State* L, int idx, int64_t n) { return lua_geti(L, idx, (lua_Integer)n); }
+
+int lua_shim_getinfo(lua_State* L, const char* what, void* ar) { (void)L; (void)what; (void)ar; _shim_seterror("lua_shim_getinfo: lua_Debug not supported"); return (int)LUA_SHIM_ERRNOTSUP; }
+
+const char* lua_shim_getlocal(lua_State* L, void* ar, int n) { (void)L; (void)ar; (void)n; _shim_seterror("lua_shim_getlocal: lua_Debug not supported"); return ""; }
+
+int lua_shim_getstack(lua_State* L, int level, void* ar) { (void)L; (void)level; (void)ar; _shim_seterror("lua_shim_getstack: lua_Debug not supported"); return (int)LUA_SHIM_ERRNOTSUP; }
+
+const char* lua_shim_getupvalue(lua_State* L, int funcindex, int n) { return lua_getupvalue(L, funcindex, n); }
+
+int lua_shim_getuservalue(lua_State* L, int idx) {
+#if SHIM_LUA_53
+    return lua_getuservalue(L, idx);
+#else
+    return lua_getiuservalue(L, idx, 0);
+#endif
+}
+
+int lua_shim_isinteger(lua_State* L, int idx) { return lua_isinteger(L, idx); }
+
+int lua_shim_isnone(lua_State* L, int idx) { return lua_type(L, idx) == LUA_TNONE; }
+
+int lua_shim_isnoneornil(lua_State* L, int idx) { return lua_type(L, idx) <= 0; }
+
+int lua_shim_isyieldable(lua_State* L) { return lua_isyieldable(L); }
+
+int lua_shim_load(lua_State* L, void* reader, void* dt, const char* chunkname, const char* mode) { (void)L; (void)reader; (void)dt; (void)chunkname; (void)mode; _shim_seterror("lua_shim_load: lua_Reader callback not supported"); return (int)LUA_SHIM_ERRNOTSUP; }
+
+void* lua_shim_newuserdata(lua_State* L, size_t sz) {
+#if SHIM_LUA_54
+    return lua_newuserdatauv(L, sz, 1);
+#else
+    return lua_newuserdata(L, sz);
+#endif
+}
+
+int lua_shim_next(lua_State* L, int idx) { return lua_next(L, idx); }
+
+int lua_shim_numbertointeger(double n, int64_t* p) { return lua_numbertointeger((lua_Number)n, (lua_Integer*)p); }
+
+lua_shim_status_t lua_shim_pcall(lua_State* L, int nargs, int nresults, int errfunc) { return (lua_shim_status_t)lua_pcallk(L, nargs, nresults, errfunc, 0, NULL); }
+
+void lua_shim_pushcfunction(lua_State* L, void* f) { lua_pushcclosure(L, (lua_CFunction)f, 0); }
+
+const char* lua_shim_pushfstring(lua_State* L, const char* fmt, ...) { (void)L; (void)fmt; _shim_seterror("lua_shim_pushfstring: varargs not supported"); return ""; }
+
+void lua_shim_pushglobaltable(lua_State* L) { lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS); }
+
+const char* lua_shim_pushliteral(lua_State* L, const char* s) { return lua_pushstring(L, s); }
+
+int lua_shim_pushthread(lua_State* L) { return lua_pushthread(L); }
+
+const char* lua_shim_pushvfstring(lua_State* L, const char* fmt, void* argp) { (void)L; (void)fmt; (void)argp; _shim_seterror("lua_shim_pushvfstring: varargs not supported"); return ""; }
+
+int lua_shim_rawequal(lua_State* L, int idx1, int idx2) { return lua_rawequal(L, idx1, idx2); }
+
+void lua_shim_register(lua_State* L, const char* n, void* f) { lua_pushcclosure(L, (lua_CFunction)f, 0); lua_setglobal(L, n); }
+
+int lua_shim_resetthread(lua_State* L) {
+#if SHIM_LUA_54
+    return lua_resetthread(L);
+#else
+    (void)L;
+    _shim_seterror("lua_resetthread: not supported in Lua 5.3");
+    return LUA_SHIM_ERRNOTSUP;
+#endif
+}
+
+void lua_shim_rotate(lua_State* L, int idx, int n) { lua_rotate(L, idx, n); }
+
+int lua_shim_sethook(lua_State* L, void* func, int mask, int count) { (void)L; (void)func; (void)mask; (void)count; _shim_seterror("lua_shim_sethook: lua_Hook not supported"); return (int)LUA_SHIM_ERRNOTSUP; }
+
+void lua_shim_seti(lua_State* L, int idx, int64_t n) { lua_seti(L, idx, (lua_Integer)n); }
+
+const char* lua_shim_setlocal(lua_State* L, void* ar, int n) { (void)L; (void)ar; (void)n; _shim_seterror("lua_shim_setlocal: lua_Debug not supported"); return ""; }
+
+const char* lua_shim_setupvalue(lua_State* L, int funcindex, int n) { return lua_setupvalue(L, funcindex, n); }
+
+void lua_shim_setuservalue(lua_State* L, int idx) {
+#if SHIM_LUA_53
+    lua_setuservalue(L, idx);
+#else
+    lua_setiuservalue(L, idx, 0);
+#endif
+}
+
+void lua_shim_setwarnf(lua_State* L, void* f, void* ud) {
+#if SHIM_LUA_54
+    lua_setwarnf(L, (lua_WarnFunction)f, ud);
+#else
+    (void)L; (void)f; (void)ud;
+    _shim_seterror("lua_setwarnf: not supported in Lua 5.3");
+#endif
+}
+
+size_t lua_shim_stringtonumber(lua_State* L, const char* s) { return lua_stringtonumber(L, s); }
+
+void* lua_shim_tocfunction(lua_State* L, int idx) { return (void*)lua_tocfunction(L, idx); }
+
+void lua_shim_toclose(lua_State* L, int idx) {
+#if SHIM_LUA_54
+    lua_toclose(L, idx);
+#else
+    (void)L; (void)idx;
+    _shim_seterror("lua_toclose: not supported in Lua 5.3");
+#endif
+}
+
+int64_t lua_shim_tointeger(lua_State* L, int idx) { return (int64_t)lua_tointegerx(L, idx, NULL); }
+
+double lua_shim_tonumber(lua_State* L, int idx) { return lua_tonumberx(L, idx, NULL); }
+
+const void* lua_shim_topointer(lua_State* L, int idx) { return lua_topointer(L, idx); }
+
+const char* lua_shim_tostring(lua_State* L, int idx) { return lua_tolstring(L, idx, NULL); }
+
+void* lua_shim_upvalueid(lua_State* L, int fidx, int n) { return lua_upvalueid(L, fidx, n); }
+
+int lua_shim_upvalueindex(int i) { return LUA_REGISTRYINDEX - (i); }
+
+void lua_shim_upvaluejoin(lua_State* L, int fidx1, int n1, int fidx2, int n2) { lua_upvaluejoin(L, fidx1, n1, fidx2, n2); }
+
+void lua_shim_warning(lua_State* L, const char* msg, int tocont) {
+#if SHIM_LUA_54
+    lua_warning(L, msg, tocont);
+#else
+    (void)L; (void)msg; (void)tocont;
+    _shim_seterror("lua_warning: not supported in Lua 5.3");
+#endif
+}
+
+int lua_shim_yield(lua_State* L, int nresults) { return lua_yieldk(L, nresults, 0, NULL); }
+
+/* ================================================================
+ * auxlib 补全实现
+ * ================================================================ */
+
+void lua_shimL_addchar(void* B, char c) { luaL_addchar((luaL_Buffer*)B, c); }
+
+void lua_shimL_addgsub(void* B, const char* s, const char* p, const char* r) {
+#if SHIM_LUA_54
+    luaL_addgsub((luaL_Buffer*)B, s, p, r);
+#else
+    (void)B; (void)s; (void)p; (void)r;
+    _shim_seterror("luaL_addgsub: not supported in Lua 5.3");
+#endif
+}
+
+void lua_shimL_addlstring(void* B, const char* s, size_t l) { luaL_addlstring((luaL_Buffer*)B, s, l); }
+
+void lua_shimL_addsize(void* B, size_t n) { luaL_addsize((luaL_Buffer*)B, n); }
+
+void lua_shimL_addstring(void* B, const char* s) { luaL_addstring((luaL_Buffer*)B, s); }
+
+void lua_shimL_addvalue(void* B) { luaL_addvalue((luaL_Buffer*)B); }
+
+void lua_shimL_argcheck(lua_State* L, int cond, int arg, const char* extramsg) { luaL_argcheck(L, cond, arg, extramsg); }
+
+int lua_shimL_argerror(lua_State* L, int arg, const char* extramsg) { return luaL_argerror(L, arg, extramsg); }
+
+void lua_shimL_argexpected(lua_State* L, int cond, int arg, const char* tname) {
+#if SHIM_LUA_54
+    luaL_argexpected(L, cond, arg, tname);
+#else
+    (void)L; (void)cond; (void)arg; (void)tname;
+    _shim_seterror("luaL_argexpected: not supported in Lua 5.3");
+#endif
+}
+
+char* lua_shimL_buffaddr(void* B) {
+#if SHIM_LUA_54
+    return luaL_buffaddr((luaL_Buffer*)B);
+#else
+    (void)B;
+    _shim_seterror("luaL_buffaddr: not supported in Lua 5.3");
+    return NULL;
+#endif
+}
+
+void lua_shimL_buffinit(lua_State* L, void* B) { luaL_buffinit(L, (luaL_Buffer*)B); }
+
+char* lua_shimL_buffinitsize(lua_State* L, void* B, size_t sz) { return luaL_buffinitsize(L, (luaL_Buffer*)B, sz); }
+
+size_t lua_shimL_bufflen(void* B) {
+#if SHIM_LUA_54
+    return luaL_bufflen((luaL_Buffer*)B);
+#else
+    (void)B;
+    _shim_seterror("luaL_bufflen: not supported in Lua 5.3");
+    return 0;
+#endif
+}
+
+void lua_shimL_buffsub(void* B, int n) {
+#if SHIM_LUA_54
+    luaL_buffsub((luaL_Buffer*)B, n);
+#else
+    (void)B; (void)n;
+    _shim_seterror("luaL_buffsub: not supported in Lua 5.3");
+#endif
+}
+
+int lua_shimL_callmeta(lua_State* L, int obj, const char* e) { return luaL_callmeta(L, obj, e); }
+
+void lua_shimL_checkany(lua_State* L, int arg) { luaL_checkany(L, arg); }
+
+int64_t lua_shimL_checkinteger(lua_State* L, int arg) { return (int64_t)luaL_checkinteger(L, arg); }
+
+const char* lua_shimL_checklstring(lua_State* L, int arg, size_t* l) { return luaL_checklstring(L, arg, l); }
+
+double lua_shimL_checknumber(lua_State* L, int arg) { return luaL_checknumber(L, arg); }
+
+int lua_shimL_checkoption(lua_State* L, int arg, const char* def, const char* const lst[]) { return luaL_checkoption(L, arg, def, lst); }
+
+void lua_shimL_checkstack(lua_State* L, int sz, const char* msg) { luaL_checkstack(L, sz, msg); }
+
+const char* lua_shimL_checkstring(lua_State* L, int arg) { return luaL_checkstring(L, arg); }
+
+void lua_shimL_checktype(lua_State* L, int arg, int t) { luaL_checktype(L, arg, t); }
+
+void* lua_shimL_checkudata(lua_State* L, int ud, const char* tname) { return luaL_checkudata(L, ud, tname); }
+
+void lua_shimL_checkversion(lua_State* L) { luaL_checkversion_(L, LUA_VERSION_NUM, LUAL_NUMSIZES); }
+
+int lua_shimL_dofile(lua_State* L, const char* fn) { return (luaL_loadfile(L, fn) || lua_pcall(L, 0, LUA_MULTRET, 0)); }
+
+int lua_shimL_dostring(lua_State* L, const char* s) { return (luaL_loadstring(L, s) || lua_pcall(L, 0, LUA_MULTRET, 0)); }
+
+int lua_shimL_error(lua_State* L, const char* fmt, ...) { (void)L; (void)fmt; _shim_seterror("lua_shimL_error: varargs not supported"); return (int)LUA_SHIM_ERRNOTSUP; }
+
+int lua_shimL_execresult(lua_State* L, int stat) { return luaL_execresult(L, stat); }
+
+int lua_shimL_fileresult(lua_State* L, int stat, const char* fname) { return luaL_fileresult(L, stat, fname); }
+
+int lua_shimL_getmetafield(lua_State* L, int obj, const char* e) { return luaL_getmetafield(L, obj, e); }
+
+int lua_shimL_getmetatable(lua_State* L, const char* tname) { return luaL_getmetatable(L, tname); }
+
+int lua_shimL_getsubtable(lua_State* L, int idx, const char* fname) { return luaL_getsubtable(L, idx, fname); }
+
+const char* lua_shimL_gsub(lua_State* L, const char* s, const char* p, const char* r) { return luaL_gsub(L, s, p, r); }
+
+int64_t lua_shimL_len(lua_State* L, int idx) { return (int64_t)luaL_len(L, idx); }
+
+int lua_shimL_loadbuffer(lua_State* L, const char* buff, size_t sz, const char* name) { return luaL_loadbufferx(L, buff, sz, name, NULL); }
+
+int lua_shimL_loadbufferx(lua_State* L, const char* buff, size_t sz, const char* name, const char* mode) { return luaL_loadbufferx(L, buff, sz, name, mode); }
+
+int lua_shimL_loadfile(lua_State* L, const char* filename) { return luaL_loadfilex(L, filename, NULL); }
+
+int lua_shimL_loadfilex(lua_State* L, const char* filename, const char* mode) { return luaL_loadfilex(L, filename, mode); }
+
+int lua_shimL_loadstring(lua_State* L, const char* s) { return luaL_loadstring(L, s); }
+
+void lua_shimL_newlib(lua_State* L, void* l, int nrec) { luaL_checkversion_(L, LUA_VERSION_NUM, LUAL_NUMSIZES); lua_createtable(L, 0, nrec); luaL_setfuncs(L, (const luaL_Reg*)l, 0); }
+
+void lua_shimL_newlibtable(lua_State* L, int nrec) { lua_createtable(L, 0, nrec); }
+
+int lua_shimL_newmetatable(lua_State* L, const char* tname) { return luaL_newmetatable(L, tname); }
+
+lua_State* lua_shimL_newstate(void) { return luaL_newstate(); }
+
+void lua_shimL_openlibs(lua_State* L) { luaL_openlibs(L); }
+
+void* lua_shimL_opt(lua_State* L, void* f, int n, void* d) { (void)L; (void)f; (void)n; (void)d; _shim_seterror("lua_shimL_opt: generic macro not supported"); return NULL; }
+
+int64_t lua_shimL_optinteger(lua_State* L, int arg, int64_t def) { return (int64_t)luaL_optinteger(L, arg, (lua_Integer)def); }
+
+const char* lua_shimL_optlstring(lua_State* L, int arg, const char* def, size_t* l) { return luaL_optlstring(L, arg, def, l); }
+
+double lua_shimL_optnumber(lua_State* L, int arg, double def) { return luaL_optnumber(L, arg, def); }
+
+const char* lua_shimL_optstring(lua_State* L, int arg, const char* def) { return luaL_optstring(L, arg, def); }
+
+char* lua_shimL_prepbuffer(void* B) { return luaL_prepbuffsize((luaL_Buffer*)B, LUAL_BUFFERSIZE); }
+
+char* lua_shimL_prepbuffsize(void* B, size_t sz) { return luaL_prepbuffsize((luaL_Buffer*)B, sz); }
+
+void lua_shimL_pushfail(lua_State* L) {
+#if SHIM_LUA_54
+    luaL_pushfail(L);
+#else
+    lua_pushnil(L);
+#endif
+}
+
+void lua_shimL_pushresult(void* B) { luaL_pushresult((luaL_Buffer*)B); }
+
+void lua_shimL_pushresultsize(void* B, size_t sz) { luaL_pushresultsize((luaL_Buffer*)B, sz); }
+
+int lua_shimL_ref(lua_State* L, int t) { return luaL_ref(L, t); }
+
+void lua_shimL_requiref(lua_State* L, const char* modname, void* openf, int glb) { luaL_requiref(L, modname, (lua_CFunction)openf, glb); }
+
+void lua_shimL_setfuncs(lua_State* L, void* l, int nup) { luaL_setfuncs(L, (const luaL_Reg*)l, nup); }
+
+void lua_shimL_setmetatable(lua_State* L, const char* tname) { luaL_setmetatable(L, tname); }
+
+void* lua_shimL_testudata(lua_State* L, int ud, const char* tname) { return luaL_testudata(L, ud, tname); }
+
+const char* lua_shimL_tolstring(lua_State* L, int idx, size_t* len) { return luaL_tolstring(L, idx, len); }
+
+void lua_shimL_traceback(lua_State* L, lua_State* L1, const char* msg, int level) { luaL_traceback(L, L1, msg, level); }
+
+int lua_shimL_typeerror(lua_State* L, int arg, const char* tname) {
+#if SHIM_LUA_54
+    return luaL_typeerror(L, arg, tname);
+#else
+    (void)L; (void)arg; (void)tname;
+    _shim_seterror("luaL_typeerror: not supported in Lua 5.3");
+    return LUA_SHIM_ERRNOTSUP;
+#endif
+}
+
+const char* lua_shimL_typename(lua_State* L, int idx) { return lua_typename(L, lua_type(L, idx)); }
+
+void lua_shimL_unref(lua_State* L, int t, int ref) { luaL_unref(L, t, ref); }
+
+void lua_shimL_where(lua_State* L, int lvl) { luaL_where(L, lvl); }
+
+/* ================================================================
+ * Lua 5.5 新增 API 占位实现
+ * ================================================================ */
+
+const char* lua_shim_numbertocstring(lua_State* L, double n, size_t* len) {
+    (void)L; (void)n; (void)len;
+    _shim_seterror("lua_numbertocstring: Lua 5.5 API not available in current build");
+    return "";
+}
+
+const char* lua_shim_pushexternalstring(lua_State* L, const char* s, size_t len, void* ud) {
+    (void)L; (void)s; (void)len; (void)ud;
+    _shim_seterror("lua_pushexternalstring: Lua 5.5 API not available in current build");
+    return "";
+}
+
+void* lua_shimL_alloc(lua_State* L, void* ptr, size_t osize, size_t nsize) {
+    (void)L; (void)ptr; (void)osize; (void)nsize;
+    _shim_seterror("luaL_alloc: Lua 5.5 API not available in current build");
+    return NULL;
+}
+
+uint64_t lua_shimL_makeseed(lua_State* L) {
+    (void)L;
+    _shim_seterror("luaL_makeseed: Lua 5.5 API not available in current build");
+    return 0;
+}
+
+void lua_shimL_openselectedlibs(lua_State* L, const char* libs) {
+    (void)L; (void)libs;
+    _shim_seterror("luaL_openselectedlibs: Lua 5.5 API not available in current build");
+}

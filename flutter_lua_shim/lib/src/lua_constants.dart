@@ -25,6 +25,7 @@ class LuaStatus {
   static const int errMem = 4; // LUA_SHIM_ERRMEM
   static const int errGcmm = 5; // LUA_SHIM_ERRGCMM
   static const int errErr = 6; // LUA_SHIM_ERRERR
+  static const int errNotSup = 7; // LUA_SHIM_ERRNOTSUP
 }
 
 // GC 操作
