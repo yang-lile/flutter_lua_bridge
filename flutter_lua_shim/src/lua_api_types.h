@@ -45,7 +45,6 @@ typedef enum lua_shim_status {
     LUA_SHIM_ERRMEM    = 4,
     LUA_SHIM_ERRGCMM   = 5,
     LUA_SHIM_ERRERR    = 6,
-    LUA_SHIM_ERRNOTSUP = 7,
 } lua_shim_status_t;
 
 /** GC 操作枚举。
