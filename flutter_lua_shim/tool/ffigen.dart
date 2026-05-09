@@ -62,42 +62,4 @@ library $packageName;
     structs: Structs(include: Declarations.includeAll, rename: _renameType, dependencies: CompoundDependencies.full),
     typedefs: Typedefs(include: Declarations.includeAll, rename: _renameType),
   ).generate();
-
-  const rawLuaPackageName = 'flutter_lua_bridge';
-
-  FfiGenerator(
-    output: Output(
-      dartFile: packageRoot.resolve('lib/src/gen/$rawLuaPackageName.g.dart'),
-      commentType: CommentType(CommentStyle.any, CommentLength.full),
-      preamble:
-          '''
-// ignore_for_file: always_specify_types
-// ignore_for_file: camel_case_types
-// ignore_for_file: non_constant_identifier_names
-// ignore_for_file: unused_element
-// ignore_for_file: unused_field
-@ffi.DefaultAsset('package:$rawLuaPackageName/$rawLuaPackageName.dart')
-library $rawLuaPackageName;
-''',
-      style: NativeExternalBindings(),
-    ),
-    headers: Headers(
-      entryPoints: [
-        packageRoot.resolve('src/lua/5.4/lua.h'),
-        packageRoot.resolve('src/lua/5.4/lualib.h'),
-        packageRoot.resolve('src/lua/5.4/lauxlib.h'),
-      ],
-    ),
-    enums: Enums(
-      include: Declarations.includeAll,
-      rename: _renameType,
-      renameMember: _renameEnumMember,
-      style: (decl, suggested) => EnumStyle.dartEnum,
-      silenceWarning: true,
-    ),
-    functions: Functions(include: Declarations.includeAll, rename: _renameFunction),
-    macros: Macros(include: Declarations.includeSet({...cApiMethod, ...auxMethod}), rename: _renameFunction),
-    structs: Structs(include: Declarations.includeAll, rename: _renameType, dependencies: CompoundDependencies.full),
-    typedefs: Typedefs(include: Declarations.includeAll, rename: _renameType),
-  ).generate();
 }
