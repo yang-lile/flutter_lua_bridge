@@ -6,5 +6,7 @@ environment:
   sdk: ^3.10.0
 
 workspace:
-  - flutter_lua_bridge
-  - example
+  - legacy/flutter_lua_bridge
+  - legacy/flutter_lua_shim
+  - examples/example
+  - examples/example_lua_url

@@ -1,6 +1,8 @@
 // ignore_for_file: always_specify_types
 // ignore_for_file: camel_case_types
 // ignore_for_file: non_constant_identifier_names
+// ignore_for_file: unused_element
+// ignore_for_file: unused_field
 @ffi.DefaultAsset('package:flutter_lua_bridge/flutter_lua_bridge.dart')
 library flutter_lua_bridge;
 
@@ -10,427 +12,648 @@ library flutter_lua_bridge;
 // ignore_for_file: type=lint, unused_import
 import 'dart:ffi' as ffi;
 
-/// RCS ident string
-@ffi.Native<ffi.Pointer<ffi.Char>>()
-external ffi.Pointer<ffi.Char> lua_ident;
+/// ================================================================
+/// 版本号
+/// ================================================================
+@ffi.Native<ffi.Int>()
+external final int kLuaVersionReleaseNum;
 
-/// state manipulation
-@ffi.Native<
-  ffi.Pointer<lua_State> Function(
-    lua_Alloc,
-    ffi.Pointer<ffi.Void>,
-    ffi.UnsignedInt,
-  )
->()
-external ffi.Pointer<lua_State> lua_newstate(
-  lua_Alloc f,
-  ffi.Pointer<ffi.Void> ud,
-  int seed,
-);
+@ffi.Native<ffi.Int>()
+external final int kLuaRegistryIndex;
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_close(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Pointer<lua_State> Function(ffi.Pointer<lua_State>)>()
-external ffi.Pointer<lua_State> lua_newthread(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_State>)>()
-external int lua_closethread(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<lua_State> from,
-);
-
-@ffi.Native<lua_CFunction Function(ffi.Pointer<lua_State>, lua_CFunction)>()
-external lua_CFunction lua_atpanic(
-  ffi.Pointer<lua_State> L,
-  lua_CFunction panicf,
-);
-
-@ffi.Native<lua_Number Function(ffi.Pointer<lua_State>)>()
-external double lua_version(ffi.Pointer<lua_State> L);
-
-/// basic stack manipulation
+/// lua_absindex
 @ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_absindex(ffi.Pointer<lua_State> L, int idx);
+external int flutter_lua_bridge_absindex(ffi.Pointer<lua_State> L, int idx);
 
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int lua_gettop(ffi.Pointer<lua_State> L);
-
+/// lua_arith
 @ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_settop(ffi.Pointer<lua_State> L, int idx);
+external void flutter_lua_bridge_arith(ffi.Pointer<lua_State> L, int op);
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_pushvalue(ffi.Pointer<lua_State> L, int idx);
+/// lua_atpanic
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)
+>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_atpanic(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> panicf,
+);
 
+/// lua_call
 @ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void lua_rotate(ffi.Pointer<lua_State> L, int idx, int n);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void lua_copy(ffi.Pointer<lua_State> L, int fromidx, int toidx);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_checkstack(ffi.Pointer<lua_State> L, int n);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_State>, ffi.Int)
->()
-external void lua_xmove(
-  ffi.Pointer<lua_State> from,
-  ffi.Pointer<lua_State> to,
-  int n,
-);
-
-/// access functions (stack -> C)
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_isnumber(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_isstring(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_iscfunction(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_isinteger(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_isuserdata(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_type(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external ffi.Pointer<ffi.Char> lua_typename(ffi.Pointer<lua_State> L, int tp);
-
-@ffi.Native<
-  lua_Number Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Int>)
->()
-external double lua_tonumberx(
+external void flutter_lua_bridge_call(
   ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Int> isnum,
+  int nargs,
+  int nresults,
 );
 
-@ffi.Native<
-  lua_Integer Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Int>)
->()
-external int lua_tointegerx(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Int> isnum,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_toboolean(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Int,
-    ffi.Pointer<ffi.Size>,
-  )
->()
-external ffi.Pointer<ffi.Char> lua_tolstring(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Size> len,
-);
-
-@ffi.Native<lua_Unsigned Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_rawlen(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<lua_CFunction Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external lua_CFunction lua_tocfunction(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external ffi.Pointer<ffi.Void> lua_touserdata(
-  ffi.Pointer<lua_State> L,
-  int idx,
-);
-
-@ffi.Native<ffi.Pointer<lua_State> Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external ffi.Pointer<lua_State> lua_tothread(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external ffi.Pointer<ffi.Void> lua_topointer(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_arith(ffi.Pointer<lua_State> L, int op);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external int lua_rawequal(ffi.Pointer<lua_State> L, int idx1, int idx2);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int, ffi.Int)
->()
-external int lua_compare(ffi.Pointer<lua_State> L, int idx1, int idx2, int op);
-
-/// push functions (C -> stack)
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
-external void lua_pushnil(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, lua_Number)>()
-external void lua_pushnumber(ffi.Pointer<lua_State> L, double n);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, lua_Integer)>()
-external void lua_pushinteger(ffi.Pointer<lua_State> L, int n);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Pointer<ffi.Char>,
-    ffi.Size,
-  )
->()
-external ffi.Pointer<ffi.Char> lua_pushlstring(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> s,
-  int len,
-);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Pointer<ffi.Char>,
-    ffi.Size,
-    lua_Alloc,
-    ffi.Pointer<ffi.Void>,
-  )
->()
-external ffi.Pointer<ffi.Char> lua_pushexternalstring(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> s,
-  int len,
-  lua_Alloc falloc,
-  ffi.Pointer<ffi.Void> ud,
-);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
->()
-external ffi.Pointer<ffi.Char> lua_pushstring(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> s,
-);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Pointer<ffi.Char>,
-    va_list$1,
-  )
->()
-external ffi.Pointer<ffi.Char> lua_pushvfstring(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> fmt,
-  va_list$1 argp,
-);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
->()
-external ffi.Pointer<ffi.Char> lua_pushfstring(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> fmt,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, lua_CFunction, ffi.Int)>()
-external void lua_pushcclosure(
-  ffi.Pointer<lua_State> L,
-  lua_CFunction fn,
-  int n,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_pushboolean(ffi.Pointer<lua_State> L, int b);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)>()
-external void lua_pushlightuserdata(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Void> p,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int lua_pushthread(ffi.Pointer<lua_State> L);
-
-/// get functions (Lua -> stack)
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
-external int lua_getglobal(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> name,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_gettable(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external int lua_getfield(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Char> k,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, lua_Integer)>()
-external int lua_geti(ffi.Pointer<lua_State> L, int idx, int n);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_rawget(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, lua_Integer)>()
-external int lua_rawgeti(ffi.Pointer<lua_State> L, int idx, int n);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
->()
-external int lua_rawgetp(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Void> p,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void lua_createtable(ffi.Pointer<lua_State> L, int narr, int nrec);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Size, ffi.Int)
->()
-external ffi.Pointer<ffi.Void> lua_newuserdatauv(
-  ffi.Pointer<lua_State> L,
-  int sz,
-  int nuvalue,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_getmetatable(ffi.Pointer<lua_State> L, int objindex);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external int lua_getiuservalue(ffi.Pointer<lua_State> L, int idx, int n);
-
-/// set functions (stack -> Lua)
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
-external void lua_setglobal(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> name,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_settable(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external void lua_setfield(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Char> k,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, lua_Integer)>()
-external void lua_seti(ffi.Pointer<lua_State> L, int idx, int n);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_rawset(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, lua_Integer)>()
-external void lua_rawseti(ffi.Pointer<lua_State> L, int idx, int n);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
->()
-external void lua_rawsetp(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Void> p,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_setmetatable(ffi.Pointer<lua_State> L, int objindex);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external int lua_setiuservalue(ffi.Pointer<lua_State> L, int idx, int n);
-
-/// 'load' and 'call' functions (load and run Lua code)
+/// lua_callk
 @ffi.Native<
   ffi.Void Function(
     ffi.Pointer<lua_State>,
     ffi.Int,
     ffi.Int,
-    lua_KContext,
-    lua_KFunction,
+    ffi.Int,
+    ffi.Pointer<ffi.Void>,
   )
 >()
-external void lua_callk(
+external void flutter_lua_bridge_callk(
   ffi.Pointer<lua_State> L,
   int nargs,
   int nresults,
   int ctx,
-  lua_KFunction k,
+  ffi.Pointer<ffi.Void> k,
 );
 
+/// lua_checkstack
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_checkstack(ffi.Pointer<lua_State> L, int n);
+
+/// lua_close
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void flutter_lua_bridge_close(ffi.Pointer<lua_State> L);
+
+/// lua_closeslot
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_closeslot(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_closethread
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridge_closethread(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<lua_State> from,
+);
+
+/// lua_compare
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int, ffi.Int)
+>()
+external int flutter_lua_bridge_compare(
+  ffi.Pointer<lua_State> L,
+  int idx1,
+  int idx2,
+  int op,
+);
+
+/// lua_concat
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_concat(ffi.Pointer<lua_State> L, int n);
+
+/// lua_copy
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void flutter_lua_bridge_copy(
+  ffi.Pointer<lua_State> L,
+  int fromidx,
+  int toidx,
+);
+
+/// lua_createtable
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void flutter_lua_bridge_createtable(
+  ffi.Pointer<lua_State> L,
+  int nseq,
+  int nrec,
+);
+
+/// lua_dump
 @ffi.Native<
   ffi.Int Function(
     ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Void>,
     ffi.Int,
-    ffi.Int,
-    ffi.Int,
-    lua_KContext,
-    lua_KFunction,
   )
 >()
-external int lua_pcallk(
+external int flutter_lua_bridge_dump(
   ffi.Pointer<lua_State> L,
-  int nargs,
-  int nresults,
-  int errfunc,
-  int ctx,
-  lua_KFunction k,
+  ffi.Pointer<ffi.Void> writer,
+  ffi.Pointer<ffi.Void> data,
+  int strip,
 );
 
+/// lua_error
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridge_error(ffi.Pointer<lua_State> L);
+
+/// lua_gc
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external int flutter_lua_bridge_gc(
+  ffi.Pointer<lua_State> L,
+  int what,
+  int data,
+);
+
+/// lua_getallocf
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Pointer<ffi.Void>>,
+  )
+>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_getallocf(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Pointer<ffi.Void>> ud,
+);
+
+/// lua_getextraspace
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>)>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_getextraspace(
+  ffi.Pointer<lua_State> L,
+);
+
+/// lua_getfield
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int flutter_lua_bridge_getfield(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Char> k,
+);
+
+/// lua_getglobal
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int flutter_lua_bridge_getglobal(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> name,
+);
+
+/// lua_gethook
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>)>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_gethook(
+  ffi.Pointer<lua_State> L,
+);
+
+/// lua_gethookcount
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridge_gethookcount(ffi.Pointer<lua_State> L);
+
+/// lua_gethookmask
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridge_gethookmask(ffi.Pointer<lua_State> L);
+
+/// lua_geti
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external int flutter_lua_bridge_geti(ffi.Pointer<lua_State> L, int idx, int n);
+
+/// lua_getinfo
 @ffi.Native<
   ffi.Int Function(
     ffi.Pointer<lua_State>,
-    lua_Reader,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external int flutter_lua_bridge_getinfo(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> what,
+  ffi.Pointer<ffi.Void> ar,
+);
+
+/// lua_getiuservalue
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void flutter_lua_bridge_getiuservalue(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  int n,
+);
+
+/// lua_getlocal
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+  )
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_getlocal(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> ar,
+  int n,
+);
+
+/// lua_getmetatable
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_getmetatable(
+  ffi.Pointer<lua_State> L,
+  int objindex,
+);
+
+/// lua_getstack
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
+>()
+external int flutter_lua_bridge_getstack(
+  ffi.Pointer<lua_State> L,
+  int level,
+  ffi.Pointer<ffi.Void> ar,
+);
+
+/// lua_gettable
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_gettable(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_gettop
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridge_gettop(ffi.Pointer<lua_State> L);
+
+/// lua_getupvalue
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_getupvalue(
+  ffi.Pointer<lua_State> L,
+  int funcindex,
+  int n,
+);
+
+/// lua_getuservalue
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_getuservalue(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_insert
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_insert(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isboolean
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isboolean(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_iscfunction
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_iscfunction(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isfunction
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isfunction(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isinteger
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isinteger(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_islightuserdata
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_islightuserdata(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+/// lua_isnil
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isnil(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isnone
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isnone(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isnoneornil
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isnoneornil(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isnumber
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isnumber(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isstring
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isstring(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_istable
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_istable(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isthread
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isthread(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isuserdata
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_isuserdata(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_isyieldable
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridge_isyieldable(ffi.Pointer<lua_State> L);
+
+/// lua_len
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_len(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_load
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
     ffi.Pointer<ffi.Void>,
     ffi.Pointer<ffi.Char>,
     ffi.Pointer<ffi.Char>,
   )
 >()
-external int lua_load(
+external int flutter_lua_bridge_load(
   ffi.Pointer<lua_State> L,
-  lua_Reader reader,
+  ffi.Pointer<ffi.Void> reader,
   ffi.Pointer<ffi.Void> dt,
   ffi.Pointer<ffi.Char> chunkname,
   ffi.Pointer<ffi.Char> mode,
 );
 
+/// lua_newstate
+@ffi.Native<
+  ffi.Pointer<lua_State> Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>)
+>()
+external ffi.Pointer<lua_State> flutter_lua_bridge_newstate(
+  ffi.Pointer<ffi.Void> f,
+  ffi.Pointer<ffi.Void> ud,
+);
+
+/// lua_newtable
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void flutter_lua_bridge_newtable(ffi.Pointer<lua_State> L);
+
+/// lua_newthread
+@ffi.Native<ffi.Pointer<lua_State> Function(ffi.Pointer<lua_State>)>()
+external ffi.Pointer<lua_State> flutter_lua_bridge_newthread(
+  ffi.Pointer<lua_State> L,
+);
+
+/// lua_newuserdata
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Size)>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_newuserdata(
+  ffi.Pointer<lua_State> L,
+  int sz,
+);
+
+/// lua_newuserdatauv
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Size, ffi.Int)
+>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_newuserdatauv(
+  ffi.Pointer<lua_State> L,
+  int sz,
+  int nuvalue,
+);
+
+/// lua_next
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_next(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_numbertocstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Double,
+    ffi.Pointer<ffi.Size>,
+  )
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_numbertocstring(
+  ffi.Pointer<lua_State> L,
+  double n,
+  ffi.Pointer<ffi.Size> len,
+);
+
+/// lua_numbertointeger
+@ffi.Native<ffi.Int Function(ffi.Double, ffi.Pointer<ffi.Int64>)>()
+external int flutter_lua_bridge_numbertointeger(
+  double n,
+  ffi.Pointer<ffi.Int64> p,
+);
+
+/// lua_pcall
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int, ffi.Int)
+>()
+external int flutter_lua_bridge_pcall(
+  ffi.Pointer<lua_State> L,
+  int nargs,
+  int nresults,
+  int errfunc,
+);
+
+/// lua_pcallk
 @ffi.Native<
   ffi.Int Function(
     ffi.Pointer<lua_State>,
-    lua_Writer,
-    ffi.Pointer<ffi.Void>,
     ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<ffi.Void>,
   )
 >()
-external int lua_dump(
+external int flutter_lua_bridge_pcallk(
   ffi.Pointer<lua_State> L,
-  lua_Writer writer,
-  ffi.Pointer<ffi.Void> data,
-  int strip,
-);
-
-/// coroutine functions
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, lua_KContext, lua_KFunction)
->()
-external int lua_yieldk(
-  ffi.Pointer<lua_State> L,
+  int nargs,
   int nresults,
+  int errfunc,
   int ctx,
-  lua_KFunction k,
+  ffi.Pointer<ffi.Void> k,
 );
 
+/// lua_pop
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_pop(ffi.Pointer<lua_State> L, int n);
+
+/// lua_pushboolean
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_pushboolean(ffi.Pointer<lua_State> L, int b);
+
+/// lua_pushcclosure
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>, ffi.Int)
+>()
+external void flutter_lua_bridge_pushcclosure(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> fn,
+  int n,
+);
+
+/// lua_pushcfunction
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)>()
+external void flutter_lua_bridge_pushcfunction(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> f,
+);
+
+/// lua_pushexternalstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Size,
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_pushexternalstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+  int len,
+  ffi.Pointer<ffi.Void> falloc,
+  ffi.Pointer<ffi.Void> ud,
+);
+
+/// lua_pushfstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_pushfstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> fmt,
+);
+
+/// lua_pushglobaltable
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void flutter_lua_bridge_pushglobaltable(ffi.Pointer<lua_State> L);
+
+/// lua_pushinteger
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int64)>()
+external void flutter_lua_bridge_pushinteger(ffi.Pointer<lua_State> L, int n);
+
+/// lua_pushlightuserdata
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)>()
+external void flutter_lua_bridge_pushlightuserdata(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> p,
+);
+
+/// lua_pushliteral
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_pushliteral(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+/// lua_pushlstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Size,
+  )
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_pushlstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+  int len,
+);
+
+/// lua_pushnil
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void flutter_lua_bridge_pushnil(ffi.Pointer<lua_State> L);
+
+/// lua_pushnumber
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Double)>()
+external void flutter_lua_bridge_pushnumber(ffi.Pointer<lua_State> L, double n);
+
+/// lua_pushstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_pushstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+/// lua_pushthread
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridge_pushthread(ffi.Pointer<lua_State> L);
+
+/// lua_pushvalue
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_pushvalue(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_pushvfstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_pushvfstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> fmt,
+);
+
+/// lua_rawequal
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external int flutter_lua_bridge_rawequal(
+  ffi.Pointer<lua_State> L,
+  int idx1,
+  int idx2,
+);
+
+/// lua_rawget
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_rawget(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_rawgeti
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external int flutter_lua_bridge_rawgeti(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  int n,
+);
+
+/// lua_rawgetp
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
+>()
+external int flutter_lua_bridge_rawgetp(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Void> p,
+);
+
+/// lua_rawlen
+@ffi.Native<ffi.Size Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_rawlen(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_rawset
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_rawset(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_rawseti
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external void flutter_lua_bridge_rawseti(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  int n,
+);
+
+/// lua_rawsetp
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Void>)
+>()
+external void flutter_lua_bridge_rawsetp(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Void> p,
+);
+
+/// lua_register
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external void flutter_lua_bridge_register(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> n,
+  ffi.Pointer<ffi.Void> f,
+);
+
+/// lua_remove
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_remove(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_replace
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_replace(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_resetthread
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridge_resetthread(ffi.Pointer<lua_State> L);
+
+/// lua_resume
 @ffi.Native<
   ffi.Int Function(
     ffi.Pointer<lua_State>,
@@ -439,179 +662,266 @@ external int lua_yieldk(
     ffi.Pointer<ffi.Int>,
   )
 >()
-external int lua_resume(
+external int flutter_lua_bridge_resume(
   ffi.Pointer<lua_State> L,
   ffi.Pointer<lua_State> from,
   int narg,
   ffi.Pointer<ffi.Int> nres,
 );
 
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int lua_status(ffi.Pointer<lua_State> L);
+/// lua_rotate
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void flutter_lua_bridge_rotate(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  int n,
+);
 
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int lua_isyieldable(ffi.Pointer<lua_State> L);
-
-/// Warning-related functions
+/// lua_setallocf
 @ffi.Native<
   ffi.Void Function(
     ffi.Pointer<lua_State>,
-    lua_WarnFunction,
+    ffi.Pointer<ffi.Void>,
     ffi.Pointer<ffi.Void>,
   )
 >()
-external void lua_setwarnf(
+external void flutter_lua_bridge_setallocf(
   ffi.Pointer<lua_State> L,
-  lua_WarnFunction f,
+  ffi.Pointer<ffi.Void> f,
   ffi.Pointer<ffi.Void> ud,
 );
 
+/// lua_setfield
 @ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>, ffi.Int)
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
 >()
-external void lua_warning(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> msg,
-  int tocont,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_gc(ffi.Pointer<lua_State> L, int what);
-
-/// miscellaneous functions
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int lua_error(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int lua_next(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_concat(ffi.Pointer<lua_State> L, int n);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_len(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<
-  ffi.UnsignedInt Function(
-    ffi.Pointer<lua_State>,
-    ffi.Int,
-    ffi.Pointer<ffi.Char>,
-  )
->()
-external int lua_numbertocstring(
+external void flutter_lua_bridge_setfield(
   ffi.Pointer<lua_State> L,
   int idx,
-  ffi.Pointer<ffi.Char> buff,
+  ffi.Pointer<ffi.Char> k,
 );
 
+/// lua_setglobal
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external void flutter_lua_bridge_setglobal(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> name,
+);
+
+/// lua_sethook
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+    ffi.Int,
+  )
+>()
+external void flutter_lua_bridge_sethook(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> func,
+  int mask,
+  int count,
+);
+
+/// lua_seti
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external void flutter_lua_bridge_seti(ffi.Pointer<lua_State> L, int idx, int n);
+
+/// lua_setiuservalue
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void flutter_lua_bridge_setiuservalue(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  int n,
+);
+
+/// lua_setlocal
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+  )
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_setlocal(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> ar,
+  int n,
+);
+
+/// lua_setmetatable
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_setmetatable(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+/// lua_settable
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_settable(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_settop
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_settop(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_setupvalue
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_setupvalue(
+  ffi.Pointer<lua_State> L,
+  int funcindex,
+  int n,
+);
+
+/// lua_setuservalue
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridge_setuservalue(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+/// lua_setwarnf
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external void flutter_lua_bridge_setwarnf(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> f,
+  ffi.Pointer<ffi.Void> ud,
+);
+
+/// lua_status
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridge_status(ffi.Pointer<lua_State> L);
+
+/// lua_stringtonumber
 @ffi.Native<ffi.Size Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
-external int lua_stringtonumber(
+external int flutter_lua_bridge_stringtonumber(
   ffi.Pointer<lua_State> L,
   ffi.Pointer<ffi.Char> s,
 );
 
-@ffi.Native<
-  lua_Alloc Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Pointer<ffi.Void>>)
->()
-external lua_Alloc lua_getallocf(
+/// lua_toboolean
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_toboolean(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_tocfunction
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_tocfunction(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Pointer<ffi.Void>> ud,
+  int idx,
 );
 
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, lua_Alloc, ffi.Pointer<ffi.Void>)
->()
-external void lua_setallocf(
-  ffi.Pointer<lua_State> L,
-  lua_Alloc f,
-  ffi.Pointer<ffi.Void> ud,
-);
-
+/// lua_toclose
 @ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_toclose(ffi.Pointer<lua_State> L, int idx);
+external void flutter_lua_bridge_toclose(ffi.Pointer<lua_State> L, int idx);
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void lua_closeslot(ffi.Pointer<lua_State> L, int idx);
+/// lua_tointeger
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_tointeger(ffi.Pointer<lua_State> L, int idx);
 
+/// lua_tointegerx
 @ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<lua_Debug>)
+  ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Int>)
 >()
-external int lua_getstack(
+external int flutter_lua_bridge_tointegerx(
   ffi.Pointer<lua_State> L,
-  int level,
-  ffi.Pointer<lua_Debug> ar,
+  int idx,
+  ffi.Pointer<ffi.Int> isnum,
 );
 
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<lua_State>,
-    ffi.Pointer<ffi.Char>,
-    ffi.Pointer<lua_Debug>,
-  )
->()
-external int lua_getinfo(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> what,
-  ffi.Pointer<lua_Debug> ar,
-);
-
+/// lua_tolstring
 @ffi.Native<
   ffi.Pointer<ffi.Char> Function(
     ffi.Pointer<lua_State>,
-    ffi.Pointer<lua_Debug>,
     ffi.Int,
+    ffi.Pointer<ffi.Size>,
   )
 >()
-external ffi.Pointer<ffi.Char> lua_getlocal(
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_tolstring(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<lua_Debug> ar,
-  int n,
+  int idx,
+  ffi.Pointer<ffi.Size> len,
 );
 
+/// lua_tonumber
+@ffi.Native<ffi.Double Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external double flutter_lua_bridge_tonumber(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_tonumberx
 @ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Pointer<lua_Debug>,
-    ffi.Int,
-  )
+  ffi.Double Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Int>)
 >()
-external ffi.Pointer<ffi.Char> lua_setlocal(
+external double flutter_lua_bridge_tonumberx(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<lua_Debug> ar,
-  int n,
+  int idx,
+  ffi.Pointer<ffi.Int> isnum,
 );
 
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
->()
-external ffi.Pointer<ffi.Char> lua_getupvalue(
+/// lua_topointer
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_topointer(
   ffi.Pointer<lua_State> L,
-  int funcindex,
-  int n,
+  int idx,
 );
 
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
->()
-external ffi.Pointer<ffi.Char> lua_setupvalue(
+/// lua_tostring
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_tostring(
   ffi.Pointer<lua_State> L,
-  int funcindex,
-  int n,
+  int idx,
 );
 
+/// lua_tothread
+@ffi.Native<ffi.Pointer<lua_State> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<lua_State> flutter_lua_bridge_tothread(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+/// lua_touserdata
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_touserdata(
+  ffi.Pointer<lua_State> L,
+  int idx,
+);
+
+/// lua_type
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_type(ffi.Pointer<lua_State> L, int idx);
+
+/// lua_typename
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridge_typename(
+  ffi.Pointer<lua_State> L,
+  int tp,
+);
+
+/// lua_upvalueid
 @ffi.Native<
   ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)
 >()
-external ffi.Pointer<ffi.Void> lua_upvalueid(
+external ffi.Pointer<ffi.Void> flutter_lua_bridge_upvalueid(
   ffi.Pointer<lua_State> L,
   int fidx,
   int n,
 );
 
+/// lua_upvalueindex
+@ffi.Native<ffi.Int Function(ffi.Int)>()
+external int flutter_lua_bridge_upvalueindex(int i);
+
+/// lua_upvaluejoin
 @ffi.Native<
   ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int, ffi.Int, ffi.Int)
 >()
-external void lua_upvaluejoin(
+external void flutter_lua_bridge_upvaluejoin(
   ffi.Pointer<lua_State> L,
   int fidx1,
   int n1,
@@ -619,812 +929,96 @@ external void lua_upvaluejoin(
   int n2,
 );
 
+/// lua_version
+@ffi.Native<ffi.Double Function(ffi.Pointer<lua_State>)>()
+external double flutter_lua_bridge_version(ffi.Pointer<lua_State> L);
+
+/// lua_warning
 @ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, lua_Hook, ffi.Int, ffi.Int)
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>, ffi.Int)
 >()
-external void lua_sethook(
+external void flutter_lua_bridge_warning(
   ffi.Pointer<lua_State> L,
-  lua_Hook func,
-  int mask,
-  int count,
-);
-
-@ffi.Native<lua_Hook Function(ffi.Pointer<lua_State>)>()
-external lua_Hook lua_gethook(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int lua_gethookmask(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int lua_gethookcount(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_base(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_package(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_coroutine(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_debug(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_io(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_math(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_os(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_string(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_table(ffi.Pointer<lua_State> L);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>)>()
-external int luaopen_utf8(ffi.Pointer<lua_State> L);
-
-/// open selected libraries
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void luaL_openselectedlibs(
-  ffi.Pointer<lua_State> L,
-  int load,
-  int preload,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Int,
-    ffi.Pointer<ffi.Char>,
-    ffi.Int,
-    ffi.Pointer<ffi.Char>,
-  )
->()
-external int renameat(
-  int arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  int arg2,
-  ffi.Pointer<ffi.Char> arg3,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<ffi.Char>,
-    ffi.Pointer<ffi.Char>,
-    ffi.UnsignedInt,
-  )
->()
-external int renamex_np(
-  ffi.Pointer<ffi.Char> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  int arg2,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Int,
-    ffi.Pointer<ffi.Char>,
-    ffi.Int,
-    ffi.Pointer<ffi.Char>,
-    ffi.UnsignedInt,
-  )
->()
-external int renameatx_np(
-  int arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  int arg2,
-  ffi.Pointer<ffi.Char> arg3,
-  int arg4,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>)>()
-external int printf(ffi.Pointer<ffi.Char> arg0);
-
-@ffi.Native<ffi.Pointer<FILE>>()
-external ffi.Pointer<FILE> __stdinp;
-
-@ffi.Native<ffi.Pointer<FILE>>()
-external ffi.Pointer<FILE> __stdoutp;
-
-@ffi.Native<ffi.Pointer<FILE>>()
-external ffi.Pointer<FILE> __stderrp;
-
-/// ANSI-C
-@ffi.Native<ffi.Void Function(ffi.Pointer<FILE>)>()
-external void clearerr(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int fclose(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int feof(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int ferror(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int fflush(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int fgetc(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>, ffi.Pointer<fpos_t>)>()
-external int fgetpos(ffi.Pointer<FILE> arg0, ffi.Pointer<fpos_t> arg1);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<ffi.Char>,
-    ffi.Int,
-    ffi.Pointer<FILE>,
-  )
->()
-external ffi.Pointer<ffi.Char> fgets(
-  ffi.Pointer<ffi.Char> arg0,
-  int __size,
-  ffi.Pointer<FILE> arg2,
-);
-
-@ffi.Native<
-  ffi.Pointer<FILE> Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
->()
-external ffi.Pointer<FILE> fopen(
-  ffi.Pointer<ffi.Char> __filename,
-  ffi.Pointer<ffi.Char> __mode,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Char>)>()
-external int fprintf(ffi.Pointer<FILE> arg0, ffi.Pointer<ffi.Char> arg1);
-
-@ffi.Native<ffi.Int Function(ffi.Int, ffi.Pointer<FILE>)>()
-external int fputc(int arg0, ffi.Pointer<FILE> arg1);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<FILE>)>()
-external int fputs(ffi.Pointer<ffi.Char> arg0, ffi.Pointer<FILE> arg1);
-
-@ffi.Native<
-  ffi.Pointer<FILE> Function(
-    ffi.Pointer<ffi.Char>,
-    ffi.Pointer<ffi.Char>,
-    ffi.Pointer<FILE>,
-  )
->()
-external ffi.Pointer<FILE> freopen(
-  ffi.Pointer<ffi.Char> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  ffi.Pointer<FILE> arg2,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Char>)>()
-external int fscanf(ffi.Pointer<FILE> arg0, ffi.Pointer<ffi.Char> arg1);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>, ffi.Long, ffi.Int)>()
-external int fseek(ffi.Pointer<FILE> arg0, int arg1, int arg2);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>, ffi.Pointer<fpos_t>)>()
-external int fsetpos(ffi.Pointer<FILE> arg0, ffi.Pointer<fpos_t> arg1);
-
-@ffi.Native<ffi.Long Function(ffi.Pointer<FILE>)>()
-external int ftell(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int getc(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function()>()
-external int getchar();
-
-@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>()
-external ffi.Pointer<ffi.Char> gets(ffi.Pointer<ffi.Char> arg0);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Char>)>()
-external void perror(ffi.Pointer<ffi.Char> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Int, ffi.Pointer<FILE>)>()
-external int putc(int arg0, ffi.Pointer<FILE> arg1);
-
-@ffi.Native<ffi.Int Function(ffi.Int)>()
-external int putchar(int arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>)>()
-external int puts(ffi.Pointer<ffi.Char> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>)>()
-external int remove(ffi.Pointer<ffi.Char> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)>()
-external int rename(ffi.Pointer<ffi.Char> __old, ffi.Pointer<ffi.Char> __new);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<FILE>)>()
-external void rewind(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>)>()
-external int scanf(ffi.Pointer<ffi.Char> arg0);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Char>)>()
-external void setbuf(ffi.Pointer<FILE> arg0, ffi.Pointer<ffi.Char> arg1);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Char>, ffi.Int, ffi.Size)
->()
-external int setvbuf(
-  ffi.Pointer<FILE> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  int arg2,
-  int __size,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)>()
-external int sprintf(ffi.Pointer<ffi.Char> arg0, ffi.Pointer<ffi.Char> arg1);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)>()
-external int sscanf(ffi.Pointer<ffi.Char> arg0, ffi.Pointer<ffi.Char> arg1);
-
-@ffi.Native<ffi.Pointer<FILE> Function()>()
-external ffi.Pointer<FILE> tmpfile();
-
-@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>()
-external ffi.Pointer<ffi.Char> tmpnam(ffi.Pointer<ffi.Char> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Int, ffi.Pointer<FILE>)>()
-external int ungetc(int arg0, ffi.Pointer<FILE> arg1);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Char>, va_list)
->()
-external int vfprintf(
-  ffi.Pointer<FILE> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  va_list arg2,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>, va_list)>()
-external int vprintf(ffi.Pointer<ffi.Char> arg0, va_list arg1);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, va_list)
->()
-external int vsprintf(
-  ffi.Pointer<ffi.Char> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  va_list arg2,
-);
-
-@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>()
-external ffi.Pointer<ffi.Char> ctermid(ffi.Pointer<ffi.Char> arg0);
-
-@ffi.Native<ffi.Pointer<FILE> Function(ffi.Int, ffi.Pointer<ffi.Char>)>()
-external ffi.Pointer<FILE> fdopen(int arg0, ffi.Pointer<ffi.Char> arg1);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int fileno(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int pclose(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<
-  ffi.Pointer<FILE> Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
->()
-external ffi.Pointer<FILE> popen(
-  ffi.Pointer<ffi.Char> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-);
-
-/// Functions internal to the implementation.
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int __srget(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Char>, va_list)
->()
-external int __svfscanf(
-  ffi.Pointer<FILE> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  va_list arg2,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Int, ffi.Pointer<FILE>)>()
-external int __swbuf(int arg0, ffi.Pointer<FILE> arg1);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<FILE>)>()
-external void flockfile(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int ftrylockfile(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<FILE>)>()
-external void funlockfile(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int getc_unlocked(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function()>()
-external int getchar_unlocked();
-
-@ffi.Native<ffi.Int Function(ffi.Int, ffi.Pointer<FILE>)>()
-external int putc_unlocked(int arg0, ffi.Pointer<FILE> arg1);
-
-@ffi.Native<ffi.Int Function(ffi.Int)>()
-external int putchar_unlocked(int arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int getw(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<ffi.Int Function(ffi.Int, ffi.Pointer<FILE>)>()
-external int putw(int arg0, ffi.Pointer<FILE> arg1);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
->()
-external ffi.Pointer<ffi.Char> tempnam(
-  ffi.Pointer<ffi.Char> __dir,
-  ffi.Pointer<ffi.Char> __prefix,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>, off_t, ffi.Int)>()
-external int fseeko(ffi.Pointer<FILE> __stream, int __offset, int __whence);
-
-@ffi.Native<off_t Function(ffi.Pointer<FILE>)>()
-external int ftello(ffi.Pointer<FILE> __stream);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<ffi.Char>, ffi.Size, ffi.Pointer<ffi.Char>)
->()
-external int snprintf(
-  ffi.Pointer<ffi.Char> __str,
-  int __size,
-  ffi.Pointer<ffi.Char> __format,
-);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Char>, va_list)
->()
-external int vfscanf(
-  ffi.Pointer<FILE> __stream,
-  ffi.Pointer<ffi.Char> __format,
-  va_list arg2,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Char>, va_list)>()
-external int vscanf(ffi.Pointer<ffi.Char> __format, va_list arg1);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<ffi.Char>,
-    ffi.Size,
-    ffi.Pointer<ffi.Char>,
-    va_list,
-  )
->()
-external int vsnprintf(
-  ffi.Pointer<ffi.Char> __str,
-  int __size,
-  ffi.Pointer<ffi.Char> __format,
-  va_list arg3,
-);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, va_list)
->()
-external int vsscanf(
-  ffi.Pointer<ffi.Char> __str,
-  ffi.Pointer<ffi.Char> __format,
-  va_list arg2,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Int, ffi.Pointer<ffi.Char>)>()
-external int dprintf(int arg0, ffi.Pointer<ffi.Char> arg1);
-
-@ffi.Native<ffi.Int Function(ffi.Int, ffi.Pointer<ffi.Char>, va_list)>()
-external int vdprintf(int arg0, ffi.Pointer<ffi.Char> arg1, va_list arg2);
-
-@ffi.Native<
-  ssize_t Function(
-    ffi.Pointer<ffi.Pointer<ffi.Char>>,
-    ffi.Pointer<ffi.Size>,
-    ffi.Int,
-    ffi.Pointer<FILE>,
-  )
->()
-external int getdelim(
-  ffi.Pointer<ffi.Pointer<ffi.Char>> __linep,
-  ffi.Pointer<ffi.Size> __linecapp,
-  int __delimiter,
-  ffi.Pointer<FILE> __stream,
-);
-
-@ffi.Native<
-  ssize_t Function(
-    ffi.Pointer<ffi.Pointer<ffi.Char>>,
-    ffi.Pointer<ffi.Size>,
-    ffi.Pointer<FILE>,
-  )
->()
-external int getline(
-  ffi.Pointer<ffi.Pointer<ffi.Char>> __linep,
-  ffi.Pointer<ffi.Size> __linecapp,
-  ffi.Pointer<FILE> __stream,
-);
-
-@ffi.Native<
-  ffi.Pointer<FILE> Function(
-    ffi.Pointer<ffi.Void>,
-    ffi.Size,
-    ffi.Pointer<ffi.Char>,
-  )
->()
-external ffi.Pointer<FILE> fmemopen(
-  ffi.Pointer<ffi.Void> __buf,
-  int __size,
-  ffi.Pointer<ffi.Char> __mode,
-);
-
-@ffi.Native<
-  ffi.Pointer<FILE> Function(
-    ffi.Pointer<ffi.Pointer<ffi.Char>>,
-    ffi.Pointer<ffi.Size>,
-  )
->()
-external ffi.Pointer<FILE> open_memstream(
-  ffi.Pointer<ffi.Pointer<ffi.Char>> __bufp,
-  ffi.Pointer<ffi.Size> __sizep,
-);
-
-/// perror(3) external variables
-@ffi.Native<ffi.Int>()
-external final int sys_nerr;
-
-@ffi.Native<ffi.Pointer<ffi.Pointer<ffi.Char>>>()
-external ffi.Pointer<ffi.Pointer<ffi.Char>> sys_errlist;
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<ffi.Pointer<ffi.Char>>, ffi.Pointer<ffi.Char>)
->()
-external int asprintf(
-  ffi.Pointer<ffi.Pointer<ffi.Char>> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-);
-
-@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>()
-external ffi.Pointer<ffi.Char> ctermid_r(ffi.Pointer<ffi.Char> arg0);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Size>)
->()
-external ffi.Pointer<ffi.Char> fgetln(
-  ffi.Pointer<FILE> arg0,
-  ffi.Pointer<ffi.Size> __len,
-);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
->()
-external ffi.Pointer<ffi.Char> fmtcheck(
-  ffi.Pointer<ffi.Char> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int fpurge(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<FILE>, ffi.Pointer<ffi.Char>, ffi.Int)
->()
-external void setbuffer(
-  ffi.Pointer<FILE> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  int __size,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<FILE>)>()
-external int setlinebuf(ffi.Pointer<FILE> arg0);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<ffi.Pointer<ffi.Char>>,
-    ffi.Pointer<ffi.Char>,
-    va_list,
-  )
->()
-external int vasprintf(
-  ffi.Pointer<ffi.Pointer<ffi.Char>> arg0,
-  ffi.Pointer<ffi.Char> arg1,
-  va_list arg2,
-);
-
-/// Stdio function-access interface.
-@ffi.Native<
-  ffi.Pointer<FILE> Function(
-    ffi.Pointer<ffi.Void>,
-    ffi.Pointer<
-      ffi.NativeFunction<
-        ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)
-      >
-    >,
-    ffi.Pointer<
-      ffi.NativeFunction<
-        ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)
-      >
-    >,
-    ffi.Pointer<
-      ffi.NativeFunction<
-        fpos_t Function(ffi.Pointer<ffi.Void>, fpos_t, ffi.Int)
-      >
-    >,
-    ffi.Pointer<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<ffi.Void>)>>,
-  )
->()
-external ffi.Pointer<FILE> funopen(
-  ffi.Pointer<ffi.Void> arg0,
-  ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)
-    >
-  >
-  arg1,
-  ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)
-    >
-  >
-  arg2,
-  ffi.Pointer<
-    ffi.NativeFunction<fpos_t Function(ffi.Pointer<ffi.Void>, fpos_t, ffi.Int)>
-  >
-  arg3,
-  ffi.Pointer<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<ffi.Void>)>> arg4,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<ffi.Char>,
-    ffi.Size,
-    ffi.Int,
-    ffi.Size,
-    ffi.Pointer<ffi.Char>,
-  )
->()
-external int __snprintf_chk(
-  ffi.Pointer<ffi.Char> arg0,
-  int __maxlen,
-  int arg2,
-  int arg3,
-  ffi.Pointer<ffi.Char> arg4,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<ffi.Char>,
-    ffi.Size,
-    ffi.Int,
-    ffi.Size,
-    ffi.Pointer<ffi.Char>,
-    va_list,
-  )
->()
-external int __vsnprintf_chk(
-  ffi.Pointer<ffi.Char> arg0,
-  int __maxlen,
-  int arg2,
-  int arg3,
-  ffi.Pointer<ffi.Char> arg4,
-  va_list arg5,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<ffi.Char>,
-    ffi.Int,
-    ffi.Size,
-    ffi.Pointer<ffi.Char>,
-  )
->()
-external int __sprintf_chk(
-  ffi.Pointer<ffi.Char> arg0,
-  int arg1,
-  int arg2,
-  ffi.Pointer<ffi.Char> arg3,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<ffi.Char>,
-    ffi.Int,
-    ffi.Size,
-    ffi.Pointer<ffi.Char>,
-    va_list,
-  )
->()
-external int __vsprintf_chk(
-  ffi.Pointer<ffi.Char> arg0,
-  int arg1,
-  int arg2,
-  ffi.Pointer<ffi.Char> arg3,
-  va_list arg4,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, lua_Number, ffi.Size)>()
-external void luaL_checkversion_(ffi.Pointer<lua_State> L, double ver, int sz);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external int luaL_getmetafield(
-  ffi.Pointer<lua_State> L,
-  int obj,
-  ffi.Pointer<ffi.Char> e,
-);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external int luaL_callmeta(
-  ffi.Pointer<lua_State> L,
-  int obj,
-  ffi.Pointer<ffi.Char> e,
-);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Int,
-    ffi.Pointer<ffi.Size>,
-  )
->()
-external ffi.Pointer<ffi.Char> luaL_tolstring(
-  ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Size> len,
-);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external int luaL_argerror(
-  ffi.Pointer<lua_State> L,
-  int arg,
-  ffi.Pointer<ffi.Char> extramsg,
-);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external int luaL_typeerror(
-  ffi.Pointer<lua_State> L,
-  int arg,
-  ffi.Pointer<ffi.Char> tname,
-);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Int,
-    ffi.Pointer<ffi.Size>,
-  )
->()
-external ffi.Pointer<ffi.Char> luaL_checklstring(
-  ffi.Pointer<lua_State> L,
-  int arg,
-  ffi.Pointer<ffi.Size> l,
-);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Int,
-    ffi.Pointer<ffi.Char>,
-    ffi.Pointer<ffi.Size>,
-  )
->()
-external ffi.Pointer<ffi.Char> luaL_optlstring(
-  ffi.Pointer<lua_State> L,
-  int arg,
-  ffi.Pointer<ffi.Char> def,
-  ffi.Pointer<ffi.Size> l,
-);
-
-@ffi.Native<lua_Number Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external double luaL_checknumber(ffi.Pointer<lua_State> L, int arg);
-
-@ffi.Native<lua_Number Function(ffi.Pointer<lua_State>, ffi.Int, lua_Number)>()
-external double luaL_optnumber(ffi.Pointer<lua_State> L, int arg, double def);
-
-@ffi.Native<lua_Integer Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int luaL_checkinteger(ffi.Pointer<lua_State> L, int arg);
-
-@ffi.Native<
-  lua_Integer Function(ffi.Pointer<lua_State>, ffi.Int, lua_Integer)
->()
-external int luaL_optinteger(ffi.Pointer<lua_State> L, int arg, int def);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external void luaL_checkstack(
-  ffi.Pointer<lua_State> L,
-  int sz,
   ffi.Pointer<ffi.Char> msg,
+  int tocont,
 );
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void luaL_checktype(ffi.Pointer<lua_State> L, int arg, int t);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void luaL_checkany(ffi.Pointer<lua_State> L, int arg);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
-external int luaL_newmetatable(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> tname,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
-external void luaL_setmetatable(
-  ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> tname,
-);
-
+/// lua_xmove
 @ffi.Native<
-  ffi.Pointer<ffi.Void> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Int,
-    ffi.Pointer<ffi.Char>,
-  )
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<lua_State>, ffi.Int)
 >()
-external ffi.Pointer<ffi.Void> luaL_testudata(
-  ffi.Pointer<lua_State> L,
-  int ud,
-  ffi.Pointer<ffi.Char> tname,
+external void flutter_lua_bridge_xmove(
+  ffi.Pointer<lua_State> from,
+  ffi.Pointer<lua_State> to,
+  int n,
 );
 
-@ffi.Native<
-  ffi.Pointer<ffi.Void> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Int,
-    ffi.Pointer<ffi.Char>,
-  )
->()
-external ffi.Pointer<ffi.Void> luaL_checkudata(
-  ffi.Pointer<lua_State> L,
-  int ud,
-  ffi.Pointer<ffi.Char> tname,
-);
+/// lua_yield
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridge_yield(ffi.Pointer<lua_State> L, int nresults);
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external void luaL_where(ffi.Pointer<lua_State> L, int lvl);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
-external int luaL_error(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> fmt);
-
+/// lua_yieldk
 @ffi.Native<
   ffi.Int Function(
     ffi.Pointer<lua_State>,
     ffi.Int,
-    ffi.Pointer<ffi.Char>,
-    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.Int,
+    ffi.Pointer<ffi.Void>,
   )
 >()
-external int luaL_checkoption(
+external int flutter_lua_bridge_yieldk(
   ffi.Pointer<lua_State> L,
-  int arg,
-  ffi.Pointer<ffi.Char> def,
-  ffi.Pointer<ffi.Pointer<ffi.Char>> lst,
+  int nresults,
+  int ctx,
+  ffi.Pointer<ffi.Void> k,
 );
 
+/// luaL_addchar
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Char)>()
+external void flutter_lua_bridgeL_addchar(ffi.Pointer<ffi.Void> B, int c);
+
+/// luaL_addgsub
 @ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+  ffi.Void Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+  )
 >()
-external int luaL_fileresult(
-  ffi.Pointer<lua_State> L,
-  int stat,
-  ffi.Pointer<ffi.Char> fname,
+external void flutter_lua_bridgeL_addgsub(
+  ffi.Pointer<ffi.Void> B,
+  ffi.Pointer<ffi.Char> s,
+  ffi.Pointer<ffi.Char> p,
+  ffi.Pointer<ffi.Char> r,
 );
 
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int luaL_execresult(ffi.Pointer<lua_State> L, int stat);
+/// luaL_addlstring
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Size)
+>()
+external void flutter_lua_bridgeL_addlstring(
+  ffi.Pointer<ffi.Void> B,
+  ffi.Pointer<ffi.Char> s,
+  int l,
+);
 
+/// luaL_addsize
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Size)>()
+external void flutter_lua_bridgeL_addsize(ffi.Pointer<ffi.Void> B, int n);
+
+/// luaL_addstring
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>)>()
+external void flutter_lua_bridgeL_addstring(
+  ffi.Pointer<ffi.Void> B,
+  ffi.Pointer<ffi.Char> s,
+);
+
+/// luaL_addvalue
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
+external void flutter_lua_bridgeL_addvalue(ffi.Pointer<ffi.Void> B);
+
+/// luaL_alloc
 @ffi.Native<
   ffi.Pointer<ffi.Void> Function(
     ffi.Pointer<ffi.Void>,
@@ -1433,32 +1027,290 @@ external int luaL_execresult(ffi.Pointer<lua_State> L, int stat);
     ffi.Size,
   )
 >()
-external ffi.Pointer<ffi.Void> luaL_alloc(
+external ffi.Pointer<ffi.Void> flutter_lua_bridgeL_alloc(
   ffi.Pointer<ffi.Void> ud,
   ffi.Pointer<ffi.Void> ptr,
   int osize,
   int nsize,
 );
 
-@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int luaL_ref(ffi.Pointer<lua_State> L, int t);
+/// luaL_argcheck
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external void flutter_lua_bridgeL_argcheck(
+  ffi.Pointer<lua_State> L,
+  int cond,
+  int arg,
+  ffi.Pointer<ffi.Char> extramsg,
+);
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
-external void luaL_unref(ffi.Pointer<lua_State> L, int t, int ref);
+/// luaL_argerror
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int flutter_lua_bridgeL_argerror(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  ffi.Pointer<ffi.Char> extramsg,
+);
 
+/// luaL_argexpected
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external void flutter_lua_bridgeL_argexpected(
+  ffi.Pointer<lua_State> L,
+  int cond,
+  int arg,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+/// luaL_buffaddr
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Void>)>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_buffaddr(
+  ffi.Pointer<ffi.Void> B,
+);
+
+/// luaL_buffinit
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>)>()
+external void flutter_lua_bridgeL_buffinit(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> B,
+);
+
+/// luaL_buffinitsize
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Size,
+  )
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_buffinitsize(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> B,
+  int sz,
+);
+
+/// luaL_bufflen
+@ffi.Native<ffi.Size Function(ffi.Pointer<ffi.Void>)>()
+external int flutter_lua_bridgeL_bufflen(ffi.Pointer<ffi.Void> B);
+
+/// luaL_buffsub
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Int)>()
+external void flutter_lua_bridgeL_buffsub(ffi.Pointer<ffi.Void> B, int n);
+
+/// luaL_callmeta
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int flutter_lua_bridgeL_callmeta(
+  ffi.Pointer<lua_State> L,
+  int obj,
+  ffi.Pointer<ffi.Char> e,
+);
+
+/// luaL_checkany
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridgeL_checkany(ffi.Pointer<lua_State> L, int arg);
+
+/// luaL_checkinteger
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridgeL_checkinteger(
+  ffi.Pointer<lua_State> L,
+  int arg,
+);
+
+/// luaL_checklstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Size>,
+  )
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_checklstring(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  ffi.Pointer<ffi.Size> l,
+);
+
+/// luaL_checknumber
+@ffi.Native<ffi.Double Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external double flutter_lua_bridgeL_checknumber(
+  ffi.Pointer<lua_State> L,
+  int arg,
+);
+
+/// luaL_checkoption
 @ffi.Native<
   ffi.Int Function(
     ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+  )
+>()
+external int flutter_lua_bridgeL_checkoption(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  ffi.Pointer<ffi.Char> def,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> lst,
+);
+
+/// luaL_checkstack
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external void flutter_lua_bridgeL_checkstack(
+  ffi.Pointer<lua_State> L,
+  int sz,
+  ffi.Pointer<ffi.Char> msg,
+);
+
+/// luaL_checkstring
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_checkstring(
+  ffi.Pointer<lua_State> L,
+  int arg,
+);
+
+/// luaL_checktype
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void flutter_lua_bridgeL_checktype(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  int t,
+);
+
+/// luaL_checkudata
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridgeL_checkudata(
+  ffi.Pointer<lua_State> L,
+  int ud,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+/// luaL_checkversion
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void flutter_lua_bridgeL_checkversion(ffi.Pointer<lua_State> L);
+
+/// luaL_dofile
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int flutter_lua_bridgeL_dofile(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> fn,
+);
+
+/// luaL_dostring
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int flutter_lua_bridgeL_dostring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+/// luaL_error
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int flutter_lua_bridgeL_error(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> fmt,
+);
+
+/// luaL_execresult
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridgeL_execresult(ffi.Pointer<lua_State> L, int stat);
+
+/// luaL_fileresult
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int flutter_lua_bridgeL_fileresult(
+  ffi.Pointer<lua_State> L,
+  int stat,
+  ffi.Pointer<ffi.Char> fname,
+);
+
+/// luaL_getmetafield
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int flutter_lua_bridgeL_getmetafield(
+  ffi.Pointer<lua_State> L,
+  int obj,
+  ffi.Pointer<ffi.Char> e,
+);
+
+/// luaL_getmetatable
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int flutter_lua_bridgeL_getmetatable(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+/// luaL_getsubtable
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
+>()
+external int flutter_lua_bridgeL_getsubtable(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Char> fname,
+);
+
+/// luaL_gsub
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
     ffi.Pointer<ffi.Char>,
     ffi.Pointer<ffi.Char>,
   )
 >()
-external int luaL_loadfilex(
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_gsub(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> filename,
-  ffi.Pointer<ffi.Char> mode,
+  ffi.Pointer<ffi.Char> s,
+  ffi.Pointer<ffi.Char> p,
+  ffi.Pointer<ffi.Char> r,
 );
 
+/// luaL_len
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridgeL_len(ffi.Pointer<lua_State> L, int idx);
+
+/// luaL_loadbuffer
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Size,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external int flutter_lua_bridgeL_loadbuffer(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> buff,
+  int sz,
+  ffi.Pointer<ffi.Char> name,
+);
+
+/// luaL_loadbufferx
 @ffi.Native<
   ffi.Int Function(
     ffi.Pointer<lua_State>,
@@ -1468,7 +1320,7 @@ external int luaL_loadfilex(
     ffi.Pointer<ffi.Char>,
   )
 >()
-external int luaL_loadbufferx(
+external int flutter_lua_bridgeL_loadbufferx(
   ffi.Pointer<lua_State> L,
   ffi.Pointer<ffi.Char> buff,
   int sz,
@@ -1476,66 +1328,217 @@ external int luaL_loadbufferx(
   ffi.Pointer<ffi.Char> mode,
 );
 
+/// luaL_loadfile
 @ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
-external int luaL_loadstring(ffi.Pointer<lua_State> L, ffi.Pointer<ffi.Char> s);
-
-@ffi.Native<ffi.Pointer<lua_State> Function()>()
-external ffi.Pointer<lua_State> luaL_newstate();
-
-@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<lua_State>)>()
-external int luaL_makeseed(ffi.Pointer<lua_State> L);
-
-@ffi.Native<lua_Integer Function(ffi.Pointer<lua_State>, ffi.Int)>()
-external int luaL_len(ffi.Pointer<lua_State> L, int idx);
-
-@ffi.Native<
-  ffi.Void Function(
-    ffi.Pointer<luaL_Buffer>,
-    ffi.Pointer<ffi.Char>,
-    ffi.Pointer<ffi.Char>,
-    ffi.Pointer<ffi.Char>,
-  )
->()
-external void luaL_addgsub(
-  ffi.Pointer<luaL_Buffer> b,
-  ffi.Pointer<ffi.Char> s,
-  ffi.Pointer<ffi.Char> p,
-  ffi.Pointer<ffi.Char> r,
+external int flutter_lua_bridgeL_loadfile(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> filename,
 );
 
+/// luaL_loadfilex
 @ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
+  ffi.Int Function(
     ffi.Pointer<lua_State>,
     ffi.Pointer<ffi.Char>,
     ffi.Pointer<ffi.Char>,
+  )
+>()
+external int flutter_lua_bridgeL_loadfilex(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> filename,
+  ffi.Pointer<ffi.Char> mode,
+);
+
+/// luaL_loadstring
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int flutter_lua_bridgeL_loadstring(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> s,
+);
+
+/// luaL_makeseed
+@ffi.Native<ffi.Uint64 Function(ffi.Pointer<lua_State>)>()
+external int flutter_lua_bridgeL_makeseed(ffi.Pointer<lua_State> L);
+
+/// luaL_newlib
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>, ffi.Int)
+>()
+external void flutter_lua_bridgeL_newlib(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> l,
+  int nrec,
+);
+
+/// luaL_newlibtable
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridgeL_newlibtable(
+  ffi.Pointer<lua_State> L,
+  int nrec,
+);
+
+/// luaL_newmetatable
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external int flutter_lua_bridgeL_newmetatable(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+/// luaL_newstate
+@ffi.Native<ffi.Pointer<lua_State> Function()>()
+external ffi.Pointer<lua_State> flutter_lua_bridgeL_newstate();
+
+/// luaL_openlibs
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void flutter_lua_bridgeL_openlibs(ffi.Pointer<lua_State> L);
+
+/// luaL_openselectedlibs
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external void flutter_lua_bridgeL_openselectedlibs(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Char> libs,
+);
+
+/// luaL_optinteger
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int64)>()
+external int flutter_lua_bridgeL_optinteger(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  int d,
+);
+
+/// luaL_optlstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Size>,
+  )
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_optlstring(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  ffi.Pointer<ffi.Char> d,
+  ffi.Pointer<ffi.Size> l,
+);
+
+/// luaL_optnumber
+@ffi.Native<ffi.Double Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Double)>()
+external double flutter_lua_bridgeL_optnumber(
+  ffi.Pointer<lua_State> L,
+  int arg,
+  double d,
+);
+
+/// luaL_optstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
     ffi.Pointer<ffi.Char>,
   )
 >()
-external ffi.Pointer<ffi.Char> luaL_gsub(
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_optstring(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> s,
-  ffi.Pointer<ffi.Char> p,
-  ffi.Pointer<ffi.Char> r,
+  int arg,
+  ffi.Pointer<ffi.Char> d,
 );
 
+/// luaL_prepbuffer
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Void>)>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_prepbuffer(
+  ffi.Pointer<ffi.Void> B,
+);
+
+/// luaL_prepbuffsize
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Void>, ffi.Size)>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_prepbuffsize(
+  ffi.Pointer<ffi.Void> B,
+  int sz,
+);
+
+/// luaL_pushfail
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>)>()
+external void flutter_lua_bridgeL_pushfail(ffi.Pointer<lua_State> L);
+
+/// luaL_pushresult
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
+external void flutter_lua_bridgeL_pushresult(ffi.Pointer<ffi.Void> B);
+
+/// luaL_pushresultsize
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Size)>()
+external void flutter_lua_bridgeL_pushresultsize(
+  ffi.Pointer<ffi.Void> B,
+  int sz,
+);
+
+/// luaL_ref
+@ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external int flutter_lua_bridgeL_ref(ffi.Pointer<lua_State> L, int t);
+
+/// luaL_requiref
 @ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<luaL_Reg>, ffi.Int)
+  ffi.Void Function(
+    ffi.Pointer<lua_State>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Int,
+  )
 >()
-external void luaL_setfuncs(
+external void flutter_lua_bridgeL_requiref(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<luaL_Reg> l,
+  ffi.Pointer<ffi.Char> modname,
+  ffi.Pointer<ffi.Void> openf,
+  int glb,
+);
+
+/// luaL_setfuncs
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Void>, ffi.Int)
+>()
+external void flutter_lua_bridgeL_setfuncs(
+  ffi.Pointer<lua_State> L,
+  ffi.Pointer<ffi.Void> l,
   int nup,
 );
 
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
->()
-external int luaL_getsubtable(
+/// luaL_setmetatable
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
+external void flutter_lua_bridgeL_setmetatable(
   ffi.Pointer<lua_State> L,
-  int idx,
-  ffi.Pointer<ffi.Char> fname,
+  ffi.Pointer<ffi.Char> tname,
 );
 
+/// luaL_testudata
+@ffi.Native<
+  ffi.Pointer<ffi.Void> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Char>,
+  )
+>()
+external ffi.Pointer<ffi.Void> flutter_lua_bridgeL_testudata(
+  ffi.Pointer<lua_State> L,
+  int ud,
+  ffi.Pointer<ffi.Char> tname,
+);
+
+/// luaL_tolstring
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(
+    ffi.Pointer<lua_State>,
+    ffi.Int,
+    ffi.Pointer<ffi.Size>,
+  )
+>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_tolstring(
+  ffi.Pointer<lua_State> L,
+  int idx,
+  ffi.Pointer<ffi.Size> len,
+);
+
+/// luaL_traceback
 @ffi.Native<
   ffi.Void Function(
     ffi.Pointer<lua_State>,
@@ -1544,86 +1547,42 @@ external int luaL_getsubtable(
     ffi.Int,
   )
 >()
-external void luaL_traceback(
+external void flutter_lua_bridgeL_traceback(
   ffi.Pointer<lua_State> L,
   ffi.Pointer<lua_State> L1,
   ffi.Pointer<ffi.Char> msg,
   int level,
 );
 
+/// luaL_typeerror
 @ffi.Native<
-  ffi.Void Function(
-    ffi.Pointer<lua_State>,
-    ffi.Pointer<ffi.Char>,
-    lua_CFunction,
-    ffi.Int,
-  )
+  ffi.Int Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Pointer<ffi.Char>)
 >()
-external void luaL_requiref(
+external int flutter_lua_bridgeL_typeerror(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<ffi.Char> modname,
-  lua_CFunction openf,
-  int glb,
+  int arg,
+  ffi.Pointer<ffi.Char> tname,
 );
 
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<lua_State>, ffi.Pointer<luaL_Buffer>)
->()
-external void luaL_buffinit(
+/// luaL_typename
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external ffi.Pointer<ffi.Char> flutter_lua_bridgeL_typename(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<luaL_Buffer> B,
+  int idx,
 );
 
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(ffi.Pointer<luaL_Buffer>, ffi.Size)
->()
-external ffi.Pointer<ffi.Char> luaL_prepbuffsize(
-  ffi.Pointer<luaL_Buffer> B,
-  int sz,
-);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<luaL_Buffer>, ffi.Pointer<ffi.Char>, ffi.Size)
->()
-external void luaL_addlstring(
-  ffi.Pointer<luaL_Buffer> B,
-  ffi.Pointer<ffi.Char> s,
-  int l,
-);
-
-@ffi.Native<
-  ffi.Void Function(ffi.Pointer<luaL_Buffer>, ffi.Pointer<ffi.Char>)
->()
-external void luaL_addstring(
-  ffi.Pointer<luaL_Buffer> B,
-  ffi.Pointer<ffi.Char> s,
-);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<luaL_Buffer>)>()
-external void luaL_addvalue(ffi.Pointer<luaL_Buffer> B);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<luaL_Buffer>)>()
-external void luaL_pushresult(ffi.Pointer<luaL_Buffer> B);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<luaL_Buffer>, ffi.Size)>()
-external void luaL_pushresultsize(ffi.Pointer<luaL_Buffer> B, int sz);
-
-@ffi.Native<
-  ffi.Pointer<ffi.Char> Function(
-    ffi.Pointer<lua_State>,
-    ffi.Pointer<luaL_Buffer>,
-    ffi.Size,
-  )
->()
-external ffi.Pointer<ffi.Char> luaL_buffinitsize(
+/// luaL_unref
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
+external void flutter_lua_bridgeL_unref(
   ffi.Pointer<lua_State> L,
-  ffi.Pointer<luaL_Buffer> B,
-  int sz,
+  int t,
+  int ref,
 );
 
-typedef __builtin_va_list = ffi.Pointer<ffi.Char>;
-typedef __gnuc_va_list = __builtin_va_list;
-typedef va_list$1 = __builtin_va_list;
+/// luaL_where
+@ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
+external void flutter_lua_bridgeL_where(ffi.Pointer<lua_State> L, int lvl);
+
 typedef __int8_t = ffi.SignedChar;
 typedef Dart__int8_t = int;
 typedef __uint8_t = ffi.UnsignedChar;
@@ -1665,20 +1624,14 @@ typedef Dart__darwin_ct_rune_t = int;
 
 /// mbstate_t is an opaque object to keep conversion state, during multibyte
 /// stream conversions.  The content must not be referenced by user programs.
-final class __mbstate_t extends ffi.Union {
-  @ffi.Array.multi([128])
-  external ffi.Array<ffi.Char> __mbstate8;
-
-  /// for alignment
-  @ffi.LongLong()
-  external int _mbstateL;
-}
+final class __mbstate_t extends ffi.Opaque {}
 
 typedef __darwin_mbstate_t = __mbstate_t;
 typedef __darwin_ptrdiff_t = ffi.Long;
 typedef Dart__darwin_ptrdiff_t = int;
 typedef __darwin_size_t = ffi.UnsignedLong;
 typedef Dart__darwin_size_t = int;
+typedef __builtin_va_list = ffi.Pointer<ffi.Char>;
 typedef __darwin_va_list = __builtin_va_list;
 typedef __darwin_wchar_t = ffi.Int;
 typedef Dart__darwin_wchar_t = int;
@@ -1882,1934 +1835,143 @@ typedef Dartintmax_t = int;
 typedef uintmax_t = ffi.UnsignedLong;
 typedef Dartuintmax_t = int;
 
+/// Lua 值类型枚举
+enum FlbType {
+  FLB_TNONE(-1),
+  FLB_TNIL(0),
+  FLB_TBOOLEAN(1),
+  FLB_TLIGHTUSERDATA(2),
+  FLB_TNUMBER(3),
+  FLB_TSTRING(4),
+  FLB_TTABLE(5),
+  FLB_TFUNCTION(6),
+  FLB_TUSERDATA(7),
+  FLB_TTHREAD(8);
+
+  final int value;
+  const FlbType(this.value);
+
+  static FlbType fromValue(int value) => switch (value) {
+    -1 => FLB_TNONE,
+    0 => FLB_TNIL,
+    1 => FLB_TBOOLEAN,
+    2 => FLB_TLIGHTUSERDATA,
+    3 => FLB_TNUMBER,
+    4 => FLB_TSTRING,
+    5 => FLB_TTABLE,
+    6 => FLB_TFUNCTION,
+    7 => FLB_TUSERDATA,
+    8 => FLB_TTHREAD,
+    _ => throw ArgumentError('Unknown value for FlbType: $value'),
+  };
+}
+
+/// Lua 线程/调用状态枚举
+enum FlbStatus {
+  FLB_OK(0),
+  FLB_YIELD(1),
+  FLB_ERRRUN(2),
+  FLB_ERRSYNTAX(3),
+  FLB_ERRMEM(4),
+  FLB_ERRGCMM(5),
+  FLB_ERRERR(6);
+
+  final int value;
+  const FlbStatus(this.value);
+
+  static FlbStatus fromValue(int value) => switch (value) {
+    0 => FLB_OK,
+    1 => FLB_YIELD,
+    2 => FLB_ERRRUN,
+    3 => FLB_ERRSYNTAX,
+    4 => FLB_ERRMEM,
+    5 => FLB_ERRGCMM,
+    6 => FLB_ERRERR,
+    _ => throw ArgumentError('Unknown value for FlbStatus: $value'),
+  };
+}
+
+/// GC 操作枚举
+enum FlbGC {
+  FLB_GC_STOP(0),
+  FLB_GC_RESTART(1),
+  FLB_GC_COLLECT(2),
+  FLB_GC_COUNT(3),
+  FLB_GC_COUNTB(4),
+  FLB_GC_STEP(5),
+  FLB_GC_SETPAUSE(6),
+  FLB_GC_SETSTEPMUL(7),
+  FLB_GC_ISRUNNING(9);
+
+  final int value;
+  const FlbGC(this.value);
+
+  static FlbGC fromValue(int value) => switch (value) {
+    0 => FLB_GC_STOP,
+    1 => FLB_GC_RESTART,
+    2 => FLB_GC_COLLECT,
+    3 => FLB_GC_COUNT,
+    4 => FLB_GC_COUNTB,
+    5 => FLB_GC_STEP,
+    6 => FLB_GC_SETPAUSE,
+    7 => FLB_GC_SETSTEPMUL,
+    9 => FLB_GC_ISRUNNING,
+    _ => throw ArgumentError('Unknown value for FlbGC: $value'),
+  };
+}
+
+/// 算术操作枚举
+enum FlbArith {
+  FLB_OPADD(0),
+  FLB_OPSUB(1),
+  FLB_OPMUL(2),
+  FLB_OPDIV(4),
+  FLB_OPMOD(5),
+  FLB_OPPOW(6),
+  FLB_OPUNM(7),
+  FLB_OPBAND(8),
+  FLB_OPBOR(9),
+  FLB_OPBXOR(10),
+  FLB_OPSHL(11),
+  FLB_OPSHR(12),
+  FLB_OPBNOT(13);
+
+  final int value;
+  const FlbArith(this.value);
+
+  static FlbArith fromValue(int value) => switch (value) {
+    0 => FLB_OPADD,
+    1 => FLB_OPSUB,
+    2 => FLB_OPMUL,
+    4 => FLB_OPDIV,
+    5 => FLB_OPMOD,
+    6 => FLB_OPPOW,
+    7 => FLB_OPUNM,
+    8 => FLB_OPBAND,
+    9 => FLB_OPBOR,
+    10 => FLB_OPBXOR,
+    11 => FLB_OPSHL,
+    12 => FLB_OPSHR,
+    13 => FLB_OPBNOT,
+    _ => throw ArgumentError('Unknown value for FlbArith: $value'),
+  };
+}
+
+/// 比较操作枚举
+enum FlbCompare {
+  FLB_OPEQ(0),
+  FLB_OPLT(1),
+  FLB_OPLE(2);
+
+  final int value;
+  const FlbCompare(this.value);
+
+  static FlbCompare fromValue(int value) => switch (value) {
+    0 => FLB_OPEQ,
+    1 => FLB_OPLT,
+    2 => FLB_OPLE,
+    _ => throw ArgumentError('Unknown value for FlbCompare: $value'),
+  };
+}
+
 final class lua_State extends ffi.Opaque {}
-
-/// type of numbers in Lua
-typedef lua_Number = ffi.Double;
-typedef Dartlua_Number = double;
-
-/// type for integer functions
-typedef lua_Integer = ffi.LongLong;
-typedef Dartlua_Integer = int;
-
-/// unsigned integer type
-typedef lua_Unsigned = ffi.UnsignedLongLong;
-typedef Dartlua_Unsigned = int;
-
-/// type for continuation-function contexts
-typedef lua_KContext = ffi.IntPtr;
-typedef Dartlua_KContext = int;
-typedef lua_CFunctionFunction = ffi.Int Function(ffi.Pointer<lua_State> L);
-typedef Dartlua_CFunctionFunction = int Function(ffi.Pointer<lua_State> L);
-
-/// Type for C functions registered with Lua
-typedef lua_CFunction = ffi.Pointer<ffi.NativeFunction<lua_CFunctionFunction>>;
-typedef lua_KFunctionFunction =
-    ffi.Int Function(
-      ffi.Pointer<lua_State> L,
-      ffi.Int status,
-      lua_KContext ctx,
-    );
-typedef Dartlua_KFunctionFunction =
-    int Function(ffi.Pointer<lua_State> L, int status, Dartlua_KContext ctx);
-
-/// Type for continuation functions
-typedef lua_KFunction = ffi.Pointer<ffi.NativeFunction<lua_KFunctionFunction>>;
-typedef lua_ReaderFunction =
-    ffi.Pointer<ffi.Char> Function(
-      ffi.Pointer<lua_State> L,
-      ffi.Pointer<ffi.Void> ud,
-      ffi.Pointer<ffi.Size> sz,
-    );
-
-/// Type for functions that read/write blocks when loading/dumping Lua chunks
-typedef lua_Reader = ffi.Pointer<ffi.NativeFunction<lua_ReaderFunction>>;
-typedef lua_WriterFunction =
-    ffi.Int Function(
-      ffi.Pointer<lua_State> L,
-      ffi.Pointer<ffi.Void> p,
-      ffi.Size sz,
-      ffi.Pointer<ffi.Void> ud,
-    );
-typedef Dartlua_WriterFunction =
-    int Function(
-      ffi.Pointer<lua_State> L,
-      ffi.Pointer<ffi.Void> p,
-      int sz,
-      ffi.Pointer<ffi.Void> ud,
-    );
-typedef lua_Writer = ffi.Pointer<ffi.NativeFunction<lua_WriterFunction>>;
-typedef lua_AllocFunction =
-    ffi.Pointer<ffi.Void> Function(
-      ffi.Pointer<ffi.Void> ud,
-      ffi.Pointer<ffi.Void> ptr,
-      ffi.Size osize,
-      ffi.Size nsize,
-    );
-typedef Dartlua_AllocFunction =
-    ffi.Pointer<ffi.Void> Function(
-      ffi.Pointer<ffi.Void> ud,
-      ffi.Pointer<ffi.Void> ptr,
-      int osize,
-      int nsize,
-    );
-
-/// Type for memory-allocation functions
-typedef lua_Alloc = ffi.Pointer<ffi.NativeFunction<lua_AllocFunction>>;
-typedef lua_WarnFunctionFunction =
-    ffi.Void Function(
-      ffi.Pointer<ffi.Void> ud,
-      ffi.Pointer<ffi.Char> msg,
-      ffi.Int tocont,
-    );
-typedef Dartlua_WarnFunctionFunction =
-    void Function(
-      ffi.Pointer<ffi.Void> ud,
-      ffi.Pointer<ffi.Char> msg,
-      int tocont,
-    );
-
-/// Type for warning functions
-typedef lua_WarnFunction =
-    ffi.Pointer<ffi.NativeFunction<lua_WarnFunctionFunction>>;
-
-final class CallInfo extends ffi.Opaque {}
-
-final class lua_Debug extends ffi.Struct {
-  @ffi.Int()
-  external int event;
-
-  /// (n)
-  external ffi.Pointer<ffi.Char> name;
-
-  /// (n) 'global', 'local', 'field', 'method'
-  external ffi.Pointer<ffi.Char> namewhat;
-
-  /// (S) 'Lua', 'C', 'main', 'tail'
-  external ffi.Pointer<ffi.Char> what;
-
-  /// (S)
-  external ffi.Pointer<ffi.Char> source;
-
-  /// (S)
-  @ffi.Size()
-  external int srclen;
-
-  /// (l)
-  @ffi.Int()
-  external int currentline;
-
-  /// (S)
-  @ffi.Int()
-  external int linedefined;
-
-  /// (S)
-  @ffi.Int()
-  external int lastlinedefined;
-
-  /// (u) number of upvalues
-  @ffi.UnsignedChar()
-  external int nups;
-
-  /// (u) number of parameters
-  @ffi.UnsignedChar()
-  external int nparams;
-
-  /// (u)
-  @ffi.Char()
-  external int isvararg;
-
-  /// (t) number of extra arguments
-  @ffi.UnsignedChar()
-  external int extraargs;
-
-  /// (t)
-  @ffi.Char()
-  external int istailcall;
-
-  /// (r) index of first value transferred
-  @ffi.Int()
-  external int ftransfer;
-
-  /// (r) number of transferred values
-  @ffi.Int()
-  external int ntransfer;
-
-  /// (S)
-  @ffi.Array.multi([60])
-  external ffi.Array<ffi.Char> short_src;
-
-  /// active function
-  external ffi.Pointer<CallInfo> i_ci;
-}
-
-typedef lua_HookFunction =
-    ffi.Void Function(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar);
-typedef Dartlua_HookFunction =
-    void Function(ffi.Pointer<lua_State> L, ffi.Pointer<lua_Debug> ar);
-
-/// Functions to be called by the debugger in specific events
-typedef lua_Hook = ffi.Pointer<ffi.NativeFunction<lua_HookFunction>>;
-typedef va_list = __darwin_va_list;
-typedef fpos_t = __darwin_off_t;
-
-/// stdio buffers
-final class __sbuf extends ffi.Struct {
-  external ffi.Pointer<ffi.UnsignedChar> _base;
-
-  @ffi.Int()
-  external int _size;
-}
-
-/// hold a buncha junk that would grow the ABI
-final class __sFILEX extends ffi.Opaque {}
-
-/// stdio state variables.
-///
-/// The following always hold:
-///
-/// if (_flags&(__SLBF|__SWR)) == (__SLBF|__SWR),
-/// _lbfsize is -_bf._size, else _lbfsize is 0
-/// if _flags&__SRD, _w is 0
-/// if _flags&__SWR, _r is 0
-///
-/// This ensures that the getc and putc macros (or inline functions) never
-/// try to write or read from a file that is in `read' or `write' mode.
-/// (Moreover, they can, and do, automatically switch from read mode to
-/// write mode, and back, on "r+" and "w+" files.)
-///
-/// _lbfsize is used only to make the inline line-buffered output stream
-/// code as compact as possible.
-///
-/// _ub, _up, and _ur are used when ungetc() pushes back more characters
-/// than fit in the current _bf, or when ungetc() pushes back a character
-/// that does not match the previous one in _bf.  When this happens,
-/// _ub._base becomes non-nil (i.e., a stream has ungetc() data iff
-/// _ub._base!=NULL) and _up and _ur save the current values of _p and _r.
-///
-/// NB: see WARNING above before changing the layout of this structure!
-final class __sFILE extends ffi.Struct {
-  /// current position in (some) buffer
-  external ffi.Pointer<ffi.UnsignedChar> _p;
-
-  /// read space left for getc()
-  @ffi.Int()
-  external int _r;
-
-  /// write space left for putc()
-  @ffi.Int()
-  external int _w;
-
-  /// flags, below; this FILE is free if 0
-  @ffi.Short()
-  external int _flags;
-
-  /// fileno, if Unix descriptor, else -1
-  @ffi.Short()
-  external int _file;
-
-  /// the buffer (at least 1 byte, if !NULL)
-  external __sbuf _bf;
-
-  /// 0 or -_bf._size, for inline putc
-  @ffi.Int()
-  external int _lbfsize;
-
-  /// cookie passed to io functions
-  external ffi.Pointer<ffi.Void> _cookie;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<ffi.Int Function(ffi.Pointer<ffi.Void>)>
-  >
-  _close;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)
-    >
-  >
-  _read;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<fpos_t Function(ffi.Pointer<ffi.Void>, fpos_t, ffi.Int)>
-  >
-  _seek;
-
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)
-    >
-  >
-  _write;
-
-  /// ungetc buffer
-  external __sbuf _ub;
-
-  /// additions to FILE to not break ABI
-  external ffi.Pointer<__sFILEX> _extra;
-
-  /// saved _r when _r is counting ungetc data
-  @ffi.Int()
-  external int _ur;
-
-  /// guarantee an ungetc() buffer
-  @ffi.Array.multi([3])
-  external ffi.Array<ffi.UnsignedChar> _ubuf;
-
-  /// guarantee a getc() buffer
-  @ffi.Array.multi([1])
-  external ffi.Array<ffi.UnsignedChar> _nbuf;
-
-  /// buffer for fgetln()
-  external __sbuf _lb;
-
-  /// stat.st_blksize (may be != _bf._size)
-  @ffi.Int()
-  external int _blksize;
-
-  /// current lseek offset (see WARNING)
-  @fpos_t()
-  external int _offset;
-}
-
-typedef FILE = __sFILE;
-typedef off_t = __darwin_off_t;
-typedef ssize_t = __darwin_ssize_t;
-
-final class UnnamedUnion extends ffi.Union {
-  /// ensure maximum alignment for buffer
-  @lua_Number()
-  external double n;
-
-  @ffi.Double()
-  external double u;
-
-  external ffi.Pointer<ffi.Void> s;
-
-  @lua_Integer()
-  external int i;
-
-  @ffi.Long()
-  external int l;
-
-  /// initial buffer
-  @ffi.Array.multi([1024])
-  external ffi.Array<ffi.Char> b;
-}
-
-/// {======================================================
-/// Generic Buffer manipulation
-/// =======================================================
-final class luaL_Buffer extends ffi.Struct {
-  /// buffer address
-  external ffi.Pointer<ffi.Char> b;
-
-  /// buffer size
-  @ffi.Size()
-  external int size;
-
-  /// number of characters in buffer
-  @ffi.Size()
-  external int n;
-
-  external ffi.Pointer<lua_State> L;
-
-  external UnnamedUnion init;
-}
-
-final class luaL_Reg extends ffi.Struct {
-  external ffi.Pointer<ffi.Char> name;
-
-  external lua_CFunction func;
-}
-
-final class luaL_Stream extends ffi.Struct {
-  /// stream (NULL for incompletely created streams)
-  external ffi.Pointer<FILE> f;
-
-  /// to close stream (NULL for closed streams)
-  external lua_CFunction closef;
-}
-
-const int __has_safe_buffers = 1;
-
-const int __DARWIN_ONLY_64_BIT_INO_T = 1;
-
-const int __DARWIN_ONLY_UNIX_CONFORMANCE = 1;
-
-const int __DARWIN_ONLY_VERS_1050 = 1;
-
-const int __DARWIN_UNIX03 = 1;
-
-const int __DARWIN_64_BIT_INO_T = 1;
-
-const int __DARWIN_VERS_1050 = 1;
-
-const int __DARWIN_NON_CANCELABLE = 0;
-
-const String __DARWIN_SUF_EXTSN = '\$DARWIN_EXTSN';
-
-const int __DARWIN_C_ANSI = 4096;
-
-const int __DARWIN_C_FULL = 900000;
-
-const int __DARWIN_C_LEVEL = 900000;
-
-const int __STDC_WANT_LIB_EXT1__ = 1;
-
-const int __DARWIN_NO_LONG_LONG = 0;
-
-const int _DARWIN_FEATURE_64_BIT_INODE = 1;
-
-const int _DARWIN_FEATURE_ONLY_64_BIT_INODE = 1;
-
-const int _DARWIN_FEATURE_ONLY_VERS_1050 = 1;
-
-const int _DARWIN_FEATURE_ONLY_UNIX_CONFORMANCE = 1;
-
-const int _DARWIN_FEATURE_UNIX_CONFORMANCE = 3;
-
-const int __has_ptrcheck = 0;
-
-const int __has_bounds_safety_attributes = 0;
-
-const int __DARWIN_NULL = 0;
-
-const int __PTHREAD_SIZE__ = 8176;
-
-const int __PTHREAD_ATTR_SIZE__ = 56;
-
-const int __PTHREAD_MUTEXATTR_SIZE__ = 8;
-
-const int __PTHREAD_MUTEX_SIZE__ = 56;
-
-const int __PTHREAD_CONDATTR_SIZE__ = 8;
-
-const int __PTHREAD_COND_SIZE__ = 40;
-
-const int __PTHREAD_ONCE_SIZE__ = 8;
-
-const int __PTHREAD_RWLOCK_SIZE__ = 192;
-
-const int __PTHREAD_RWLOCKATTR_SIZE__ = 16;
-
-const int __DARWIN_WCHAR_MAX = 2147483647;
-
-const int __DARWIN_WCHAR_MIN = -2147483648;
-
-const int __DARWIN_WEOF = -1;
-
-const int _FORTIFY_SOURCE = 2;
-
-const int NULL = 0;
-
-const int USER_ADDR_NULL = 0;
-
-const String LUA_COPYRIGHT =
-    'Lua 5.5.0  Copyright (C) 1994-2025 Lua.org, PUC-Rio';
-
-const String LUA_AUTHORS = 'R. Ierusalimschy, L. H. de Figueiredo, W. Celes';
-
-const int LUA_VERSION_MAJOR_N = 5;
-
-const int LUA_VERSION_MINOR_N = 5;
-
-const int LUA_VERSION_RELEASE_N = 0;
-
-const int LUA_VERSION_NUM = 505;
-
-const int LUA_VERSION_RELEASE_NUM = 50500;
-
-const int __DARWIN_CLK_TCK = 100;
-
-const int MB_LEN_MAX = 6;
-
-const int CLK_TCK = 100;
-
-const int CHAR_BIT = 8;
-
-const int SCHAR_MAX = 127;
-
-const int SCHAR_MIN = -128;
-
-const int UCHAR_MAX = 255;
-
-const int CHAR_MAX = 127;
-
-const int CHAR_MIN = -128;
-
-const int USHRT_MAX = 65535;
-
-const int SHRT_MAX = 32767;
-
-const int SHRT_MIN = -32768;
-
-const int UINT_MAX = 4294967295;
-
-const int INT_MAX = 2147483647;
-
-const int INT_MIN = -2147483648;
-
-const int ULONG_MAX = -1;
-
-const int LONG_MAX = 9223372036854775807;
-
-const int LONG_MIN = -9223372036854775808;
-
-const int ULLONG_MAX = -1;
-
-const int LLONG_MAX = 9223372036854775807;
-
-const int LLONG_MIN = -9223372036854775808;
-
-const int LONG_BIT = 64;
-
-const int SSIZE_MAX = 9223372036854775807;
-
-const int WORD_BIT = 32;
-
-const int SIZE_T_MAX = -1;
-
-const int UQUAD_MAX = -1;
-
-const int QUAD_MAX = 9223372036854775807;
-
-const int QUAD_MIN = -9223372036854775808;
-
-const int ARG_MAX = 1048576;
-
-const int CHILD_MAX = 266;
-
-const int GID_MAX = 2147483647;
-
-const int LINK_MAX = 32767;
-
-const int MAX_CANON = 1024;
-
-const int MAX_INPUT = 1024;
-
-const int NAME_MAX = 255;
-
-const int NGROUPS_MAX = 16;
-
-const int UID_MAX = 2147483647;
-
-const int OPEN_MAX = 10240;
-
-const int PATH_MAX = 1024;
-
-const int PIPE_BUF = 512;
-
-const int BC_BASE_MAX = 99;
-
-const int BC_DIM_MAX = 2048;
-
-const int BC_SCALE_MAX = 99;
-
-const int BC_STRING_MAX = 1000;
-
-const int CHARCLASS_NAME_MAX = 14;
-
-const int COLL_WEIGHTS_MAX = 2;
-
-const int EQUIV_CLASS_MAX = 2;
-
-const int EXPR_NEST_MAX = 32;
-
-const int LINE_MAX = 2048;
-
-const int RE_DUP_MAX = 255;
-
-const int NZERO = 20;
-
-const int _POSIX_ARG_MAX = 4096;
-
-const int _POSIX_CHILD_MAX = 25;
-
-const int _POSIX_LINK_MAX = 8;
-
-const int _POSIX_MAX_CANON = 255;
-
-const int _POSIX_MAX_INPUT = 255;
-
-const int _POSIX_NAME_MAX = 14;
-
-const int _POSIX_NGROUPS_MAX = 8;
-
-const int _POSIX_OPEN_MAX = 20;
-
-const int _POSIX_PATH_MAX = 256;
-
-const int _POSIX_PIPE_BUF = 512;
-
-const int _POSIX_SSIZE_MAX = 32767;
-
-const int _POSIX_STREAM_MAX = 8;
-
-const int _POSIX_TZNAME_MAX = 6;
-
-const int _POSIX2_BC_BASE_MAX = 99;
-
-const int _POSIX2_BC_DIM_MAX = 2048;
-
-const int _POSIX2_BC_SCALE_MAX = 99;
-
-const int _POSIX2_BC_STRING_MAX = 1000;
-
-const int _POSIX2_EQUIV_CLASS_MAX = 2;
-
-const int _POSIX2_EXPR_NEST_MAX = 32;
-
-const int _POSIX2_LINE_MAX = 2048;
-
-const int _POSIX2_RE_DUP_MAX = 255;
-
-const int _POSIX_AIO_LISTIO_MAX = 2;
-
-const int _POSIX_AIO_MAX = 1;
-
-const int _POSIX_DELAYTIMER_MAX = 32;
-
-const int _POSIX_MQ_OPEN_MAX = 8;
-
-const int _POSIX_MQ_PRIO_MAX = 32;
-
-const int _POSIX_RTSIG_MAX = 8;
-
-const int _POSIX_SEM_NSEMS_MAX = 256;
-
-const int _POSIX_SEM_VALUE_MAX = 32767;
-
-const int _POSIX_SIGQUEUE_MAX = 32;
-
-const int _POSIX_TIMER_MAX = 32;
-
-const int _POSIX_CLOCKRES_MIN = 20000000;
-
-const int _POSIX_THREAD_DESTRUCTOR_ITERATIONS = 4;
-
-const int _POSIX_THREAD_KEYS_MAX = 128;
-
-const int _POSIX_THREAD_THREADS_MAX = 64;
-
-const int PTHREAD_DESTRUCTOR_ITERATIONS = 4;
-
-const int PTHREAD_KEYS_MAX = 512;
-
-const int PTHREAD_STACK_MIN = 16384;
-
-const int _POSIX_HOST_NAME_MAX = 255;
-
-const int _POSIX_LOGIN_NAME_MAX = 9;
-
-const int _POSIX_SS_REPL_MAX = 4;
-
-const int _POSIX_SYMLINK_MAX = 255;
-
-const int _POSIX_SYMLOOP_MAX = 8;
-
-const int _POSIX_TRACE_EVENT_NAME_MAX = 30;
-
-const int _POSIX_TRACE_NAME_MAX = 8;
-
-const int _POSIX_TRACE_SYS_MAX = 8;
-
-const int _POSIX_TRACE_USER_EVENT_MAX = 32;
-
-const int _POSIX_TTY_NAME_MAX = 9;
-
-const int _POSIX2_CHARCLASS_NAME_MAX = 14;
-
-const int _POSIX2_COLL_WEIGHTS_MAX = 2;
-
-const int _POSIX_RE_DUP_MAX = 255;
-
-const int OFF_MIN = -9223372036854775808;
-
-const int OFF_MAX = 9223372036854775807;
-
-const int PASS_MAX = 128;
-
-const int NL_ARGMAX = 9;
-
-const int NL_LANGMAX = 14;
-
-const int NL_MSGMAX = 32767;
-
-const int NL_NMAX = 1;
-
-const int NL_SETMAX = 255;
-
-const int NL_TEXTMAX = 2048;
-
-const int _XOPEN_IOV_MAX = 16;
-
-const int IOV_MAX = 1024;
-
-const int _XOPEN_NAME_MAX = 255;
-
-const int _XOPEN_PATH_MAX = 1024;
-
-const int LUAI_IS32INT = 1;
-
-const int LUA_INT_INT = 1;
-
-const int LUA_INT_LONG = 2;
-
-const int LUA_INT_LONGLONG = 3;
-
-const int LUA_FLOAT_FLOAT = 1;
-
-const int LUA_FLOAT_DOUBLE = 2;
-
-const int LUA_FLOAT_LONGDOUBLE = 3;
-
-const int LUA_INT_DEFAULT = 3;
-
-const int LUA_FLOAT_DEFAULT = 2;
-
-const int LUA_C89_NUMBERS = 0;
-
-const int LUA_INT_TYPE = 3;
-
-const int LUA_FLOAT_TYPE = 2;
-
-const String LUA_PATH_SEP = ';';
-
-const String LUA_PATH_MARK = '?';
-
-const String LUA_EXEC_DIR = '!';
-
-const String LUA_VDIR = '5.5';
-
-const String LUA_ROOT = '/usr/local/';
-
-const String LUA_LDIR = '/usr/local/share/lua/5.5/';
-
-const String LUA_CDIR = '/usr/local/lib/lua/5.5/';
-
-const String LUA_PATH_DEFAULT =
-    '/usr/local/share/lua/5.5/?.lua;/usr/local/share/lua/5.5/?/init.lua;/usr/local/lib/lua/5.5/?.lua;/usr/local/lib/lua/5.5/?/init.lua;./?.lua;./?/init.lua';
-
-const String LUA_CPATH_DEFAULT =
-    '/usr/local/lib/lua/5.5/?.so;/usr/local/lib/lua/5.5/loadall.so;./?.so';
-
-const String LUA_DIRSEP = '/';
-
-const String LUA_IGMARK = '-';
-
-const String LUA_NUMBER_FRMLEN = '';
-
-const String LUA_NUMBER_FMT = '%.15g';
-
-const String LUA_NUMBER_FMT_N = '%.17g';
-
-const String LUA_INTEGER_FMT = '%lld';
-
-const String LUA_INTEGER_FRMLEN = 'll';
-
-const int LUA_MAXINTEGER = 9223372036854775807;
-
-const int LUA_MININTEGER = -9223372036854775808;
-
-const int LUA_MAXUNSIGNED = -1;
-
-const int LUA_EXTRASPACE = 8;
-
-const int LUA_IDSIZE = 60;
-
-const int LUAL_BUFFERSIZE = 1024;
-
-const String LUA_SIGNATURE = '\x1BLua';
-
-const int LUA_MULTRET = -1;
-
-const int LUA_REGISTRYINDEX = -1073742823;
-
-const int LUA_OK = 0;
-
-const int LUA_YIELD = 1;
-
-const int LUA_ERRRUN = 2;
-
-const int LUA_ERRSYNTAX = 3;
-
-const int LUA_ERRMEM = 4;
-
-const int LUA_ERRERR = 5;
-
-const int LUA_TNONE = -1;
-
-const int LUA_TNIL = 0;
-
-const int LUA_TBOOLEAN = 1;
-
-const int LUA_TLIGHTUSERDATA = 2;
-
-const int LUA_TNUMBER = 3;
-
-const int LUA_TSTRING = 4;
-
-const int LUA_TTABLE = 5;
-
-const int LUA_TFUNCTION = 6;
-
-const int LUA_TUSERDATA = 7;
-
-const int LUA_TTHREAD = 8;
-
-const int LUA_NUMTYPES = 9;
-
-const int LUA_MINSTACK = 20;
-
-const int LUA_RIDX_GLOBALS = 2;
-
-const int LUA_RIDX_MAINTHREAD = 3;
-
-const int LUA_RIDX_LAST = 3;
-
-const int LUA_OPADD = 0;
-
-const int LUA_OPSUB = 1;
-
-const int LUA_OPMUL = 2;
-
-const int LUA_OPMOD = 3;
-
-const int LUA_OPPOW = 4;
-
-const int LUA_OPDIV = 5;
-
-const int LUA_OPIDIV = 6;
-
-const int LUA_OPBAND = 7;
-
-const int LUA_OPBOR = 8;
-
-const int LUA_OPBXOR = 9;
-
-const int LUA_OPSHL = 10;
-
-const int LUA_OPSHR = 11;
-
-const int LUA_OPUNM = 12;
-
-const int LUA_OPBNOT = 13;
-
-const int LUA_OPEQ = 0;
-
-const int LUA_OPLT = 1;
-
-const int LUA_OPLE = 2;
-
-const int LUA_GCSTOP = 0;
-
-const int LUA_GCRESTART = 1;
-
-const int LUA_GCCOLLECT = 2;
-
-const int LUA_GCCOUNT = 3;
-
-const int LUA_GCCOUNTB = 4;
-
-const int LUA_GCSTEP = 5;
-
-const int LUA_GCISRUNNING = 6;
-
-const int LUA_GCGEN = 7;
-
-const int LUA_GCINC = 8;
-
-const int LUA_GCPARAM = 9;
-
-const int LUA_GCPMINORMUL = 0;
-
-const int LUA_GCPMAJORMINOR = 1;
-
-const int LUA_GCPMINORMAJOR = 2;
-
-const int LUA_GCPPAUSE = 3;
-
-const int LUA_GCPSTEPMUL = 4;
-
-const int LUA_GCPSTEPSIZE = 5;
-
-const int LUA_GCPN = 6;
-
-const int LUA_N2SBUFFSZ = 64;
-
-const int LUA_HOOKCALL = 0;
-
-const int LUA_HOOKRET = 1;
-
-const int LUA_HOOKLINE = 2;
-
-const int LUA_HOOKCOUNT = 3;
-
-const int LUA_HOOKTAILCALL = 4;
-
-const int LUA_MASKCALL = 1;
-
-const int LUA_MASKRET = 2;
-
-const int LUA_MASKLINE = 4;
-
-const int LUA_MASKCOUNT = 8;
-
-const String LUA_VERSION_MAJOR = '5';
-
-const String LUA_VERSION_MINOR = '5';
-
-const String LUA_VERSION_RELEASE = '0';
-
-const String LUA_VERSION = 'Lua 5.5';
-
-const String LUA_RELEASE = 'Lua 5.5.0';
-
-const String LUA_VERSUFFIX = '_5_5';
-
-const int LUA_GLIBK = 1;
-
-const String LUA_LOADLIBNAME = 'package';
-
-const int LUA_LOADLIBK = 2;
-
-const String LUA_COLIBNAME = 'coroutine';
-
-const int LUA_COLIBK = 4;
-
-const String LUA_DBLIBNAME = 'debug';
-
-const int LUA_DBLIBK = 8;
-
-const String LUA_IOLIBNAME = 'io';
-
-const int LUA_IOLIBK = 16;
-
-const String LUA_MATHLIBNAME = 'math';
-
-const int LUA_MATHLIBK = 32;
-
-const String LUA_OSLIBNAME = 'os';
-
-const int LUA_OSLIBK = 64;
-
-const String LUA_STRLIBNAME = 'string';
-
-const int LUA_STRLIBK = 128;
-
-const String LUA_TABLIBNAME = 'table';
-
-const int LUA_TABLIBK = 256;
-
-const String LUA_UTF8LIBNAME = 'utf8';
-
-const int LUA_UTF8LIBK = 512;
-
-const int __API_TO_BE_DEPRECATED = 100000;
-
-const int __API_TO_BE_DEPRECATED_MACOS = 100000;
-
-const int __API_TO_BE_DEPRECATED_MACOSAPPLICATIONEXTENSION = 100000;
-
-const int __API_TO_BE_DEPRECATED_IOS = 100000;
-
-const int __API_TO_BE_DEPRECATED_IOSAPPLICATIONEXTENSION = 100000;
-
-const int __API_TO_BE_DEPRECATED_MACCATALYST = 100000;
-
-const int __API_TO_BE_DEPRECATED_MACCATALYSTAPPLICATIONEXTENSION = 100000;
-
-const int __API_TO_BE_DEPRECATED_WATCHOS = 100000;
-
-const int __API_TO_BE_DEPRECATED_WATCHOSAPPLICATIONEXTENSION = 100000;
-
-const int __API_TO_BE_DEPRECATED_TVOS = 100000;
-
-const int __API_TO_BE_DEPRECATED_TVOSAPPLICATIONEXTENSION = 100000;
-
-const int __API_TO_BE_DEPRECATED_DRIVERKIT = 100000;
-
-const int __API_TO_BE_DEPRECATED_VISIONOS = 100000;
-
-const int __API_TO_BE_DEPRECATED_VISIONOSAPPLICATIONEXTENSION = 100000;
-
-const int __API_TO_BE_DEPRECATED_KERNELKIT = 100000;
-
-const int __MAC_10_0 = 1000;
-
-const int __MAC_10_1 = 1010;
-
-const int __MAC_10_2 = 1020;
-
-const int __MAC_10_3 = 1030;
-
-const int __MAC_10_4 = 1040;
-
-const int __MAC_10_5 = 1050;
-
-const int __MAC_10_6 = 1060;
-
-const int __MAC_10_7 = 1070;
-
-const int __MAC_10_8 = 1080;
-
-const int __MAC_10_9 = 1090;
-
-const int __MAC_10_10 = 101000;
-
-const int __MAC_10_10_2 = 101002;
-
-const int __MAC_10_10_3 = 101003;
-
-const int __MAC_10_11 = 101100;
-
-const int __MAC_10_11_2 = 101102;
-
-const int __MAC_10_11_3 = 101103;
-
-const int __MAC_10_11_4 = 101104;
-
-const int __MAC_10_12 = 101200;
-
-const int __MAC_10_12_1 = 101201;
-
-const int __MAC_10_12_2 = 101202;
-
-const int __MAC_10_12_4 = 101204;
-
-const int __MAC_10_13 = 101300;
-
-const int __MAC_10_13_1 = 101301;
-
-const int __MAC_10_13_2 = 101302;
-
-const int __MAC_10_13_4 = 101304;
-
-const int __MAC_10_14 = 101400;
-
-const int __MAC_10_14_1 = 101401;
-
-const int __MAC_10_14_4 = 101404;
-
-const int __MAC_10_14_5 = 101405;
-
-const int __MAC_10_14_6 = 101406;
-
-const int __MAC_10_15 = 101500;
-
-const int __MAC_10_15_1 = 101501;
-
-const int __MAC_10_15_4 = 101504;
-
-const int __MAC_10_16 = 101600;
-
-const int __MAC_11_0 = 110000;
-
-const int __MAC_11_1 = 110100;
-
-const int __MAC_11_3 = 110300;
-
-const int __MAC_11_4 = 110400;
-
-const int __MAC_11_5 = 110500;
-
-const int __MAC_11_6 = 110600;
-
-const int __MAC_12_0 = 120000;
-
-const int __MAC_12_1 = 120100;
-
-const int __MAC_12_2 = 120200;
-
-const int __MAC_12_3 = 120300;
-
-const int __MAC_12_4 = 120400;
-
-const int __MAC_12_5 = 120500;
-
-const int __MAC_12_6 = 120600;
-
-const int __MAC_12_7 = 120700;
-
-const int __MAC_13_0 = 130000;
-
-const int __MAC_13_1 = 130100;
-
-const int __MAC_13_2 = 130200;
-
-const int __MAC_13_3 = 130300;
-
-const int __MAC_13_4 = 130400;
-
-const int __MAC_13_5 = 130500;
-
-const int __MAC_13_6 = 130600;
-
-const int __MAC_13_7 = 130700;
-
-const int __MAC_14_0 = 140000;
-
-const int __MAC_14_1 = 140100;
-
-const int __MAC_14_2 = 140200;
-
-const int __MAC_14_3 = 140300;
-
-const int __MAC_14_4 = 140400;
-
-const int __MAC_14_5 = 140500;
-
-const int __MAC_14_6 = 140600;
-
-const int __MAC_14_7 = 140700;
-
-const int __MAC_15_0 = 150000;
-
-const int __MAC_15_1 = 150100;
-
-const int __MAC_15_2 = 150200;
-
-const int __MAC_15_3 = 150300;
-
-const int __MAC_15_4 = 150400;
-
-const int __MAC_15_5 = 150500;
-
-const int __MAC_15_6 = 150600;
-
-const int __MAC_16_0 = 160000;
-
-const int __MAC_26_0 = 260000;
-
-const int __MAC_26_1 = 260100;
-
-const int __MAC_26_2 = 260200;
-
-const int __IPHONE_2_0 = 20000;
-
-const int __IPHONE_2_1 = 20100;
-
-const int __IPHONE_2_2 = 20200;
-
-const int __IPHONE_3_0 = 30000;
-
-const int __IPHONE_3_1 = 30100;
-
-const int __IPHONE_3_2 = 30200;
-
-const int __IPHONE_4_0 = 40000;
-
-const int __IPHONE_4_1 = 40100;
-
-const int __IPHONE_4_2 = 40200;
-
-const int __IPHONE_4_3 = 40300;
-
-const int __IPHONE_5_0 = 50000;
-
-const int __IPHONE_5_1 = 50100;
-
-const int __IPHONE_6_0 = 60000;
-
-const int __IPHONE_6_1 = 60100;
-
-const int __IPHONE_7_0 = 70000;
-
-const int __IPHONE_7_1 = 70100;
-
-const int __IPHONE_8_0 = 80000;
-
-const int __IPHONE_8_1 = 80100;
-
-const int __IPHONE_8_2 = 80200;
-
-const int __IPHONE_8_3 = 80300;
-
-const int __IPHONE_8_4 = 80400;
-
-const int __IPHONE_9_0 = 90000;
-
-const int __IPHONE_9_1 = 90100;
-
-const int __IPHONE_9_2 = 90200;
-
-const int __IPHONE_9_3 = 90300;
-
-const int __IPHONE_10_0 = 100000;
-
-const int __IPHONE_10_1 = 100100;
-
-const int __IPHONE_10_2 = 100200;
-
-const int __IPHONE_10_3 = 100300;
-
-const int __IPHONE_11_0 = 110000;
-
-const int __IPHONE_11_1 = 110100;
-
-const int __IPHONE_11_2 = 110200;
-
-const int __IPHONE_11_3 = 110300;
-
-const int __IPHONE_11_4 = 110400;
-
-const int __IPHONE_12_0 = 120000;
-
-const int __IPHONE_12_1 = 120100;
-
-const int __IPHONE_12_2 = 120200;
-
-const int __IPHONE_12_3 = 120300;
-
-const int __IPHONE_12_4 = 120400;
-
-const int __IPHONE_13_0 = 130000;
-
-const int __IPHONE_13_1 = 130100;
-
-const int __IPHONE_13_2 = 130200;
-
-const int __IPHONE_13_3 = 130300;
-
-const int __IPHONE_13_4 = 130400;
-
-const int __IPHONE_13_5 = 130500;
-
-const int __IPHONE_13_6 = 130600;
-
-const int __IPHONE_13_7 = 130700;
-
-const int __IPHONE_14_0 = 140000;
-
-const int __IPHONE_14_1 = 140100;
-
-const int __IPHONE_14_2 = 140200;
-
-const int __IPHONE_14_3 = 140300;
-
-const int __IPHONE_14_5 = 140500;
-
-const int __IPHONE_14_6 = 140600;
-
-const int __IPHONE_14_7 = 140700;
-
-const int __IPHONE_14_8 = 140800;
-
-const int __IPHONE_15_0 = 150000;
-
-const int __IPHONE_15_1 = 150100;
-
-const int __IPHONE_15_2 = 150200;
-
-const int __IPHONE_15_3 = 150300;
-
-const int __IPHONE_15_4 = 150400;
-
-const int __IPHONE_15_5 = 150500;
-
-const int __IPHONE_15_6 = 150600;
-
-const int __IPHONE_15_7 = 150700;
-
-const int __IPHONE_15_8 = 150800;
-
-const int __IPHONE_16_0 = 160000;
-
-const int __IPHONE_16_1 = 160100;
-
-const int __IPHONE_16_2 = 160200;
-
-const int __IPHONE_16_3 = 160300;
-
-const int __IPHONE_16_4 = 160400;
-
-const int __IPHONE_16_5 = 160500;
-
-const int __IPHONE_16_6 = 160600;
-
-const int __IPHONE_16_7 = 160700;
-
-const int __IPHONE_17_0 = 170000;
-
-const int __IPHONE_17_1 = 170100;
-
-const int __IPHONE_17_2 = 170200;
-
-const int __IPHONE_17_3 = 170300;
-
-const int __IPHONE_17_4 = 170400;
-
-const int __IPHONE_17_5 = 170500;
-
-const int __IPHONE_17_6 = 170600;
-
-const int __IPHONE_17_7 = 170700;
-
-const int __IPHONE_18_0 = 180000;
-
-const int __IPHONE_18_1 = 180100;
-
-const int __IPHONE_18_2 = 180200;
-
-const int __IPHONE_18_3 = 180300;
-
-const int __IPHONE_18_4 = 180400;
-
-const int __IPHONE_18_5 = 180500;
-
-const int __IPHONE_18_6 = 180600;
-
-const int __IPHONE_19_0 = 190000;
-
-const int __IPHONE_26_0 = 260000;
-
-const int __IPHONE_26_1 = 260100;
-
-const int __IPHONE_26_2 = 260200;
-
-const int __WATCHOS_1_0 = 10000;
-
-const int __WATCHOS_2_0 = 20000;
-
-const int __WATCHOS_2_1 = 20100;
-
-const int __WATCHOS_2_2 = 20200;
-
-const int __WATCHOS_3_0 = 30000;
-
-const int __WATCHOS_3_1 = 30100;
-
-const int __WATCHOS_3_1_1 = 30101;
-
-const int __WATCHOS_3_2 = 30200;
-
-const int __WATCHOS_4_0 = 40000;
-
-const int __WATCHOS_4_1 = 40100;
-
-const int __WATCHOS_4_2 = 40200;
-
-const int __WATCHOS_4_3 = 40300;
-
-const int __WATCHOS_5_0 = 50000;
-
-const int __WATCHOS_5_1 = 50100;
-
-const int __WATCHOS_5_2 = 50200;
-
-const int __WATCHOS_5_3 = 50300;
-
-const int __WATCHOS_6_0 = 60000;
-
-const int __WATCHOS_6_1 = 60100;
-
-const int __WATCHOS_6_2 = 60200;
-
-const int __WATCHOS_7_0 = 70000;
-
-const int __WATCHOS_7_1 = 70100;
-
-const int __WATCHOS_7_2 = 70200;
-
-const int __WATCHOS_7_3 = 70300;
-
-const int __WATCHOS_7_4 = 70400;
-
-const int __WATCHOS_7_5 = 70500;
-
-const int __WATCHOS_7_6 = 70600;
-
-const int __WATCHOS_8_0 = 80000;
-
-const int __WATCHOS_8_1 = 80100;
-
-const int __WATCHOS_8_3 = 80300;
-
-const int __WATCHOS_8_4 = 80400;
-
-const int __WATCHOS_8_5 = 80500;
-
-const int __WATCHOS_8_6 = 80600;
-
-const int __WATCHOS_8_7 = 80700;
-
-const int __WATCHOS_8_8 = 80800;
-
-const int __WATCHOS_9_0 = 90000;
-
-const int __WATCHOS_9_1 = 90100;
-
-const int __WATCHOS_9_2 = 90200;
-
-const int __WATCHOS_9_3 = 90300;
-
-const int __WATCHOS_9_4 = 90400;
-
-const int __WATCHOS_9_5 = 90500;
-
-const int __WATCHOS_9_6 = 90600;
-
-const int __WATCHOS_10_0 = 100000;
-
-const int __WATCHOS_10_1 = 100100;
-
-const int __WATCHOS_10_2 = 100200;
-
-const int __WATCHOS_10_3 = 100300;
-
-const int __WATCHOS_10_4 = 100400;
-
-const int __WATCHOS_10_5 = 100500;
-
-const int __WATCHOS_10_6 = 100600;
-
-const int __WATCHOS_10_7 = 100700;
-
-const int __WATCHOS_11_0 = 110000;
-
-const int __WATCHOS_11_1 = 110100;
-
-const int __WATCHOS_11_2 = 110200;
-
-const int __WATCHOS_11_3 = 110300;
-
-const int __WATCHOS_11_4 = 110400;
-
-const int __WATCHOS_11_5 = 110500;
-
-const int __WATCHOS_11_6 = 110600;
-
-const int __WATCHOS_12_0 = 120000;
-
-const int __WATCHOS_26_0 = 260000;
-
-const int __WATCHOS_26_1 = 260100;
-
-const int __WATCHOS_26_2 = 260200;
-
-const int __TVOS_9_0 = 90000;
-
-const int __TVOS_9_1 = 90100;
-
-const int __TVOS_9_2 = 90200;
-
-const int __TVOS_10_0 = 100000;
-
-const int __TVOS_10_0_1 = 100001;
-
-const int __TVOS_10_1 = 100100;
-
-const int __TVOS_10_2 = 100200;
-
-const int __TVOS_11_0 = 110000;
-
-const int __TVOS_11_1 = 110100;
-
-const int __TVOS_11_2 = 110200;
-
-const int __TVOS_11_3 = 110300;
-
-const int __TVOS_11_4 = 110400;
-
-const int __TVOS_12_0 = 120000;
-
-const int __TVOS_12_1 = 120100;
-
-const int __TVOS_12_2 = 120200;
-
-const int __TVOS_12_3 = 120300;
-
-const int __TVOS_12_4 = 120400;
-
-const int __TVOS_13_0 = 130000;
-
-const int __TVOS_13_2 = 130200;
-
-const int __TVOS_13_3 = 130300;
-
-const int __TVOS_13_4 = 130400;
-
-const int __TVOS_14_0 = 140000;
-
-const int __TVOS_14_1 = 140100;
-
-const int __TVOS_14_2 = 140200;
-
-const int __TVOS_14_3 = 140300;
-
-const int __TVOS_14_5 = 140500;
-
-const int __TVOS_14_6 = 140600;
-
-const int __TVOS_14_7 = 140700;
-
-const int __TVOS_15_0 = 150000;
-
-const int __TVOS_15_1 = 150100;
-
-const int __TVOS_15_2 = 150200;
-
-const int __TVOS_15_3 = 150300;
-
-const int __TVOS_15_4 = 150400;
-
-const int __TVOS_15_5 = 150500;
-
-const int __TVOS_15_6 = 150600;
-
-const int __TVOS_16_0 = 160000;
-
-const int __TVOS_16_1 = 160100;
-
-const int __TVOS_16_2 = 160200;
-
-const int __TVOS_16_3 = 160300;
-
-const int __TVOS_16_4 = 160400;
-
-const int __TVOS_16_5 = 160500;
-
-const int __TVOS_16_6 = 160600;
-
-const int __TVOS_17_0 = 170000;
-
-const int __TVOS_17_1 = 170100;
-
-const int __TVOS_17_2 = 170200;
-
-const int __TVOS_17_3 = 170300;
-
-const int __TVOS_17_4 = 170400;
-
-const int __TVOS_17_5 = 170500;
-
-const int __TVOS_17_6 = 170600;
-
-const int __TVOS_18_0 = 180000;
-
-const int __TVOS_18_1 = 180100;
-
-const int __TVOS_18_2 = 180200;
-
-const int __TVOS_18_3 = 180300;
-
-const int __TVOS_18_4 = 180400;
-
-const int __TVOS_18_5 = 180500;
-
-const int __TVOS_18_6 = 180600;
-
-const int __TVOS_19_0 = 190000;
-
-const int __TVOS_26_0 = 260000;
-
-const int __TVOS_26_1 = 260100;
-
-const int __TVOS_26_2 = 260200;
-
-const int __BRIDGEOS_2_0 = 20000;
-
-const int __BRIDGEOS_3_0 = 30000;
-
-const int __BRIDGEOS_3_1 = 30100;
-
-const int __BRIDGEOS_3_4 = 30400;
-
-const int __BRIDGEOS_4_0 = 40000;
-
-const int __BRIDGEOS_4_1 = 40100;
-
-const int __BRIDGEOS_5_0 = 50000;
-
-const int __BRIDGEOS_5_1 = 50100;
-
-const int __BRIDGEOS_5_3 = 50300;
-
-const int __BRIDGEOS_6_0 = 60000;
-
-const int __BRIDGEOS_6_2 = 60200;
-
-const int __BRIDGEOS_6_4 = 60400;
-
-const int __BRIDGEOS_6_5 = 60500;
-
-const int __BRIDGEOS_6_6 = 60600;
-
-const int __BRIDGEOS_7_0 = 70000;
-
-const int __BRIDGEOS_7_1 = 70100;
-
-const int __BRIDGEOS_7_2 = 70200;
-
-const int __BRIDGEOS_7_3 = 70300;
-
-const int __BRIDGEOS_7_4 = 70400;
-
-const int __BRIDGEOS_7_6 = 70600;
-
-const int __BRIDGEOS_8_0 = 80000;
-
-const int __BRIDGEOS_8_1 = 80100;
-
-const int __BRIDGEOS_8_2 = 80200;
-
-const int __BRIDGEOS_8_3 = 80300;
-
-const int __BRIDGEOS_8_4 = 80400;
-
-const int __BRIDGEOS_8_5 = 80500;
-
-const int __BRIDGEOS_8_6 = 80600;
-
-const int __BRIDGEOS_9_0 = 90000;
-
-const int __BRIDGEOS_9_1 = 90100;
-
-const int __BRIDGEOS_9_2 = 90200;
-
-const int __BRIDGEOS_9_3 = 90300;
-
-const int __BRIDGEOS_9_4 = 90400;
-
-const int __BRIDGEOS_9_5 = 90500;
-
-const int __BRIDGEOS_9_6 = 90600;
-
-const int __BRIDGEOS_10_0 = 100000;
-
-const int __BRIDGEOS_10_1 = 100100;
-
-const int __BRIDGEOS_10_2 = 100200;
-
-const int __DRIVERKIT_19_0 = 190000;
-
-const int __DRIVERKIT_20_0 = 200000;
-
-const int __DRIVERKIT_21_0 = 210000;
-
-const int __DRIVERKIT_22_0 = 220000;
-
-const int __DRIVERKIT_22_4 = 220400;
-
-const int __DRIVERKIT_22_5 = 220500;
-
-const int __DRIVERKIT_22_6 = 220600;
-
-const int __DRIVERKIT_23_0 = 230000;
-
-const int __DRIVERKIT_23_1 = 230100;
-
-const int __DRIVERKIT_23_2 = 230200;
-
-const int __DRIVERKIT_23_3 = 230300;
-
-const int __DRIVERKIT_23_4 = 230400;
-
-const int __DRIVERKIT_23_5 = 230500;
-
-const int __DRIVERKIT_23_6 = 230600;
-
-const int __DRIVERKIT_24_0 = 240000;
-
-const int __DRIVERKIT_24_1 = 240100;
-
-const int __DRIVERKIT_24_2 = 240200;
-
-const int __DRIVERKIT_24_3 = 240300;
-
-const int __DRIVERKIT_24_4 = 240400;
-
-const int __DRIVERKIT_24_5 = 240500;
-
-const int __DRIVERKIT_24_6 = 240600;
-
-const int __DRIVERKIT_25_0 = 250000;
-
-const int __DRIVERKIT_25_1 = 250100;
-
-const int __DRIVERKIT_25_2 = 250200;
-
-const int __VISIONOS_1_0 = 10000;
-
-const int __VISIONOS_1_1 = 10100;
-
-const int __VISIONOS_1_2 = 10200;
-
-const int __VISIONOS_1_3 = 10300;
-
-const int __VISIONOS_2_0 = 20000;
-
-const int __VISIONOS_2_1 = 20100;
-
-const int __VISIONOS_2_2 = 20200;
-
-const int __VISIONOS_2_3 = 20300;
-
-const int __VISIONOS_2_4 = 20400;
-
-const int __VISIONOS_2_5 = 20500;
-
-const int __VISIONOS_2_6 = 20600;
-
-const int __VISIONOS_3_0 = 30000;
-
-const int __VISIONOS_26_0 = 260000;
-
-const int __VISIONOS_26_1 = 260100;
-
-const int __VISIONOS_26_2 = 260200;
-
-const int MAC_OS_X_VERSION_10_0 = 1000;
-
-const int MAC_OS_X_VERSION_10_1 = 1010;
-
-const int MAC_OS_X_VERSION_10_2 = 1020;
-
-const int MAC_OS_X_VERSION_10_3 = 1030;
-
-const int MAC_OS_X_VERSION_10_4 = 1040;
-
-const int MAC_OS_X_VERSION_10_5 = 1050;
-
-const int MAC_OS_X_VERSION_10_6 = 1060;
-
-const int MAC_OS_X_VERSION_10_7 = 1070;
-
-const int MAC_OS_X_VERSION_10_8 = 1080;
-
-const int MAC_OS_X_VERSION_10_9 = 1090;
-
-const int MAC_OS_X_VERSION_10_10 = 101000;
-
-const int MAC_OS_X_VERSION_10_10_2 = 101002;
-
-const int MAC_OS_X_VERSION_10_10_3 = 101003;
-
-const int MAC_OS_X_VERSION_10_11 = 101100;
-
-const int MAC_OS_X_VERSION_10_11_2 = 101102;
-
-const int MAC_OS_X_VERSION_10_11_3 = 101103;
-
-const int MAC_OS_X_VERSION_10_11_4 = 101104;
-
-const int MAC_OS_X_VERSION_10_12 = 101200;
-
-const int MAC_OS_X_VERSION_10_12_1 = 101201;
-
-const int MAC_OS_X_VERSION_10_12_2 = 101202;
-
-const int MAC_OS_X_VERSION_10_12_4 = 101204;
-
-const int MAC_OS_X_VERSION_10_13 = 101300;
-
-const int MAC_OS_X_VERSION_10_13_1 = 101301;
-
-const int MAC_OS_X_VERSION_10_13_2 = 101302;
-
-const int MAC_OS_X_VERSION_10_13_4 = 101304;
-
-const int MAC_OS_X_VERSION_10_14 = 101400;
-
-const int MAC_OS_X_VERSION_10_14_1 = 101401;
-
-const int MAC_OS_X_VERSION_10_14_4 = 101404;
-
-const int MAC_OS_X_VERSION_10_14_5 = 101405;
-
-const int MAC_OS_X_VERSION_10_14_6 = 101406;
-
-const int MAC_OS_X_VERSION_10_15 = 101500;
-
-const int MAC_OS_X_VERSION_10_15_1 = 101501;
-
-const int MAC_OS_X_VERSION_10_15_4 = 101504;
-
-const int MAC_OS_X_VERSION_10_16 = 101600;
-
-const int MAC_OS_VERSION_11_0 = 110000;
-
-const int MAC_OS_VERSION_11_1 = 110100;
-
-const int MAC_OS_VERSION_11_3 = 110300;
-
-const int MAC_OS_VERSION_11_4 = 110400;
-
-const int MAC_OS_VERSION_11_5 = 110500;
-
-const int MAC_OS_VERSION_11_6 = 110600;
-
-const int MAC_OS_VERSION_12_0 = 120000;
-
-const int MAC_OS_VERSION_12_1 = 120100;
-
-const int MAC_OS_VERSION_12_2 = 120200;
-
-const int MAC_OS_VERSION_12_3 = 120300;
-
-const int MAC_OS_VERSION_12_4 = 120400;
-
-const int MAC_OS_VERSION_12_5 = 120500;
-
-const int MAC_OS_VERSION_12_6 = 120600;
-
-const int MAC_OS_VERSION_12_7 = 120700;
-
-const int MAC_OS_VERSION_13_0 = 130000;
-
-const int MAC_OS_VERSION_13_1 = 130100;
-
-const int MAC_OS_VERSION_13_2 = 130200;
-
-const int MAC_OS_VERSION_13_3 = 130300;
-
-const int MAC_OS_VERSION_13_4 = 130400;
-
-const int MAC_OS_VERSION_13_5 = 130500;
-
-const int MAC_OS_VERSION_13_6 = 130600;
-
-const int MAC_OS_VERSION_13_7 = 130700;
-
-const int MAC_OS_VERSION_14_0 = 140000;
-
-const int MAC_OS_VERSION_14_1 = 140100;
-
-const int MAC_OS_VERSION_14_2 = 140200;
-
-const int MAC_OS_VERSION_14_3 = 140300;
-
-const int MAC_OS_VERSION_14_4 = 140400;
-
-const int MAC_OS_VERSION_14_5 = 140500;
-
-const int MAC_OS_VERSION_14_6 = 140600;
-
-const int MAC_OS_VERSION_14_7 = 140700;
-
-const int MAC_OS_VERSION_15_0 = 150000;
-
-const int MAC_OS_VERSION_15_1 = 150100;
-
-const int MAC_OS_VERSION_15_2 = 150200;
-
-const int MAC_OS_VERSION_15_3 = 150300;
-
-const int MAC_OS_VERSION_15_4 = 150400;
-
-const int MAC_OS_VERSION_15_5 = 150500;
-
-const int MAC_OS_VERSION_15_6 = 150600;
-
-const int MAC_OS_VERSION_16_0 = 160000;
-
-const int MAC_OS_VERSION_26_0 = 260000;
-
-const int MAC_OS_VERSION_26_1 = 260100;
-
-const int MAC_OS_VERSION_26_2 = 260200;
-
-const int __AVAILABILITY_VERSIONS_VERSION_HASH = 93585900;
-
-const String __AVAILABILITY_VERSIONS_VERSION_STRING = 'Local';
-
-const String __AVAILABILITY_FILE = 'AvailabilityVersions.h';
-
-const int __MAC_OS_X_VERSION_MIN_REQUIRED = 260000;
-
-const int __MAC_OS_X_VERSION_MAX_ALLOWED = 260200;
-
-const int __ENABLE_LEGACY_MAC_AVAILABILITY = 1;
-
-const int RENAME_SECLUDE = 1;
-
-const int RENAME_SWAP = 2;
-
-const int RENAME_EXCL = 4;
-
-const int RENAME_RESERVED1 = 8;
-
-const int RENAME_NOFOLLOW_ANY = 16;
-
-const int RENAME_RESOLVE_BENEATH = 32;
-
-const int SEEK_SET = 0;
-
-const int SEEK_CUR = 1;
-
-const int SEEK_END = 2;
-
-const int SEEK_HOLE = 3;
-
-const int SEEK_DATA = 4;
-
-const int __SLBF = 1;
-
-const int __SNBF = 2;
-
-const int __SRD = 4;
-
-const int __SWR = 8;
-
-const int __SRW = 16;
-
-const int __SEOF = 32;
-
-const int __SERR = 64;
-
-const int __SMBF = 128;
-
-const int __SAPP = 256;
-
-const int __SSTR = 512;
-
-const int __SOPT = 1024;
-
-const int __SNPT = 2048;
-
-const int __SOFF = 4096;
-
-const int __SMOD = 8192;
-
-const int __SALC = 16384;
-
-const int __SIGN = 32768;
-
-const int _IOFBF = 0;
-
-const int _IOLBF = 1;
-
-const int _IONBF = 2;
-
-const int BUFSIZ = 1024;
-
-const int EOF = -1;
-
-const int FOPEN_MAX = 20;
-
-const int FILENAME_MAX = 1024;
-
-const String P_tmpdir = '/var/tmp/';
-
-const int L_tmpnam = 1024;
-
-const int TMP_MAX = 308915776;
-
-const int L_ctermid = 1024;
-
-const String LUA_GNAME = '_G';
-
-const int LUA_ERRFILE = 6;
-
-const String LUA_LOADED_TABLE = '_LOADED';
-
-const String LUA_PRELOAD_TABLE = '_PRELOAD';
-
-const int LUAL_NUMSIZES = 136;
-
-const int LUA_NOREF = -2;
-
-const int LUA_REFNIL = -1;
-
-const String LUA_FILEHANDLE = 'FILE*';

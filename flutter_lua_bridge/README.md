@@ -1,39 +1,49 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# flutter_lua_bridge
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages). 
+A new Dart FFI package project.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages). 
--->
+## Getting Started
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+This project is a starting point for a Flutter
+[FFI package](https://flutter.dev/to/ffi-package),
+a specialized package that includes native code directly invoked with Dart FFI.
 
-## Features
+## Project structure
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+This template uses the following structure:
 
-## Getting started
+* `src`: Contains the native source code, and a CmakeFile.txt file for building
+  that source code into a dynamic library.
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+* `lib`: Contains the Dart code that defines the API of the plugin, and which
+  calls into the native code using `dart:ffi`.
 
-## Usage
+* `bin`: Contains the `build.dart` that performs the external native builds.
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
+## Building and bundling native code
 
-```dart
-const like = 'sample';
-```
+`build.dart` does the building of native components.
 
-## Additional information
+Bundling is done by Flutter based on the output from `build.dart`.
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+## Binding to native code
+
+To use the native code, bindings in Dart are needed.
+To avoid writing these by hand, they are generated from the header file
+(`src/flutter_lua_bridge.h`) by `package:ffigen`.
+Regenerate the bindings by running `dart run ffigen --config ffigen.yaml`.
+
+## Invoking native code
+
+Very short-running native functions can be directly invoked from any isolate.
+For example, see `sum` in `lib/flutter_lua_bridge.dart`.
+
+Longer-running functions should be invoked on a helper isolate to avoid
+dropping frames in Flutter applications.
+For example, see `sumAsync` in `lib/flutter_lua_bridge.dart`.
+
+## Flutter help
+
+For help getting started with Flutter, view our
+[online documentation](https://docs.flutter.dev), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
