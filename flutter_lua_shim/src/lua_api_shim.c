@@ -11,6 +11,8 @@
   #error "Only Lua 5.3/5.4 supported"
 #endif
 
+const int kLuaVersionReleaseNum = LUA_VERSION_RELEASE_NUM;
+
 /* ================================================================
  * 状态管理
  * ================================================================ */

@@ -23,7 +23,9 @@ String _renameType(Declaration decl) {
     // lua_shim_compare -> LuaCompare
     final suffix = name.substring('lua_shim_'.length);
     // 特殊处理 gc -> GC
-    final suffixUpper = suffix == 'gc' ? 'GC' : suffix[0].toUpperCase() + suffix.substring(1);
+    final suffixUpper = suffix == 'gc'
+        ? 'GC'
+        : suffix[0].toUpperCase() + suffix.substring(1);
     return 'Lua$suffixUpper';
   }
   return name;
@@ -59,7 +61,10 @@ library $packageName;
       style: NativeExternalBindings(),
     ),
     headers: Headers(
-      entryPoints: [packageRoot.resolve('src/lua_api_types.h'), packageRoot.resolve('src/lua_api_shim.h')],
+      entryPoints: [
+        packageRoot.resolve('src/lua_api_types.h'),
+        packageRoot.resolve('src/lua_api_shim.h'),
+      ],
     ),
     enums: Enums(
       include: Declarations.includeAll,
@@ -68,9 +73,19 @@ library $packageName;
       style: (decl, suggested) => EnumStyle.dartEnum,
       silenceWarning: true,
     ),
-    functions: Functions(include: Declarations.includeAll, rename: _renameFunction),
-    macros: Macros(include: Declarations.includeSet({'LUA_REGISTRYINDEX'}), rename: _renameFunction),
-    structs: Structs(include: Declarations.includeAll, rename: _renameType, dependencies: CompoundDependencies.full),
+    functions: Functions(
+      include: Declarations.includeAll,
+      rename: _renameFunction,
+    ),
+    structs: Structs(
+      include: Declarations.includeAll,
+      rename: _renameType,
+      dependencies: CompoundDependencies.full,
+    ),
     typedefs: Typedefs(include: Declarations.includeAll, rename: _renameType),
+    globals: Globals(
+      include: Declarations.includeSet({'kLuaVersionReleaseNum'}),
+      rename: _renameFunction,
+    ),
   ).generate();
 }

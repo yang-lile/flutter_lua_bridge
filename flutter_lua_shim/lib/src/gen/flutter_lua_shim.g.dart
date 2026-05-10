@@ -12,6 +12,9 @@ library flutter_lua_shim;
 // ignore_for_file: type=lint, unused_import
 import 'dart:ffi' as ffi;
 
+@ffi.Native<ffi.Int>()
+external final int kLuaVersionReleaseNum;
+
 @ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Char)>()
 external void dart_lua_shimL_addchar(ffi.Pointer<ffi.Void> B, int c);
 
@@ -1930,6 +1933,12 @@ enum LuaCompare {
   };
 }
 
+/// ================================================================
+/// 值容器 Union（工程中常用的跨层数据传递概念）
+///
+/// 不属于 shim 层的核心职责，但为上层（如 Dart FFI 或后续桥接层）
+/// 提供一个类型安全的“Lua 值”抽象，避免在 C 侧使用裸 void*。
+/// ================================================================
 final class lua_State extends ffi.Opaque {}
 
 /// 无标签的值 Union。调用方需自行保证读取的分支与 Lua 栈实际类型一致。
@@ -2000,5 +2009,3 @@ typedef dart_lua_shim_int_result_t = int_const_char_ptr_result;
 typedef DartCFunctionFunction = ffi.Int Function(ffi.Pointer<lua_State> L);
 typedef DartDartCFunctionFunction = int Function(ffi.Pointer<lua_State> L);
 typedef DartCFunction = ffi.Pointer<ffi.NativeFunction<DartCFunctionFunction>>;
-
-const int LUA_REGISTRYINDEX = -1001000;

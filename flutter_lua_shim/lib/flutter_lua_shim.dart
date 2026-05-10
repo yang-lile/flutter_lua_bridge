@@ -5,4 +5,4 @@ export 'src/gen/flutter_lua_shim.g.dart' show
   LuaGC,
   LuaArith,
   LuaCompare,
-  LUA_REGISTRYINDEX;
+  kLuaVersionReleaseNum;

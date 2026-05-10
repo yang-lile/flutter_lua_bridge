@@ -26,6 +26,8 @@ typedef int_const_char_ptr_result dart_lua_shim_int_result_t;
 extern "C" {
 #endif
 
+DART_LUA_SHIM_API extern const int kLuaVersionReleaseNum;
+
 typedef struct lua_State lua_State;
 
 typedef int (*DartCFunction)(lua_State* L);
