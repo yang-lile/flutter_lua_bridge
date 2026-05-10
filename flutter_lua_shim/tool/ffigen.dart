@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:ffigen/ffigen.dart';
 
-import 'api_set_5.4.dart';
-
 // ============================================================================
 // ffigen 声明级 rename 回调
 // ============================================================================
@@ -26,7 +24,7 @@ String _renameType(Declaration decl) {
     final suffix = name.substring('lua_shim_'.length);
     // 特殊处理 gc -> GC
     final suffixUpper = suffix == 'gc' ? 'GC' : suffix[0].toUpperCase() + suffix.substring(1);
-    return 'Lua' + suffixUpper;
+    return 'Lua$suffixUpper';
   }
   return name;
 }

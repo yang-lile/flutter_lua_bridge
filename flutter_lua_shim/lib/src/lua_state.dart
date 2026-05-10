@@ -1,5 +1,4 @@
 import 'dart:ffi';
-import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'gen/flutter_lua_shim.g.dart' as generated;
 import '../flutter_lua_shim.dart';

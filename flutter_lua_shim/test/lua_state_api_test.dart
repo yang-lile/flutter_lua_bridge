@@ -38,20 +38,20 @@ void main() {
     });
 
     test('xMove - 在状态间移动值', () {
-      final L1 = LuaState.newState();
-      final L2 = LuaState.newState();
+      final l1 = LuaState.newState();
+      final l2 = LuaState.newState();
       
-      L1.pushInteger(42);
-      L1.pushString('hello');
+      l1.pushInteger(42);
+      l1.pushString('hello');
       
-      L1.xMove(L2, 2);
+      l1.xMove(l2, 2);
       
-      expect(L2.top, equals(2));
-      expect(L2.toIntegerX(1), equals(42));
-      expect(L2.toLString(2), equals('hello'));
+      expect(l2.top, equals(2));
+      expect(l2.toIntegerX(1), equals(42));
+      expect(l2.toLString(2), equals('hello'));
       
-      L1.close();
-      L2.close();
+      l1.close();
+      l2.close();
     });
   });
 
@@ -178,7 +178,7 @@ void main() {
     test('newThread 和 pushThread', () {
       final L = LuaState.newState();
       
-      final thread = L.newThread();
+      final _ = L.newThread();
       // newThread 在主状态上压入新线程，不是在 thread 对象上
       expect(L.isThread(-1), isTrue);
       
