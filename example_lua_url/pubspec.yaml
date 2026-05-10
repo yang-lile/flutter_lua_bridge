@@ -1,0 +1,30 @@
+name: example_lua_url
+description: "Example demonstrating flutter_lua_shim with lua_source_url"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_lua_shim:
+    path: ../flutter_lua_shim
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  test: ^1.25.8
+
+flutter:
+  uses-material-design: true
+
+hooks:
+  user_defines:
+    flutter_lua_shim:
+      lua_version: "5.4"
+      lua_source_url: "https://www.lua.org/ftp/lua-5.4.7.tar.gz"

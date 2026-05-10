@@ -119,13 +119,6 @@ typedef struct lua_shim_result {
     lua_shim_value_t  value;    /**< 值内容 */
 } lua_shim_result_t;
 
-/* ================================================================
- * Registry 索引常量
- * ================================================================ */
-
-/** Lua Registry 索引，用于在 registry 表中存储和检索值。 */
-#define LUA_REGISTRYINDEX (-1001000)
-
 #ifdef __cplusplus
 }
 #endif
