@@ -8,4 +8,5 @@ environment:
 workspace:
   - legacy/flutter_lua_bridge
   - legacy/flutter_lua_shim
-  - example
+  - examples/example
+  - examples/example_lua_url

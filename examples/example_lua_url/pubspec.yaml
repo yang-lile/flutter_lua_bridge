@@ -3,15 +3,14 @@ description: "Example demonstrating flutter_lua_shim with lua_source_url"
 publish_to: 'none'
 
 version: 1.0.0+1
-
+resolution: workspace
 environment:
   sdk: ^3.8.1
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_lua_shim:
-    path: ../legacy/flutter_lua_shim
+  flutter_lua_shim: ^1.0.0
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
