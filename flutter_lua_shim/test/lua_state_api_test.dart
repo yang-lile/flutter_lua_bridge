@@ -203,7 +203,7 @@ void main() {
       final L = LuaState.newState();
       
       final status = L.status();
-      expect(status, equals(LuaStatus.ok));
+      expect(status, equals(LuaStatus.LUA_SHIM_OK.value));
       
       L.close();
     });
@@ -324,7 +324,7 @@ void main() {
       final L = LuaState.newState();
       
       final result = L.doString('return 42');
-      expect(result, equals(LuaStatus.ok));
+      expect(result, equals(LuaStatus.LUA_SHIM_OK.value));
       
       expect(L.toIntegerX(-1), equals(42));
       
@@ -344,7 +344,7 @@ void main() {
       final L = LuaState.newState();
       
       final result = L.loadStringL('return 1 + 1');
-      expect(result, equals(LuaStatus.ok));
+      expect(result, equals(LuaStatus.LUA_SHIM_OK.value));
       
       L.close();
     });
@@ -436,13 +436,13 @@ void main() {
       final L = LuaState.newState();
       
       L.newTable();
-      final ref = L.lRef(LuaRegistry.index);
+      final ref = L.lRef(LUA_REGISTRYINDEX);
       expect(ref, greaterThan(0));
-      
-      L.rawGetI(LuaRegistry.index, ref);
+
+      L.rawGetI(LUA_REGISTRYINDEX, ref);
       expect(L.isTable(-1), isTrue);
-      
-      L.lUnref(LuaRegistry.index, ref);
+
+      L.lUnref(LUA_REGISTRYINDEX, ref);
       
       L.close();
     });
@@ -588,7 +588,7 @@ void main() {
     test('GC collect', () {
       final L = LuaState.newState();
       
-      final count = L.gc(LuaGC.collect, 0);
+      final count = L.gc(LuaGC.LUA_SHIM_GC_COLLECT.value, 0);
       expect(count, isNotNull);
       
       L.close();
@@ -597,7 +597,7 @@ void main() {
     test('GC count', () {
       final L = LuaState.newState();
       
-      final count = L.gc(LuaGC.count, 0);
+      final count = L.gc(LuaGC.LUA_SHIM_GC_COUNT.value, 0);
       expect(count, greaterThanOrEqualTo(0));
       
       L.close();
@@ -610,7 +610,7 @@ void main() {
       
       L.pushInteger(42);
       L.pushInteger(42);
-      expect(L.compare(-1, -2, LuaCompare.eq), isTrue);
+      expect(L.compare(-1, -2, LuaCompare.LUA_SHIM_OPEQ.value), isTrue);
       
       L.close();
     });
@@ -620,7 +620,7 @@ void main() {
       
       L.pushInteger(10);
       L.pushInteger(20);
-      expect(L.compare(-2, -1, LuaCompare.lt), isTrue);
+      expect(L.compare(-2, -1, LuaCompare.LUA_SHIM_OPLT.value), isTrue);
       
       L.close();
     });
@@ -630,7 +630,7 @@ void main() {
       
       L.pushInteger(10);
       L.pushInteger(20);
-      expect(L.compare(-2, -1, LuaCompare.le), isTrue);
+      expect(L.compare(-2, -1, LuaCompare.LUA_SHIM_OPLE.value), isTrue);
       
       L.close();
     });
@@ -642,7 +642,7 @@ void main() {
       
       L.pushInteger(10);
       L.pushInteger(20);
-      L.arith(LuaArith.add);
+      L.arith(LuaArith.LUA_SHIM_OPADD.value);
       expect(L.toIntegerX(-1), equals(30));
       
       L.close();
@@ -653,7 +653,7 @@ void main() {
       
       L.pushInteger(20);
       L.pushInteger(10);
-      L.arith(LuaArith.sub);
+      L.arith(LuaArith.LUA_SHIM_OPSUB.value);
       expect(L.toIntegerX(-1), equals(10));
       
       L.close();
@@ -664,7 +664,7 @@ void main() {
       
       L.pushInteger(5);
       L.pushInteger(6);
-      L.arith(LuaArith.mul);
+      L.arith(LuaArith.LUA_SHIM_OPMUL.value);
       expect(L.toIntegerX(-1), equals(30));
       
       L.close();

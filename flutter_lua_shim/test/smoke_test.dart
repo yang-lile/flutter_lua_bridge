@@ -13,10 +13,10 @@ void main() {
         return a + b
       end
     ''');
-    expect(loadStatus, equals(LuaStatus.ok));
+    expect(loadStatus, equals(LuaStatus.LUA_SHIM_OK.value));
 
     final callStatus = L.pCall(0, 0);
-    expect(callStatus, equals(LuaStatus.ok));
+    expect(callStatus, equals(LuaStatus.LUA_SHIM_OK.value));
 
     L.getGlobal('add');
     expect(L.typeName(L.type(-1)), equals('function'));
@@ -26,7 +26,7 @@ void main() {
     expect(L.top, equals(3));
 
     final pcallStatus = L.pCall(2, 1);
-    expect(pcallStatus, equals(LuaStatus.ok));
+    expect(pcallStatus, equals(LuaStatus.LUA_SHIM_OK.value));
 
     expect(L.typeName(L.type(-1)), equals('number'));
     expect(L.toIntegerX(-1), equals(30));

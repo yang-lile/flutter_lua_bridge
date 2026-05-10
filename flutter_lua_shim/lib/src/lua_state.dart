@@ -2,7 +2,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'gen/flutter_lua_shim.g.dart' as generated;
-import 'lua_constants.dart';
+import '../flutter_lua_shim.dart';
 
 /// Dart 友好的 Lua State 包装器
 class LuaState {
@@ -46,7 +46,7 @@ class LuaState {
   String typeName(int tp) {
     final ptr = generated.dart_lua_shim_typename(
       _ptr,
-      generated.lua_shim_type.fromValue(tp),
+      LuaType.fromValue(tp),
     );
     return ptr.cast<Utf8>().toDartString();
   }
@@ -170,7 +170,7 @@ class LuaState {
 
   // GC
   int gc(int what, int data) =>
-      generated.dart_lua_shim_gc(_ptr, generated.lua_shim_gc.fromValue(what), data);
+      generated.dart_lua_shim_gc(_ptr, LuaGC.fromValue(what), data);
 
   // 错误
   int error() => generated.dart_lua_shim_error(_ptr).value;
@@ -191,14 +191,14 @@ class LuaState {
 
   // 算术
   void arith(int op) =>
-      generated.dart_lua_shim_arith(_ptr, generated.lua_shim_arith.fromValue(op));
+      generated.dart_lua_shim_arith(_ptr, LuaArith.fromValue(op));
 
   bool compare(int idx1, int idx2, int op) =>
       generated.dart_lua_shim_compare(
             _ptr,
             idx1,
             idx2,
-            generated.lua_shim_compare.fromValue(op),
+            LuaCompare.fromValue(op),
           ) !=
           0;
 
@@ -214,14 +214,14 @@ class LuaState {
       generated.dart_lua_shim_callk(_ptr, nargs, nresults, ctx, k);
   
   /// 保护模式调用，返回状态枚举
-  generated.lua_shim_status pCallStatus(int nargs, int nresults, {int errfunc = 0}) =>
+  LuaStatus pCallStatus(int nargs, int nresults, {int errfunc = 0}) =>
       generated.dart_lua_shim_pcall(_ptr, nargs, nresults, errfunc);
   
   void pCallK(int nargs, int nresults, int errfunc, int ctx, Pointer<Void> k) =>
       generated.dart_lua_shim_pcallk(_ptr, nargs, nresults, errfunc, ctx, k);
 
   /// 加载字符串，返回状态枚举
-  generated.lua_shim_status loadStringStatus(String code) {
+  LuaStatus loadStringStatus(String code) {
     final ptr = code.toNativeUtf8();
     final r = generated.dart_lua_shim_loadstring(_ptr, ptr.cast());
     calloc.free(ptr);
@@ -233,12 +233,12 @@ class LuaState {
   // 协程
   int pushThread() => generated.dart_lua_shim_pushthread(_ptr);
   
-  generated.lua_shim_status resume(LuaState from, int narg, Pointer<Int> nres) =>
+  LuaStatus resume(LuaState from, int narg, Pointer<Int> nres) =>
       generated.dart_lua_shim_resume(_ptr, from._ptr, narg, nres);
   
   int yield(int nresults) => generated.dart_lua_shim_yield(_ptr, nresults);
   
-  generated.lua_shim_status yieldK(int nresults, int ctx, Pointer<Void> k) =>
+  LuaStatus yieldK(int nresults, int ctx, Pointer<Void> k) =>
       generated.dart_lua_shim_yieldk(_ptr, nresults, ctx, k);
   
   int resetThread() => generated.dart_lua_shim_resetthread(_ptr).value;

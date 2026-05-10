@@ -573,7 +573,7 @@ external int dart_lua_shim_absindex(ffi.Pointer<lua_State> L, int idx);
 )
 external void _dart_lua_shim_arith(ffi.Pointer<lua_State> L, int op);
 
-void dart_lua_shim_arith(ffi.Pointer<lua_State> L, lua_shim_arith op) =>
+void dart_lua_shim_arith(ffi.Pointer<lua_State> L, LuaArith op) =>
     _dart_lua_shim_arith(L, op.value);
 
 @ffi.Native<
@@ -642,7 +642,7 @@ int dart_lua_shim_compare(
   ffi.Pointer<lua_State> L,
   int idx1,
   int idx2,
-  lua_shim_compare op,
+  LuaCompare op,
 ) => _dart_lua_shim_compare(L, idx1, idx2, op.value);
 
 @ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int)>()
@@ -682,15 +682,15 @@ external int dart_lua_shim_dump(
 )
 external int _dart_lua_shim_error(ffi.Pointer<lua_State> L);
 
-lua_shim_status dart_lua_shim_error(ffi.Pointer<lua_State> L) =>
-    lua_shim_status.fromValue(_dart_lua_shim_error(L));
+LuaStatus dart_lua_shim_error(ffi.Pointer<lua_State> L) =>
+    LuaStatus.fromValue(_dart_lua_shim_error(L));
 
 @ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.UnsignedInt, ffi.Int)>(
   symbol: 'dart_lua_shim_gc',
 )
 external int _dart_lua_shim_gc(ffi.Pointer<lua_State> L, int what, int data);
 
-int dart_lua_shim_gc(ffi.Pointer<lua_State> L, lua_shim_gc what, int data) =>
+int dart_lua_shim_gc(ffi.Pointer<lua_State> L, LuaGC what, int data) =>
     _dart_lua_shim_gc(L, what.value, data);
 
 @ffi.Native<
@@ -718,11 +718,11 @@ external int _dart_lua_shim_getfield(
   ffi.Pointer<ffi.Char> k,
 );
 
-lua_shim_type dart_lua_shim_getfield(
+LuaType dart_lua_shim_getfield(
   ffi.Pointer<lua_State> L,
   int idx,
   ffi.Pointer<ffi.Char> k,
-) => lua_shim_type.fromValue(_dart_lua_shim_getfield(L, idx, k));
+) => LuaType.fromValue(_dart_lua_shim_getfield(L, idx, k));
 
 @ffi.Native<ffi.Int Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>(
   symbol: 'dart_lua_shim_getglobal',
@@ -732,10 +732,10 @@ external int _dart_lua_shim_getglobal(
   ffi.Pointer<ffi.Char> name,
 );
 
-lua_shim_type dart_lua_shim_getglobal(
+LuaType dart_lua_shim_getglobal(
   ffi.Pointer<lua_State> L,
   ffi.Pointer<ffi.Char> name,
-) => lua_shim_type.fromValue(_dart_lua_shim_getglobal(L, name));
+) => LuaType.fromValue(_dart_lua_shim_getglobal(L, name));
 
 @ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<lua_State>)>()
 external ffi.Pointer<ffi.Void> dart_lua_shim_gethook(ffi.Pointer<lua_State> L);
@@ -888,10 +888,10 @@ external int _dart_lua_shim_loadstring(
   ffi.Pointer<ffi.Char> s,
 );
 
-lua_shim_status dart_lua_shim_loadstring(
+LuaStatus dart_lua_shim_loadstring(
   ffi.Pointer<lua_State> L,
   ffi.Pointer<ffi.Char> s,
-) => lua_shim_status.fromValue(_dart_lua_shim_loadstring(L, s));
+) => LuaStatus.fromValue(_dart_lua_shim_loadstring(L, s));
 
 @ffi.Native<ffi.Pointer<lua_State> Function()>()
 external ffi.Pointer<lua_State> dart_lua_shim_newstate();
@@ -978,14 +978,12 @@ external int _dart_lua_shim_pcall(
   int errfunc,
 );
 
-lua_shim_status dart_lua_shim_pcall(
+LuaStatus dart_lua_shim_pcall(
   ffi.Pointer<lua_State> L,
   int nargs,
   int nresults,
   int errfunc,
-) => lua_shim_status.fromValue(
-  _dart_lua_shim_pcall(L, nargs, nresults, errfunc),
-);
+) => LuaStatus.fromValue(_dart_lua_shim_pcall(L, nargs, nresults, errfunc));
 
 @ffi.Native<
   ffi.UnsignedInt Function(
@@ -1006,14 +1004,14 @@ external int _dart_lua_shim_pcallk(
   ffi.Pointer<ffi.Void> k,
 );
 
-lua_shim_status dart_lua_shim_pcallk(
+LuaStatus dart_lua_shim_pcallk(
   ffi.Pointer<lua_State> L,
   int nargs,
   int nresults,
   int errfunc,
   int ctx,
   ffi.Pointer<ffi.Void> k,
-) => lua_shim_status.fromValue(
+) => LuaStatus.fromValue(
   _dart_lua_shim_pcallk(L, nargs, nresults, errfunc, ctx, k),
 );
 
@@ -1209,12 +1207,12 @@ external int _dart_lua_shim_resume(
   ffi.Pointer<ffi.Int> nres,
 );
 
-lua_shim_status dart_lua_shim_resume(
+LuaStatus dart_lua_shim_resume(
   ffi.Pointer<lua_State> L,
   ffi.Pointer<lua_State> from,
   int narg,
   ffi.Pointer<ffi.Int> nres,
-) => lua_shim_status.fromValue(_dart_lua_shim_resume(L, from, narg, nres));
+) => LuaStatus.fromValue(_dart_lua_shim_resume(L, from, narg, nres));
 
 @ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
 external void dart_lua_shim_rotate(ffi.Pointer<lua_State> L, int idx, int n);
@@ -1327,8 +1325,8 @@ external dart_lua_shim_void_result_t dart_lua_shim_setwarnf(
 )
 external int _dart_lua_shim_status(ffi.Pointer<lua_State> L);
 
-lua_shim_status dart_lua_shim_status(ffi.Pointer<lua_State> L) =>
-    lua_shim_status.fromValue(_dart_lua_shim_status(L));
+LuaStatus dart_lua_shim_status(ffi.Pointer<lua_State> L) =>
+    LuaStatus.fromValue(_dart_lua_shim_status(L));
 
 @ffi.Native<ffi.Size Function(ffi.Pointer<lua_State>, ffi.Pointer<ffi.Char>)>()
 external int dart_lua_shim_stringtonumber(
@@ -1344,10 +1342,10 @@ external int _dart_lua_shim_throwstring(
   ffi.Pointer<ffi.Char> s,
 );
 
-lua_shim_status dart_lua_shim_throwstring(
+LuaStatus dart_lua_shim_throwstring(
   ffi.Pointer<lua_State> L,
   ffi.Pointer<ffi.Char> s,
-) => lua_shim_status.fromValue(_dart_lua_shim_throwstring(L, s));
+) => LuaStatus.fromValue(_dart_lua_shim_throwstring(L, s));
 
 @ffi.Native<ffi.Bool Function(ffi.Pointer<lua_State>, ffi.Int)>()
 external bool dart_lua_shim_toboolean(ffi.Pointer<lua_State> L, int idx);
@@ -1432,8 +1430,8 @@ external ffi.Pointer<ffi.Void> dart_lua_shim_touserdata(
 )
 external int _dart_lua_shim_type(ffi.Pointer<lua_State> L, int idx);
 
-lua_shim_type dart_lua_shim_type(ffi.Pointer<lua_State> L, int idx) =>
-    lua_shim_type.fromValue(_dart_lua_shim_type(L, idx));
+LuaType dart_lua_shim_type(ffi.Pointer<lua_State> L, int idx) =>
+    LuaType.fromValue(_dart_lua_shim_type(L, idx));
 
 @ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<lua_State>, ffi.Int)>(
   symbol: 'dart_lua_shim_typename',
@@ -1445,7 +1443,7 @@ external ffi.Pointer<ffi.Char> _dart_lua_shim_typename(
 
 ffi.Pointer<ffi.Char> dart_lua_shim_typename(
   ffi.Pointer<lua_State> L,
-  lua_shim_type tp,
+  LuaType tp,
 ) => _dart_lua_shim_typename(L, tp.value);
 
 @ffi.Native<ffi.Void Function(ffi.Pointer<lua_State>, ffi.Int, ffi.Int)>()
@@ -1517,12 +1515,12 @@ external int _dart_lua_shim_yieldk(
   ffi.Pointer<ffi.Void> k,
 );
 
-lua_shim_status dart_lua_shim_yieldk(
+LuaStatus dart_lua_shim_yieldk(
   ffi.Pointer<lua_State> L,
   int nresults,
   int ctx,
   ffi.Pointer<ffi.Void> k,
-) => lua_shim_status.fromValue(_dart_lua_shim_yieldk(L, nresults, ctx, k));
+) => LuaStatus.fromValue(_dart_lua_shim_yieldk(L, nresults, ctx, k));
 
 typedef __int8_t = ffi.SignedChar;
 typedef Dart__int8_t = int;
@@ -1780,7 +1778,7 @@ typedef Dartuintmax_t = int;
 ///
 /// 对应 Lua 源码中的 LUA_TNONE / LUA_TNIL / LUA_TBOOLEAN 等。
 /// 在 shim 层中，所有返回/接收 Lua 类型的 API 均使用此枚举。
-enum lua_shim_type {
+enum LuaType {
   LUA_SHIM_TNONE(-1),
   LUA_SHIM_TNIL(0),
   LUA_SHIM_TBOOLEAN(1),
@@ -1793,9 +1791,9 @@ enum lua_shim_type {
   LUA_SHIM_TTHREAD(8);
 
   final int value;
-  const lua_shim_type(this.value);
+  const LuaType(this.value);
 
-  static lua_shim_type fromValue(int value) => switch (value) {
+  static LuaType fromValue(int value) => switch (value) {
     -1 => LUA_SHIM_TNONE,
     0 => LUA_SHIM_TNIL,
     1 => LUA_SHIM_TBOOLEAN,
@@ -1806,7 +1804,7 @@ enum lua_shim_type {
     6 => LUA_SHIM_TFUNCTION,
     7 => LUA_SHIM_TUSERDATA,
     8 => LUA_SHIM_TTHREAD,
-    _ => throw ArgumentError('Unknown value for lua_shim_type: $value'),
+    _ => throw ArgumentError('Unknown value for LuaType: $value'),
   };
 }
 
@@ -1814,7 +1812,7 @@ enum lua_shim_type {
 ///
 /// 对应 LUA_OK / LUA_YIELD / LUA_ERRRUN 等。
 /// 所有返回状态码的 API（pcall、resume、loadstring 等）均使用此枚举。
-enum lua_shim_status {
+enum LuaStatus {
   LUA_SHIM_OK(0),
   LUA_SHIM_YIELD(1),
   LUA_SHIM_ERRRUN(2),
@@ -1824,9 +1822,9 @@ enum lua_shim_status {
   LUA_SHIM_ERRERR(6);
 
   final int value;
-  const lua_shim_status(this.value);
+  const LuaStatus(this.value);
 
-  static lua_shim_status fromValue(int value) => switch (value) {
+  static LuaStatus fromValue(int value) => switch (value) {
     0 => LUA_SHIM_OK,
     1 => LUA_SHIM_YIELD,
     2 => LUA_SHIM_ERRRUN,
@@ -1834,7 +1832,7 @@ enum lua_shim_status {
     4 => LUA_SHIM_ERRMEM,
     5 => LUA_SHIM_ERRGCMM,
     6 => LUA_SHIM_ERRERR,
-    _ => throw ArgumentError('Unknown value for lua_shim_status: $value'),
+    _ => throw ArgumentError('Unknown value for LuaStatus: $value'),
   };
 }
 
@@ -1842,7 +1840,7 @@ enum lua_shim_status {
 ///
 /// 对应 LUA_GCSTOP / LUA_GCRESTART / LUA_GCCOLLECT 等。
 /// 用于 lua_shim_gc() 的 what 参数。
-enum lua_shim_gc {
+enum LuaGC {
   LUA_SHIM_GC_STOP(0),
   LUA_SHIM_GC_RESTART(1),
   LUA_SHIM_GC_COLLECT(2),
@@ -1854,9 +1852,9 @@ enum lua_shim_gc {
   LUA_SHIM_GC_ISRUNNING(9);
 
   final int value;
-  const lua_shim_gc(this.value);
+  const LuaGC(this.value);
 
-  static lua_shim_gc fromValue(int value) => switch (value) {
+  static LuaGC fromValue(int value) => switch (value) {
     0 => LUA_SHIM_GC_STOP,
     1 => LUA_SHIM_GC_RESTART,
     2 => LUA_SHIM_GC_COLLECT,
@@ -1866,7 +1864,7 @@ enum lua_shim_gc {
     6 => LUA_SHIM_GC_SETPAUSE,
     7 => LUA_SHIM_GC_SETSTEPMUL,
     9 => LUA_SHIM_GC_ISRUNNING,
-    _ => throw ArgumentError('Unknown value for lua_shim_gc: $value'),
+    _ => throw ArgumentError('Unknown value for LuaGC: $value'),
   };
 }
 
@@ -1874,7 +1872,7 @@ enum lua_shim_gc {
 ///
 /// 对应 LUA_OPADD / LUA_OPSUB / LUA_OPMUL 等。
 /// 用于 lua_shim_arith() 的 op 参数。
-enum lua_shim_arith {
+enum LuaArith {
   LUA_SHIM_OPADD(0),
   LUA_SHIM_OPSUB(1),
   LUA_SHIM_OPMUL(2),
@@ -1891,9 +1889,9 @@ enum lua_shim_arith {
   LUA_SHIM_OPBNOT(13);
 
   final int value;
-  const lua_shim_arith(this.value);
+  const LuaArith(this.value);
 
-  static lua_shim_arith fromValue(int value) => switch (value) {
+  static LuaArith fromValue(int value) => switch (value) {
     0 => LUA_SHIM_OPADD,
     1 => LUA_SHIM_OPSUB,
     2 => LUA_SHIM_OPMUL,
@@ -1908,7 +1906,7 @@ enum lua_shim_arith {
     11 => LUA_SHIM_OPSHR,
     12 => LUA_SHIM_OPUNM,
     13 => LUA_SHIM_OPBNOT,
-    _ => throw ArgumentError('Unknown value for lua_shim_arith: $value'),
+    _ => throw ArgumentError('Unknown value for LuaArith: $value'),
   };
 }
 
@@ -1916,19 +1914,19 @@ enum lua_shim_arith {
 ///
 /// 对应 LUA_OPEQ / LUA_OPLT / LUA_OPLE。
 /// 用于 lua_shim_compare() 的 op 参数。
-enum lua_shim_compare {
+enum LuaCompare {
   LUA_SHIM_OPEQ(0),
   LUA_SHIM_OPLT(1),
   LUA_SHIM_OPLE(2);
 
   final int value;
-  const lua_shim_compare(this.value);
+  const LuaCompare(this.value);
 
-  static lua_shim_compare fromValue(int value) => switch (value) {
+  static LuaCompare fromValue(int value) => switch (value) {
     0 => LUA_SHIM_OPEQ,
     1 => LUA_SHIM_OPLT,
     2 => LUA_SHIM_OPLE,
-    _ => throw ArgumentError('Unknown value for lua_shim_compare: $value'),
+    _ => throw ArgumentError('Unknown value for LuaCompare: $value'),
   };
 }
 
@@ -1955,27 +1953,27 @@ final class lua_shim_value extends ffi.Union {
   external ffi.Pointer<lua_State> thread;
 }
 
-typedef lua_shim_value_t = lua_shim_value;
+typedef LuaValue_t = lua_shim_value;
 
 /// 带标签的值容器。status 表示操作结果，type + value 表示值内容。
-final class lua_shim_result extends ffi.Struct {
+final class LuaResult extends ffi.Struct {
   /// < 操作状态（OK / 错误码）
   @ffi.UnsignedInt()
   external int statusAsInt;
 
-  lua_shim_status get status => lua_shim_status.fromValue(statusAsInt);
+  LuaStatus get status => LuaStatus.fromValue(statusAsInt);
 
   /// < 值类型标签
   @ffi.Int()
   external int typeAsInt;
 
-  lua_shim_type get type => lua_shim_type.fromValue(typeAsInt);
+  LuaType get type => LuaType.fromValue(typeAsInt);
 
   /// < 值内容
-  external lua_shim_value_t value;
+  external LuaValue_t value;
 }
 
-typedef lua_shim_result_t = lua_shim_result;
+typedef LuaResult_t = LuaResult;
 
 /// 通用结果类型
 typedef const_char_ptr = ffi.Pointer<ffi.Char>;
@@ -2002,3 +2000,5 @@ typedef dart_lua_shim_int_result_t = int_const_char_ptr_result;
 typedef DartCFunctionFunction = ffi.Int Function(ffi.Pointer<lua_State> L);
 typedef DartDartCFunctionFunction = int Function(ffi.Pointer<lua_State> L);
 typedef DartCFunction = ffi.Pointer<ffi.NativeFunction<DartCFunctionFunction>>;
+
+const int LUA_REGISTRYINDEX = -1001000;
