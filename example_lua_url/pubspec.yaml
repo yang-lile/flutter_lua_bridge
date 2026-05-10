@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_lua_shim:
-    path: ../flutter_lua_shim
+    path: ../legacy/flutter_lua_shim
   cupertino_icons: ^1.0.8
 
 dev_dependencies:

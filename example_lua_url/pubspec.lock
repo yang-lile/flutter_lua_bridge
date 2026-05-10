@@ -153,7 +153,7 @@ packages:
   flutter_lua_shim:
     dependency: "direct main"
     description:
-      path: "../flutter_lua_shim"
+      path: "../legacy/flutter_lua_shim"
       relative: true
     source: path
     version: "1.0.0"
