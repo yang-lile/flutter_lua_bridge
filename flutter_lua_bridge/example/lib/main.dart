@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart' as flutter_lua_bridge;
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,14 +14,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late int sumResult;
-  late Future<int> sumAsyncResult;
+  late int versionNumber;
 
   @override
   void initState() {
     super.initState();
-    sumResult = flutter_lua_bridge.sum(1, 2);
-    sumAsyncResult = flutter_lua_bridge.sumAsync(3, 4);
+    versionNumber = kLuaVersionReleaseNum;
   }
 
   @override
@@ -31,38 +28,45 @@ class _MyAppState extends State<MyApp> {
     const spacerSmall = SizedBox(height: 10);
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Native Packages')),
+        appBar: AppBar(title: const Text('Flutter Lua Bridge')),
         body: SingleChildScrollView(
           child: Container(
-            padding: const .all(10),
+            padding: const EdgeInsets.all(10),
             child: Column(
               children: [
                 const Text(
-                  'This calls a native function through FFI that is shipped as source in the package. '
-                  'The native code is built as part of the Flutter Runner build.',
+                  'Flutter Lua Bridge - FFI bindings for Lua C API',
                   style: textStyle,
-                  textAlign: .center,
+                  textAlign: TextAlign.center,
                 ),
                 spacerSmall,
                 Text(
-                  'sum(1, 2) = $sumResult',
+                  'Lua Version: $versionNumber',
                   style: textStyle,
-                  textAlign: .center,
+                  textAlign: TextAlign.center,
                 ),
                 spacerSmall,
-                FutureBuilder<int>(
-                  future: sumAsyncResult,
-                  builder: (BuildContext context, AsyncSnapshot<int> value) {
-                    final displayValue = (value.hasData)
-                        ? value.data
-                        : 'loading';
-                    return Text(
-                      'await sumAsync(3, 4) = $displayValue',
-                      style: textStyle,
-                      textAlign: .center,
-                    );
-                  },
+                const Text(
+                  'Type Enums:',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
                 ),
+                spacerSmall,
+                ...FlbType.values.map((type) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text('${type.name}: ${type.value}'),
+                )),
+                spacerSmall,
+                const Text(
+                  'Status Enums:',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                spacerSmall,
+                ...FlbStatus.values.map((status) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text('${status.name}: ${status.value}'),
+                )),
               ],
             ),
           ),
