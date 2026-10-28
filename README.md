@@ -78,6 +78,12 @@ The native hook builds the bundled Lua 5.4 source for the target platform.
 The four scenario tests in `example/test/scenarios` cover Lua-first, Teal-first,
 dynamic Lua and Dart-host implementations.
 
+The pull request gate is also available locally as `./tool/ci.sh`. It runs the
+same analyzer, generator drift checks, Cyan build, native bridge test and
+Flutter example tests used by the Linux CI job. `actionlint` can validate the
+workflow file itself. Full workflow emulation with `act` requires a Docker
+compatible daemon; it is optional and is not required for the local gate.
+
 ## Local playground
 
 For a disposable end-to-end test, generate the ignored `playground/` directory:

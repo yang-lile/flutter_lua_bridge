@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: typed-bridge-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   desktop:
     strategy:
@@ -20,10 +24,11 @@ jobs:
           flutter-version: '3.38.10'
           cache: true
       - run: flutter pub get
-      - run: dart analyze --fatal-infos
       - run: dart run flutter_lua_bridge_codegen --input bridge/basic_api.dart --check
         working-directory: example
       - run: dart run flutter_lua_bridge_codegen --input bridge/scenarios.dart --check
+        working-directory: example
+      - run: dart run flutter_lua_bridge_codegen --input bridge/battle.dart --check
         working-directory: example
       - run: dart test
         working-directory: packages/flutter_lua_bridge
@@ -31,7 +36,7 @@ jobs:
         working-directory: packages/flutter_lua_bridge_codegen
       # The legacy game_demo_test.dart expects a removed AppBar button.
       # Current navigation is covered by widget_test.dart.
-      - run: flutter test test/bridge test/widget_test.dart test/game/card_loader_test.dart
+      - run: flutter test test/bridge test/scenarios test/widget_test.dart test/game/card_loader_test.dart
         working-directory: example
       - run: python3 tool/test_native.py
         if: runner.os != 'Windows'
@@ -52,3 +57,18 @@ jobs:
       - name: Build Teal project with Cyan
         run: cyan build
         working-directory: example/lua
+
+  local-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          cache: true
+      - run: flutter pub get
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y lua5.4 luarocks
+      - run: luarocks --lua-version=5.4 install tl 0.24.8-1
+      - run: luarocks --lua-version=5.4 install cyan 0.4.1-1
+      - run: ./tool/ci.sh
