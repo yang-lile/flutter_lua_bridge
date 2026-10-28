@@ -4,4 +4,4 @@ include: package:flutter_lints/flutter.yaml
 # https://dart.dev/guides/language/analysis-options
 analyzer:
   exclude:
-    - lib/src/gen/flutter_lua_bridge_bindings_generated.dart
+    - playground/**

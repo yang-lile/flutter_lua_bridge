@@ -1,16 +1,24 @@
-# flutter_lua_bridge_example
+# Flutter example
 
-Demonstrates how to use the flutter_lua_bridge plugin.
+`bridge/basic_api.dart` and `bridge/battle.dart` are application contracts.
+Generate their Dart proxies, Lua companions and Teal declarations with:
 
-## Getting Started
+```sh
+dart run flutter_lua_bridge_codegen --input bridge/basic_api.dart
+```
 
-This project is a starting point for a Flutter application.
+The editable Teal implementation is [`lua/src/basic.tl`](lua/src/basic.tl).
+Build it with Cyan from the Lua project directory:
 
-A few resources to get you started if this is your first Flutter project:
+```sh
+cd lua
+cyan build
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+The resulting `lua/build/basic.lua` is packaged as a Flutter asset and loaded
+by `BasicBridgeDemo`; Teal and Cyan are not needed on the device. Generated
+files carry a `Do not edit` header.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The game demo continues to exercise the raw API, while `test/scenarios` covers
+four typed bridge strategies: handwritten Lua, Teal compiled to Lua, dynamic
+Lua and Lua calling registered Dart functions.
