@@ -6,5 +6,7 @@ environment:
   sdk: ^3.10.0
 
 workspace:
-  - flutter_lua_bridge
+  - packages/flutter_lua_bridge
+  - packages/flutter_lua_bridge_codegen_annotation
+  - packages/flutter_lua_bridge_codegen
   - example
