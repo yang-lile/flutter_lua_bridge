@@ -1,6 +1,6 @@
 // 游戏数据模型
 import 'dart:ffi';
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+import 'package:flutter_lua_bridge/raw.dart';
 
 /// 伤害类型
 enum DamageType { physical, magic, heal }

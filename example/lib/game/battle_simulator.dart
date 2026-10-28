@@ -1,7 +1,7 @@
 // 战斗模拟器
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+import 'package:flutter_lua_bridge/raw.dart';
 
 import 'models.dart';
 
