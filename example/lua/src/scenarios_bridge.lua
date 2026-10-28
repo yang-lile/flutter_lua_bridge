@@ -4,48 +4,50 @@
 local bridge = {}
 local function _flb_ok(value) return { status = "ok", value = value } end
 local function _flb_error(kind, message) return { status = "error", kind = kind, message = tostring(message) } end
-local function _check_int(value, path)
+local function _check_int(value, path, depth)
   if type(value) ~= "number" or (math.type and math.type(value) ~= "integer") or (not math.type and value % 1 ~= 0) then return false, path .. ": expected integer" end
   return true
 end
-local function _check_String(value, path)
+local function _check_String(value, path, depth)
   if type(value) ~= "string" then return false, path .. ": expected string" end
   return true
 end
-local function _check_CalculationResult(value, path)
+local function _check_CalculationResult(value, path, depth)
   if type(value) ~= "table" then return false, path .. ": expected CalculationResult table" end
+  if depth > 64 then return false, path .. ": maximum nesting depth exceeded" end
   if rawget(value, "value") == nil then return false, path .. "." .. "value" .. ": required field" end
-  local valid_value, message_value = _check_int(rawget(value, "value"), path .. "." .. "value")
+  local valid_value, message_value = _check_int(rawget(value, "value"), path .. "." .. "value", depth + 1)
   if not valid_value then return false, message_value end
   if rawget(value, "implementation") == nil then return false, path .. "." .. "implementation" .. ": required field" end
-  local valid_implementation, message_implementation = _check_String(rawget(value, "implementation"), path .. "." .. "implementation")
+  local valid_implementation, message_implementation = _check_String(rawget(value, "implementation"), path .. "." .. "implementation", depth + 1)
   if not valid_implementation then return false, message_implementation end
   return true
 end
-local function _check_CalculationInput(value, path)
+local function _check_CalculationInput(value, path, depth)
   if type(value) ~= "table" then return false, path .. ": expected CalculationInput table" end
+  if depth > 64 then return false, path .. ": maximum nesting depth exceeded" end
   if rawget(value, "base") == nil then return false, path .. "." .. "base" .. ": required field" end
-  local valid_base, message_base = _check_int(rawget(value, "base"), path .. "." .. "base")
+  local valid_base, message_base = _check_int(rawget(value, "base"), path .. "." .. "base", depth + 1)
   if not valid_base then return false, message_base end
   if rawget(value, "multiplier") == nil then return false, path .. "." .. "multiplier" .. ": required field" end
-  local valid_multiplier, message_multiplier = _check_int(rawget(value, "multiplier"), path .. "." .. "multiplier")
+  local valid_multiplier, message_multiplier = _check_int(rawget(value, "multiplier"), path .. "." .. "multiplier", depth + 1)
   if not valid_multiplier then return false, message_multiplier end
   if rawget(value, "add") == nil then return false, path .. "." .. "add" .. ": required field" end
-  local valid_add, message_add = _check_int(rawget(value, "add"), path .. "." .. "add")
+  local valid_add, message_add = _check_int(rawget(value, "add"), path .. "." .. "add", depth + 1)
   if not valid_add then return false, message_add end
   if rawget(value, "operation") == nil then return false, path .. "." .. "operation" .. ": required field" end
-  local valid_operation, message_operation = _check_String(rawget(value, "operation"), path .. "." .. "operation")
+  local valid_operation, message_operation = _check_String(rawget(value, "operation"), path .. "." .. "operation", depth + 1)
   if not valid_operation then return false, message_operation end
   return true
 end
 local function _wrap_PureLuaApi_calculate(fn)
   return function(...)
     local arg0 = ...
-    local valid_0, message_0 = _check_CalculationInput(arg0, "PureLuaApi.calculate.input")
+    local valid_0, message_0 = _check_CalculationInput(arg0, "PureLuaApi.calculate.input", 0)
     if not valid_0 then return _flb_error("type", message_0) end
     local call_ok, result = pcall(fn, arg0)
     if not call_ok then return _flb_error("runtime", tostring(result)) end
-    local valid_result, result_message = _check_CalculationResult(result, "PureLuaApi.calculate.result")
+    local valid_result, result_message = _check_CalculationResult(result, "PureLuaApi.calculate.result", 0)
     if not valid_result then return _flb_error("type", result_message) end
     return _flb_ok(result)
   end
@@ -53,11 +55,11 @@ end
 local function _wrap_PureTealApi_calculate(fn)
   return function(...)
     local arg0 = ...
-    local valid_0, message_0 = _check_CalculationInput(arg0, "PureTealApi.calculate.input")
+    local valid_0, message_0 = _check_CalculationInput(arg0, "PureTealApi.calculate.input", 0)
     if not valid_0 then return _flb_error("type", message_0) end
     local call_ok, result = pcall(fn, arg0)
     if not call_ok then return _flb_error("runtime", tostring(result)) end
-    local valid_result, result_message = _check_CalculationResult(result, "PureTealApi.calculate.result")
+    local valid_result, result_message = _check_CalculationResult(result, "PureTealApi.calculate.result", 0)
     if not valid_result then return _flb_error("type", result_message) end
     return _flb_ok(result)
   end
@@ -65,11 +67,11 @@ end
 local function _wrap_DynamicLuaApi_calculate(fn)
   return function(...)
     local arg0 = ...
-    local valid_0, message_0 = _check_CalculationInput(arg0, "DynamicLuaApi.calculate.input")
+    local valid_0, message_0 = _check_CalculationInput(arg0, "DynamicLuaApi.calculate.input", 0)
     if not valid_0 then return _flb_error("type", message_0) end
     local call_ok, result = pcall(fn, arg0)
     if not call_ok then return _flb_error("runtime", tostring(result)) end
-    local valid_result, result_message = _check_CalculationResult(result, "DynamicLuaApi.calculate.result")
+    local valid_result, result_message = _check_CalculationResult(result, "DynamicLuaApi.calculate.result", 0)
     if not valid_result then return _flb_error("type", result_message) end
     return _flb_ok(result)
   end
@@ -77,11 +79,11 @@ end
 local function _wrap_DartHostLuaApi_calculate(fn)
   return function(...)
     local arg0 = ...
-    local valid_0, message_0 = _check_CalculationInput(arg0, "DartHostLuaApi.calculate.input")
+    local valid_0, message_0 = _check_CalculationInput(arg0, "DartHostLuaApi.calculate.input", 0)
     if not valid_0 then return _flb_error("type", message_0) end
     local call_ok, result = pcall(fn, arg0)
     if not call_ok then return _flb_error("runtime", tostring(result)) end
-    local valid_result, result_message = _check_CalculationResult(result, "DartHostLuaApi.calculate.result")
+    local valid_result, result_message = _check_CalculationResult(result, "DartHostLuaApi.calculate.result", 0)
     if not valid_result then return _flb_error("type", result_message) end
     return _flb_ok(result)
   end

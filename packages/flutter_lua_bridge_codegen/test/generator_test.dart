@@ -24,6 +24,13 @@ abstract class TestApi { int add(int value); }
 ''');
     expect(emitLua(schema('O1')), contains('runtime type checks + pcall'));
     expect(emitLua(schema('O1')), contains('_check_int'));
+    final structured = parseBridgeSchema('''
+import 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';
+@ConfigureLuaBridge(dartOut: 'a.dart', luaOut: 'a.lua', tealOut: 'a.d.tl', optimization: 'O1')
+@LuaApi(module: 'test')
+abstract class TestApi { List<int> values(); }
+''');
+    expect(emitLua(structured), contains('maximum nesting depth exceeded'));
     expect(emitLua(schema('O2')), contains('pcall'));
     expect(emitLua(schema('O2')), isNot(contains('_check_int')));
     expect(emitLua(schema('O3')), isNot(contains('pcall')));

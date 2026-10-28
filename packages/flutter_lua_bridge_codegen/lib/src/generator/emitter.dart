@@ -79,14 +79,14 @@ void _emitValidator(
   final nonNullable = type.nonNullable;
   if (type.nullable) {
     _emitValidator(out, nonNullable, data, enums, emitted);
-    out.writeln('local function ${_validatorName(type)}(value, path)');
+    out.writeln('local function ${_validatorName(type)}(value, path, depth)');
     out.writeln('  if value == nil then return true end');
-    out.writeln('  return ${_validatorName(nonNullable)}(value, path)');
+    out.writeln('  return ${_validatorName(nonNullable)}(value, path, depth)');
     out.writeln('end');
     return;
   }
   if (type.name == 'int') {
-    out.writeln('local function ${_validatorName(type)}(value, path)');
+    out.writeln('local function ${_validatorName(type)}(value, path, depth)');
     out.writeln(
       '  if type(value) ~= "number" or (math.type and math.type(value) ~= "integer") or (not math.type and value % 1 ~= 0) then return false, path .. ": expected integer" end',
     );
@@ -95,7 +95,7 @@ void _emitValidator(
     return;
   }
   if (type.name == 'double') {
-    out.writeln('local function ${_validatorName(type)}(value, path)');
+    out.writeln('local function ${_validatorName(type)}(value, path, depth)');
     out.writeln(
       '  if type(value) ~= "number" then return false, path .. ": expected number" end',
     );
@@ -105,7 +105,7 @@ void _emitValidator(
   }
   if (type.name == 'bool' || type.name == 'String') {
     final luaType = type.name == 'bool' ? 'boolean' : 'string';
-    out.writeln('local function ${_validatorName(type)}(value, path)');
+    out.writeln('local function ${_validatorName(type)}(value, path, depth)');
     out.writeln(
       '  if type(value) ~= "$luaType" then return false, path .. ": expected $luaType" end',
     );
@@ -116,9 +116,12 @@ void _emitValidator(
   if (type.name == 'List') {
     final element = type.arguments.single;
     _emitValidator(out, element, data, enums, emitted);
-    out.writeln('local function ${_validatorName(type)}(value, path)');
+    out.writeln('local function ${_validatorName(type)}(value, path, depth)');
     out.writeln(
       '  if type(value) ~= "table" then return false, path .. ": expected array" end',
+    );
+    out.writeln(
+      '  if depth > 64 then return false, path .. ": maximum nesting depth exceeded" end',
     );
     out.writeln('  local count = 0');
     out.writeln('  for key, _ in pairs(value) do');
@@ -132,7 +135,7 @@ void _emitValidator(
       '    if rawget(value, index) == nil then return false, path .. ": expected dense array" end',
     );
     out.writeln(
-      '    local valid, message = ${_validatorName(element)}(rawget(value, index), path .. "[" .. (index - 1) .. "]")',
+      '    local valid, message = ${_validatorName(element)}(rawget(value, index), path .. "[" .. (index - 1) .. "]", depth + 1)',
     );
     out.writeln('    if not valid then return false, message end');
     out.writeln('  end');
@@ -143,16 +146,19 @@ void _emitValidator(
   if (type.name == 'Map') {
     final valueType = type.arguments.last;
     _emitValidator(out, valueType, data, enums, emitted);
-    out.writeln('local function ${_validatorName(type)}(value, path)');
+    out.writeln('local function ${_validatorName(type)}(value, path, depth)');
     out.writeln(
       '  if type(value) ~= "table" then return false, path .. ": expected map" end',
+    );
+    out.writeln(
+      '  if depth > 64 then return false, path .. ": maximum nesting depth exceeded" end',
     );
     out.writeln('  for key, item in pairs(value) do');
     out.writeln(
       '    if type(key) ~= "string" then return false, path .. ": expected string map key" end',
     );
     out.writeln(
-      '    local valid, message = ${_validatorName(valueType)}(item, path .. "." .. key)',
+      '    local valid, message = ${_validatorName(valueType)}(item, path .. "." .. key, depth + 1)',
     );
     out.writeln('    if not valid then return false, message end');
     out.writeln('  end');
@@ -162,7 +168,7 @@ void _emitValidator(
   }
   final enumeration = enums[type.name];
   if (enumeration != null) {
-    out.writeln('local function ${_validatorName(type)}(value, path)');
+    out.writeln('local function ${_validatorName(type)}(value, path, depth)');
     final values = enumeration.values.values
         .map((value) => 'value ~= ${_luaString(value)}')
         .join(' and ');
@@ -178,23 +184,26 @@ void _emitValidator(
   for (final field in dto.fields) {
     _emitValidator(out, field.type, data, enums, emitted);
   }
-  out.writeln('local function ${_validatorName(type)}(value, path)');
+  out.writeln('local function ${_validatorName(type)}(value, path, depth)');
   out.writeln(
     '  if type(value) ~= "table" then return false, path .. ": expected ${type.name} table" end',
+  );
+  out.writeln(
+    '  if depth > 64 then return false, path .. ": maximum nesting depth exceeded" end',
   );
   for (final field in dto.fields) {
     final keyLiteral = _luaString(field.luaName);
     final fieldPath = 'path .. "." .. $keyLiteral';
     if (field.type.nullable) {
       out.writeln(
-        '  local valid_${field.name}, message_${field.name} = ${_validatorName(field.type)}(rawget(value, $keyLiteral), $fieldPath)',
+        '  local valid_${field.name}, message_${field.name} = ${_validatorName(field.type)}(rawget(value, $keyLiteral), $fieldPath, depth + 1)',
       );
     } else {
       out.writeln(
         '  if rawget(value, $keyLiteral) == nil then return false, $fieldPath .. ": required field" end',
       );
       out.writeln(
-        '  local valid_${field.name}, message_${field.name} = ${_validatorName(field.type)}(rawget(value, $keyLiteral), $fieldPath)',
+        '  local valid_${field.name}, message_${field.name} = ${_validatorName(field.type)}(rawget(value, $keyLiteral), $fieldPath, depth + 1)',
       );
     }
     out.writeln(
@@ -240,7 +249,7 @@ void _emitSafeWrapper(
       final parameter = method.parameters[index];
       final path = _luaPath('${api.name}.${method.name}.${parameter.name}');
       out.writeln(
-        '    local valid_$index, message_$index = ${_validatorName(parameter.type)}(${arguments[index]}, $path)',
+        '    local valid_$index, message_$index = ${_validatorName(parameter.type)}(${arguments[index]}, $path, 0)',
       );
       out.writeln(
         '    if not valid_$index then return _flb_error("type", message_$index) end',
@@ -257,7 +266,7 @@ void _emitSafeWrapper(
   if (optimization.checksTypes && method.result.name != 'void') {
     final path = _luaPath('${api.name}.${method.name}.result');
     out.writeln(
-      '    local valid_result, result_message = ${_validatorName(method.result)}(result, $path)',
+      '    local valid_result, result_message = ${_validatorName(method.result)}(result, $path, 0)',
     );
     out.writeln(
       '    if not valid_result then return _flb_error("type", result_message) end',

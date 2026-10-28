@@ -4,20 +4,21 @@
 local bridge = {}
 local function _flb_ok(value) return { status = "ok", value = value } end
 local function _flb_error(kind, message) return { status = "error", kind = kind, message = tostring(message) } end
-local function _check_int(value, path)
+local function _check_int(value, path, depth)
   if type(value) ~= "number" or (math.type and math.type(value) ~= "integer") or (not math.type and value % 1 ~= 0) then return false, path .. ": expected integer" end
   return true
 end
-local function _check_RandomResult(value, path)
+local function _check_RandomResult(value, path, depth)
   if type(value) ~= "table" then return false, path .. ": expected RandomResult table" end
+  if depth > 64 then return false, path .. ": maximum nesting depth exceeded" end
   if rawget(value, "luaVersion") == nil then return false, path .. "." .. "luaVersion" .. ": required field" end
-  local valid_luaVersion, message_luaVersion = _check_int(rawget(value, "luaVersion"), path .. "." .. "luaVersion")
+  local valid_luaVersion, message_luaVersion = _check_int(rawget(value, "luaVersion"), path .. "." .. "luaVersion", depth + 1)
   if not valid_luaVersion then return false, message_luaVersion end
   if rawget(value, "a") == nil then return false, path .. "." .. "a" .. ": required field" end
-  local valid_a, message_a = _check_int(rawget(value, "a"), path .. "." .. "a")
+  local valid_a, message_a = _check_int(rawget(value, "a"), path .. "." .. "a", depth + 1)
   if not valid_a then return false, message_a end
   if rawget(value, "b") == nil then return false, path .. "." .. "b" .. ": required field" end
-  local valid_b, message_b = _check_int(rawget(value, "b"), path .. "." .. "b")
+  local valid_b, message_b = _check_int(rawget(value, "b"), path .. "." .. "b", depth + 1)
   if not valid_b then return false, message_b end
   return true
 end
@@ -25,7 +26,7 @@ local function _wrap_BasicApi_run(fn)
   return function(...)
     local call_ok, result = pcall(fn)
     if not call_ok then return _flb_error("runtime", tostring(result)) end
-    local valid_result, result_message = _check_RandomResult(result, "BasicApi.run.result")
+    local valid_result, result_message = _check_RandomResult(result, "BasicApi.run.result", 0)
     if not valid_result then return _flb_error("type", result_message) end
     return _flb_ok(result)
   end

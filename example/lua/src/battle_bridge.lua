@@ -4,48 +4,50 @@
 local bridge = {}
 local function _flb_ok(value) return { status = "ok", value = value } end
 local function _flb_error(kind, message) return { status = "error", kind = kind, message = tostring(message) } end
-local function _check_int(value, path)
+local function _check_int(value, path, depth)
   if type(value) ~= "number" or (math.type and math.type(value) ~= "integer") or (not math.type and value % 1 ~= 0) then return false, path .. ": expected integer" end
   return true
 end
-local function _check_bool(value, path)
+local function _check_bool(value, path, depth)
   if type(value) ~= "boolean" then return false, path .. ": expected boolean" end
   return true
 end
-local function _check_DamageResult(value, path)
+local function _check_DamageResult(value, path, depth)
   if type(value) ~= "table" then return false, path .. ": expected DamageResult table" end
+  if depth > 64 then return false, path .. ": maximum nesting depth exceeded" end
   if rawget(value, "damage") == nil then return false, path .. "." .. "damage" .. ": required field" end
-  local valid_damage, message_damage = _check_int(rawget(value, "damage"), path .. "." .. "damage")
+  local valid_damage, message_damage = _check_int(rawget(value, "damage"), path .. "." .. "damage", depth + 1)
   if not valid_damage then return false, message_damage end
   if rawget(value, "critical") == nil then return false, path .. "." .. "critical" .. ": required field" end
-  local valid_critical, message_critical = _check_bool(rawget(value, "critical"), path .. "." .. "critical")
+  local valid_critical, message_critical = _check_bool(rawget(value, "critical"), path .. "." .. "critical", depth + 1)
   if not valid_critical then return false, message_critical end
   return true
 end
-local function _check_Fighter(value, path)
+local function _check_Fighter(value, path, depth)
   if type(value) ~= "table" then return false, path .. ": expected Fighter table" end
+  if depth > 64 then return false, path .. ": maximum nesting depth exceeded" end
   if rawget(value, "attack") == nil then return false, path .. "." .. "attack" .. ": required field" end
-  local valid_attack, message_attack = _check_int(rawget(value, "attack"), path .. "." .. "attack")
+  local valid_attack, message_attack = _check_int(rawget(value, "attack"), path .. "." .. "attack", depth + 1)
   if not valid_attack then return false, message_attack end
   if rawget(value, "defense") == nil then return false, path .. "." .. "defense" .. ": required field" end
-  local valid_defense, message_defense = _check_int(rawget(value, "defense"), path .. "." .. "defense")
+  local valid_defense, message_defense = _check_int(rawget(value, "defense"), path .. "." .. "defense", depth + 1)
   if not valid_defense then return false, message_defense end
   return true
 end
-local function _check_String(value, path)
+local function _check_String(value, path, depth)
   if type(value) ~= "string" then return false, path .. ": expected string" end
   return true
 end
 local function _wrap_BattleApi_calculate_damage(fn)
   return function(...)
     local arg0, arg1 = ...
-    local valid_0, message_0 = _check_Fighter(arg0, "BattleApi.calculateDamage.attacker")
+    local valid_0, message_0 = _check_Fighter(arg0, "BattleApi.calculateDamage.attacker", 0)
     if not valid_0 then return _flb_error("type", message_0) end
-    local valid_1, message_1 = _check_Fighter(arg1, "BattleApi.calculateDamage.defender")
+    local valid_1, message_1 = _check_Fighter(arg1, "BattleApi.calculateDamage.defender", 0)
     if not valid_1 then return _flb_error("type", message_1) end
     local call_ok, result = pcall(fn, arg0, arg1)
     if not call_ok then return _flb_error("runtime", tostring(result)) end
-    local valid_result, result_message = _check_DamageResult(result, "BattleApi.calculateDamage.result")
+    local valid_result, result_message = _check_DamageResult(result, "BattleApi.calculateDamage.result", 0)
     if not valid_result then return _flb_error("type", result_message) end
     return _flb_ok(result)
   end
