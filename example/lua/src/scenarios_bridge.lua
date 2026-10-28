@@ -4,8 +4,9 @@
 local bridge = {}
 local function _flb_ok(value) return { status = "ok", value = value } end
 local function _flb_error(kind, message) return { status = "error", kind = kind, message = tostring(message) } end
+local _flb_wrapped = setmetatable({}, { __mode = "k" })
 local function _check_int(value, path, depth)
-  if type(value) ~= "number" or (math.type and math.type(value) ~= "integer") or (not math.type and value % 1 ~= 0) then return false, path .. ": expected integer" end
+  if math.type(value) ~= "integer" then return false, path .. ": expected integer" end
   return true
 end
 local function _check_String(value, path, depth)
@@ -43,6 +44,7 @@ end
 local function _wrap_PureLuaApi_calculate(fn)
   return function(...)
     local arg0 = ...
+    if select("#", ...) ~= 1 then return _flb_error("type", "PureLuaApi.calculate" .. ": expected 1 arguments") end
     local valid_0, message_0 = _check_CalculationInput(arg0, "PureLuaApi.calculate.input", 0)
     if not valid_0 then return _flb_error("type", message_0) end
     local call_ok, result = pcall(fn, arg0)
@@ -55,6 +57,7 @@ end
 local function _wrap_PureTealApi_calculate(fn)
   return function(...)
     local arg0 = ...
+    if select("#", ...) ~= 1 then return _flb_error("type", "PureTealApi.calculate" .. ": expected 1 arguments") end
     local valid_0, message_0 = _check_CalculationInput(arg0, "PureTealApi.calculate.input", 0)
     if not valid_0 then return _flb_error("type", message_0) end
     local call_ok, result = pcall(fn, arg0)
@@ -67,6 +70,7 @@ end
 local function _wrap_DynamicLuaApi_calculate(fn)
   return function(...)
     local arg0 = ...
+    if select("#", ...) ~= 1 then return _flb_error("type", "DynamicLuaApi.calculate" .. ": expected 1 arguments") end
     local valid_0, message_0 = _check_CalculationInput(arg0, "DynamicLuaApi.calculate.input", 0)
     if not valid_0 then return _flb_error("type", message_0) end
     local call_ok, result = pcall(fn, arg0)
@@ -79,6 +83,7 @@ end
 local function _wrap_DartHostLuaApi_calculate(fn)
   return function(...)
     local arg0 = ...
+    if select("#", ...) ~= 1 then return _flb_error("type", "DartHostLuaApi.calculate" .. ": expected 1 arguments") end
     local valid_0, message_0 = _check_CalculationInput(arg0, "DartHostLuaApi.calculate.input", 0)
     if not valid_0 then return _flb_error("type", message_0) end
     local call_ok, result = pcall(fn, arg0)
@@ -91,9 +96,9 @@ end
 function bridge.bindPureLuaApi(implementation)
   assert(type(implementation) == "table", "PureLuaApi must be a table")
   assert(type(rawget(implementation, "calculate")) == "function", "PureLuaApi.calculate is missing")
-  if rawget(implementation, "__flb_wrapped") ~= true then
+  if not _flb_wrapped[implementation] then
     rawset(implementation, "calculate", _wrap_PureLuaApi_calculate(rawget(implementation, "calculate")))
-    rawset(implementation, "__flb_wrapped", true)
+    _flb_wrapped[implementation] = true
   end
   rawset(implementation, "__flb_contract", "ce4d23b700fe081a02cfd7161decc2bc9f47229a3796be9019a6845fafa76880")
   return implementation
@@ -101,9 +106,9 @@ end
 function bridge.bindPureTealApi(implementation)
   assert(type(implementation) == "table", "PureTealApi must be a table")
   assert(type(rawget(implementation, "calculate")) == "function", "PureTealApi.calculate is missing")
-  if rawget(implementation, "__flb_wrapped") ~= true then
+  if not _flb_wrapped[implementation] then
     rawset(implementation, "calculate", _wrap_PureTealApi_calculate(rawget(implementation, "calculate")))
-    rawset(implementation, "__flb_wrapped", true)
+    _flb_wrapped[implementation] = true
   end
   rawset(implementation, "__flb_contract", "ce4d23b700fe081a02cfd7161decc2bc9f47229a3796be9019a6845fafa76880")
   return implementation
@@ -111,9 +116,9 @@ end
 function bridge.bindDynamicLuaApi(implementation)
   assert(type(implementation) == "table", "DynamicLuaApi must be a table")
   assert(type(rawget(implementation, "calculate")) == "function", "DynamicLuaApi.calculate is missing")
-  if rawget(implementation, "__flb_wrapped") ~= true then
+  if not _flb_wrapped[implementation] then
     rawset(implementation, "calculate", _wrap_DynamicLuaApi_calculate(rawget(implementation, "calculate")))
-    rawset(implementation, "__flb_wrapped", true)
+    _flb_wrapped[implementation] = true
   end
   rawset(implementation, "__flb_contract", "ce4d23b700fe081a02cfd7161decc2bc9f47229a3796be9019a6845fafa76880")
   return implementation
@@ -121,9 +126,9 @@ end
 function bridge.bindDartHostLuaApi(implementation)
   assert(type(implementation) == "table", "DartHostLuaApi must be a table")
   assert(type(rawget(implementation, "calculate")) == "function", "DartHostLuaApi.calculate is missing")
-  if rawget(implementation, "__flb_wrapped") ~= true then
+  if not _flb_wrapped[implementation] then
     rawset(implementation, "calculate", _wrap_DartHostLuaApi_calculate(rawget(implementation, "calculate")))
-    rawset(implementation, "__flb_wrapped", true)
+    _flb_wrapped[implementation] = true
   end
   rawset(implementation, "__flb_contract", "ce4d23b700fe081a02cfd7161decc2bc9f47229a3796be9019a6845fafa76880")
   return implementation

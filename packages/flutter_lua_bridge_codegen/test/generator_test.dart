@@ -24,6 +24,9 @@ abstract class TestApi { int add(int value); }
 ''');
     expect(emitLua(schema('O1')), contains('runtime type checks + pcall'));
     expect(emitLua(schema('O1')), contains('_check_int'));
+    expect(emitLua(schema('O1')), contains('select("#", ...)'));
+    expect(emitLua(schema('O1')), contains('__mode = "k"'));
+    expect(emitLua(schema('O1')), isNot(contains('math.type and')));
     final structured = parseBridgeSchema('''
 import 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';
 @ConfigureLuaBridge(dartOut: 'a.dart', luaOut: 'a.lua', tealOut: 'a.d.tl', optimization: 'O1')

@@ -88,7 +88,7 @@ void _emitValidator(
   if (type.name == 'int') {
     out.writeln('local function ${_validatorName(type)}(value, path, depth)');
     out.writeln(
-      '  if type(value) ~= "number" or (math.type and math.type(value) ~= "integer") or (not math.type and value % 1 ~= 0) then return false, path .. ": expected integer" end',
+      '  if math.type(value) ~= "integer" then return false, path .. ": expected integer" end',
     );
     out.writeln('  return true');
     out.writeln('end');
@@ -245,11 +245,17 @@ void _emitSafeWrapper(
     out.writeln('    local ${arguments.join(', ')} = ...');
   }
   if (optimization.checksTypes) {
+    final path = _luaString('${api.name}.${method.name}');
+    out.writeln(
+      '    if select("#", ...) ~= ${arguments.length} then return _flb_error("type", $path .. ": expected ${arguments.length} arguments") end',
+    );
     for (var index = 0; index < method.parameters.length; index++) {
       final parameter = method.parameters[index];
-      final path = _luaPath('${api.name}.${method.name}.${parameter.name}');
+      final parameterPath = _luaPath(
+        '${api.name}.${method.name}.${parameter.name}',
+      );
       out.writeln(
-        '    local valid_$index, message_$index = ${_validatorName(parameter.type)}(${arguments[index]}, $path, 0)',
+        '    local valid_$index, message_$index = ${_validatorName(parameter.type)}(${arguments[index]}, $parameterPath, 0)',
       );
       out.writeln(
         '    if not valid_$index then return _flb_error("type", message_$index) end',
@@ -504,6 +510,7 @@ String emitLua(BridgeSchema schema) {
     out.writeln(
       'local function _flb_error(kind, message) return { status = "error", kind = kind, message = tostring(message) } end',
     );
+    out.writeln('local _flb_wrapped = setmetatable({}, { __mode = "k" })');
     if (schema.optimization.checksTypes) {
       final data = {for (final item in schema.data) item.name: item};
       final enums = {for (final item in schema.enums) item.name: item};
@@ -537,9 +544,7 @@ String emitLua(BridgeSchema schema) {
     }
     if (api.isLua) {
       if (schema.optimization.catchesErrors) {
-        out.writeln(
-          '  if rawget(implementation, "__flb_wrapped") ~= true then',
-        );
+        out.writeln('  if not _flb_wrapped[implementation] then');
         for (final method in api.methods) {
           final wrapper =
               '_wrap_${_safeLuaName(api.name)}_${_safeLuaName(method.luaName)}';
@@ -547,7 +552,7 @@ String emitLua(BridgeSchema schema) {
             '    rawset(implementation, ${_luaString(method.luaName)}, $wrapper(rawget(implementation, ${_luaString(method.luaName)})))',
           );
         }
-        out.writeln('    rawset(implementation, "__flb_wrapped", true)');
+        out.writeln('    _flb_wrapped[implementation] = true');
         out.writeln('  end');
       }
       out.writeln('  rawset(implementation, "__flb_contract", "$hash")');

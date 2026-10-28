@@ -4,8 +4,9 @@
 local bridge = {}
 local function _flb_ok(value) return { status = "ok", value = value } end
 local function _flb_error(kind, message) return { status = "error", kind = kind, message = tostring(message) } end
+local _flb_wrapped = setmetatable({}, { __mode = "k" })
 local function _check_int(value, path, depth)
-  if type(value) ~= "number" or (math.type and math.type(value) ~= "integer") or (not math.type and value % 1 ~= 0) then return false, path .. ": expected integer" end
+  if math.type(value) ~= "integer" then return false, path .. ": expected integer" end
   return true
 end
 local function _check_bool(value, path, depth)
@@ -41,6 +42,7 @@ end
 local function _wrap_BattleApi_calculate_damage(fn)
   return function(...)
     local arg0, arg1 = ...
+    if select("#", ...) ~= 2 then return _flb_error("type", "BattleApi.calculateDamage" .. ": expected 2 arguments") end
     local valid_0, message_0 = _check_Fighter(arg0, "BattleApi.calculateDamage.attacker", 0)
     if not valid_0 then return _flb_error("type", message_0) end
     local valid_1, message_1 = _check_Fighter(arg1, "BattleApi.calculateDamage.defender", 0)
@@ -55,9 +57,9 @@ end
 function bridge.bindBattleApi(implementation)
   assert(type(implementation) == "table", "BattleApi must be a table")
   assert(type(rawget(implementation, "calculate_damage")) == "function", "BattleApi.calculate_damage is missing")
-  if rawget(implementation, "__flb_wrapped") ~= true then
+  if not _flb_wrapped[implementation] then
     rawset(implementation, "calculate_damage", _wrap_BattleApi_calculate_damage(rawget(implementation, "calculate_damage")))
-    rawset(implementation, "__flb_wrapped", true)
+    _flb_wrapped[implementation] = true
   end
   rawset(implementation, "__flb_contract", "d924ca5c95d836194a98c30ec720fa172730381c1315fa10027c398bd0f2ebee")
   return implementation
