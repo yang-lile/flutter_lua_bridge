@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
 import 'bridge/basic_bridge_demo.dart';
 import 'game/game_demo_page.dart';
@@ -30,7 +31,11 @@ class _MyAppState extends State<MyApp> {
       locale: _locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: HomePage(localeOptions: _localeOptions, currentLocale: _locale, onLocaleChanged: _setLocale),
+      home: HomePage(
+        localeOptions: _localeOptions,
+        currentLocale: _locale,
+        onLocaleChanged: _setLocale,
+      ),
     );
   }
 }
@@ -40,7 +45,12 @@ class HomePage extends StatefulWidget {
   final Locale currentLocale;
   final ValueChanged<Locale> onLocaleChanged;
 
-  const HomePage({super.key, required this.localeOptions, required this.currentLocale, required this.onLocaleChanged});
+  const HomePage({
+    super.key,
+    required this.localeOptions,
+    required this.currentLocale,
+    required this.onLocaleChanged,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -51,14 +61,19 @@ class _HomePageState extends State<HomePage> {
   int? fetchAValue;
   int? bValue;
 
-  void onPressed() {
+  Future<void> onPressed() async {
     try {
-      final result = BasicBridgeDemo.run();
-      setState(() {
-        luaVersion = result.luaVersion;
-        fetchAValue = result.a;
-        bValue = result.b;
-      });
+      final result = await BasicBridgeDemo.run();
+      switch (result) {
+        case LuaSuccess(value: final value):
+          setState(() {
+            luaVersion = value.luaVersion;
+            fetchAValue = value.a;
+            bValue = value.b;
+          });
+        case LuaFailure(message: final message):
+          debugPrint('Lua bridge returned $message');
+      }
     } catch (e) {
       debugPrint('Bridge demo error: $e');
     }
@@ -86,7 +101,12 @@ class _HomePageState extends State<HomePage> {
             initialValue: widget.currentLocale,
             onSelected: widget.onLocaleChanged,
             itemBuilder: (context) => widget.localeOptions
-                .map((locale) => PopupMenuItem(value: locale, child: Text(_localeLabel(locale))))
+                .map(
+                  (locale) => PopupMenuItem(
+                    value: locale,
+                    child: Text(_localeLabel(locale)),
+                  ),
+                )
                 .toList(),
           ),
         ],
@@ -97,8 +117,16 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             spacing: 10,
             children: [
-              Text(l10n.testListTitle, style: textStyle, textAlign: TextAlign.center),
-              Text(l10n.testListSubtitle, style: const TextStyle(fontSize: 16), textAlign: TextAlign.center),
+              Text(
+                l10n.testListTitle,
+                style: textStyle,
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                l10n.testListSubtitle,
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
               const Divider(),
               Card(
                 child: ListTile(
@@ -127,7 +155,10 @@ class _HomePageState extends State<HomePage> {
                   subtitle: Text(l10n.gameDemoSubtitle),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const GameDemoPage()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const GameDemoPage()),
+                    );
                   },
                 ),
               ),

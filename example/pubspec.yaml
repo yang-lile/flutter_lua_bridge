@@ -37,7 +37,7 @@ dependencies:
   intl: any
   ffi: ^2.1.3
 
-  flutter_lua_bridge: ^0.0.1
+  flutter_lua_bridge: ^0.0.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -46,6 +46,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_lua_bridge_codegen: ^0.0.2
+  flutter_lua_bridge_codegen_annotation: ^0.0.2
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -68,6 +70,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - lua/build/
+    - assets/scenarios/
     - assets/game/formulas.lua
     - assets/game/cards/warrior.lua
     - assets/game/cards/mage.lua
