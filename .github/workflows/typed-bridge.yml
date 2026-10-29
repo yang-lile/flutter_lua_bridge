@@ -51,7 +51,7 @@ jobs:
       - name: Install Teal and Cyan
         run: |
           sudo apt-get update
-          sudo apt-get install -y lua5.4 luarocks
+          sudo apt-get install -y lua5.4 liblua5.4-dev luarocks
           luarocks --lua-version=5.4 install tl 0.24.8-1
           luarocks --lua-version=5.4 install cyan 0.4.1-1
       - name: Build Teal project with Cyan
@@ -68,7 +68,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: sudo apt-get update
-      - run: sudo apt-get install -y lua5.4 luarocks
+      - run: sudo apt-get install -y clang lua5.4 liblua5.4-dev luarocks
       - run: luarocks --lua-version=5.4 install tl 0.24.8-1
       - run: luarocks --lua-version=5.4 install cyan 0.4.1-1
       - run: ./tool/ci.sh

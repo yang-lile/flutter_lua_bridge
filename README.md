@@ -84,6 +84,20 @@ Flutter example tests used by the Linux CI job. `actionlint` can validate the
 workflow file itself. Full workflow emulation with `act` requires a Docker
 compatible daemon; it is optional and is not required for the local gate.
 
+If Podman is available, `tool/ci_podman.sh` wraps the `act` options needed to
+run the workflow against the Podman machine:
+
+```sh
+./tool/ci_podman.sh dry-run       # parse the workflow and list its jobs
+./tool/ci_podman.sh teal          # run the Teal/Cyan job
+./tool/ci_podman.sh local-gate    # run the Linux gate in a container
+```
+
+The local gate uses a temporary x64 Flutter configuration because Flutter
+3.38.10 does not publish a Linux arm64 archive. On Apple Silicon, the native
+ASan test may still fail under amd64 emulation; use `./tool/ci.sh` on the host
+and the GitHub Linux job for the authoritative native check.
+
 ## Local playground
 
 For a disposable end-to-end test, generate the ignored `playground/` directory:
