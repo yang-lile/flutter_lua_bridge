@@ -8,7 +8,9 @@ void main() {
   });
 
   group('Game Demo Tests', () {
-    testWidgets('Game Demo list tile exists and is tappable', (WidgetTester tester) async {
+    testWidgets('Game Demo list tile exists and is tappable', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
 
@@ -16,12 +18,27 @@ void main() {
       expect(find.byIcon(Icons.gamepad), findsOneWidget);
     });
 
-    testWidgets('Game Demo menu item exists in AppBar', (WidgetTester tester) async {
+    testWidgets('Game Demo list tile is wired to a tap handler', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
 
-      final menuButtonFinder = find.widgetWithText(TextButton, '游戏Demo');
-      expect(menuButtonFinder, findsOneWidget);
+      final tileFinder = find.ancestor(
+        of: find.text('抽卡战斗游戏测试'),
+        matching: find.byType(ListTile),
+      );
+      expect(tileFinder, findsOneWidget);
+
+      final tile = tester.widget<ListTile>(tileFinder);
+      expect(tile.onTap, isNotNull);
+      expect(
+        find.descendant(
+          of: tileFinder,
+          matching: find.byIcon(Icons.chevron_right),
+        ),
+        findsOneWidget,
+      );
     });
   });
 }
