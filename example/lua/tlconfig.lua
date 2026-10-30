@@ -2,6 +2,8 @@
 -- Teal sources live in src/ and compiled Lua is written to build/.
 return {
   source_dir = "src",
+  -- Compatibility with tl 0.24.x; newer tl versions infer this from source_dir.
+  include_dir = { "src" },
   build_dir = "build",
   include = { "**/*.tl" },
   -- Cyan's portable target is 5.3; the generated Lua runs on our 5.4 VM.
