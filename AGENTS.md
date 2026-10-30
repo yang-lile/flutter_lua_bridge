@@ -41,15 +41,21 @@ protocol changes.
 
 ## Required checks
 
-Run the shared local gate before opening a pull request:
+Run the lightweight local gate before opening a pull request:
+
+```sh
+./tool/ci_light.sh
+```
+
+It covers analyzer, generator tests, generated artifact drift and a small
+example unit test. The full release gate is:
 
 ```sh
 ./tool/ci.sh
 ```
 
-The gate covers analyzer, generator tests, generated artifact drift, Teal/Cyan,
-native bridge tests, and the Flutter example tests when the required tools are
-installed. The same script is used by the Linux CI job.
+It additionally covers Teal/Cyan, native bridge tests and Flutter integration
+tests. The full gate runs from the release-only Ubuntu workflow.
 
 For focused work, run the smallest relevant checks as well:
 

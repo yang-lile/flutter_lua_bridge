@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKFLOW="${ACT_WORKFLOW:-$ROOT_DIR/.github/workflows/typed-bridge.yml}"
+RELEASE_WORKFLOW="${ACT_RELEASE_WORKFLOW:-$ROOT_DIR/.github/workflows/typed-bridge-release.yml}"
 IMAGE="${ACT_IMAGE:-catthehacker/ubuntu:act-latest}"
 ARCHITECTURE="${ACT_ARCHITECTURE:-linux/amd64}"
 NETWORK="${ACT_NETWORK:-bridge}"
@@ -11,18 +12,20 @@ TEMP_WORKFLOW=""
 
 usage() {
   cat <<'EOF'
-Usage: ./tool/ci_podman.sh [dry-run|list|teal|local-gate|all]
+Usage: ./tool/ci_podman.sh [dry-run|list|light|release-dry-run|release|all]
 
 Run the GitHub Actions workflow locally with act and a Podman machine.
 
   dry-run     Parse the workflow and print all jobs without running them (default).
   list        List workflow jobs.
-  teal        Run the Teal/Cyan job.
-  local-gate  Run the Linux local gate. Flutter is selected as x64 for Apple Silicon.
-  all         Run teal, then local-gate.
+  light       Run the lightweight workflow.
+  release-dry-run Parse the release workflow without running it.
+  release     Run the release integration workflow. Flutter is selected as x64 for Apple Silicon.
+  all         Run light, then release integration.
 
 Environment overrides:
   ACT_WORKFLOW       Workflow file path.
+  ACT_RELEASE_WORKFLOW Release workflow file path.
   ACT_IMAGE          act runner image.
   ACT_ARCHITECTURE   Container architecture (default: linux/amd64).
   ACT_NETWORK        Container network (default: bridge).
@@ -41,7 +44,7 @@ case "$MODE" in
     usage
     exit 0
     ;;
-  dry-run|list|teal|local-gate|all)
+  dry-run|list|light|release-dry-run|release|all)
     ;;
   *)
     echo "Unknown mode: $MODE" >&2
@@ -60,6 +63,10 @@ command -v act >/dev/null 2>&1 || {
 }
 [[ -f "$WORKFLOW" ]] || {
   echo "workflow not found: $WORKFLOW" >&2
+  exit 1
+}
+[[ -f "$RELEASE_WORKFLOW" ]] || {
+  echo "release workflow not found: $RELEASE_WORKFLOW" >&2
   exit 1
 }
 
@@ -89,22 +96,24 @@ echo "Using Podman API: $DOCKER_HOST"
 echo "Using runner: $IMAGE ($ARCHITECTURE)"
 
 act_args=(
-  pull_request
   --container-daemon-socket -
   --network "$NETWORK"
   -P "ubuntu-latest=$IMAGE"
   --container-architecture "$ARCHITECTURE"
 )
 
-run_act() {
-  act "$@" -W "$WORKFLOW" "${act_args[@]}"
+run_workflow() {
+  local event="$1"
+  local workflow="$2"
+  shift 2
+  act "$event" "$@" -W "$workflow" "${act_args[@]}"
 }
 
-run_local_gate() {
+run_release() {
   # Flutter 3.38.10 has no Linux arm64 archive. act reports the Podman VM's
   # host architecture, so use a temporary x64 workflow for this local check.
   TEMP_WORKFLOW="$(mktemp "${TMPDIR:-/tmp}/flutter-lua-bridge-act.XXXXXX.yml")"
-  python3 - "$WORKFLOW" "$TEMP_WORKFLOW" <<'PY'
+  python3 - "$RELEASE_WORKFLOW" "$TEMP_WORKFLOW" <<'PY'
 from pathlib import Path
 import sys
 
@@ -117,25 +126,33 @@ for line in source.read_text().splitlines(keepends=True):
         lines.append(f"{indent}architecture: x64\n")
 destination.write_text("".join(lines))
 PY
-  act -j local-gate -W "$TEMP_WORKFLOW" "${act_args[@]}"
+  local extra_args=()
+  if [[ "${RELEASE_DRY_RUN:-}" == 1 ]]; then
+    extra_args+=(--dryrun)
+  fi
+  run_workflow release "$TEMP_WORKFLOW" -j ubuntu-integration "${extra_args[@]}"
 }
 
 case "$MODE" in
   dry-run)
-    run_act --dryrun
+    run_workflow pull_request "$WORKFLOW" --dryrun
     ;;
   list)
     act -l -W "$WORKFLOW" --container-daemon-socket - \
       -P "ubuntu-latest=$IMAGE" --container-architecture "$ARCHITECTURE"
     ;;
-  teal)
-    run_act -j teal
+  light)
+    run_workflow pull_request "$WORKFLOW"
     ;;
-  local-gate)
-    run_local_gate
+  release)
+    run_release
+    ;;
+  release-dry-run)
+    RELEASE_DRY_RUN=1
+    run_release
     ;;
   all)
-    run_act -j teal
-    run_local_gate
+    run_workflow pull_request "$WORKFLOW"
+    run_release
     ;;
 esac

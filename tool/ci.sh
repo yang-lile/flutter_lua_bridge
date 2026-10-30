@@ -13,8 +13,10 @@ dart_cmd=${DART_CMD:-dart}
 
 "$dart_cmd" --suppress-analytics analyze --fatal-infos
 
-(cd packages/flutter_lua_bridge_codegen && "$dart_cmd" --suppress-analytics test)
-(cd packages/flutter_lua_bridge && "$dart_cmd" --suppress-analytics test)
+(cd packages/flutter_lua_bridge_codegen && "$dart_cmd" --suppress-analytics test test/generator_test.dart)
+(cd packages/flutter_lua_bridge_codegen && "$dart_cmd" --suppress-analytics test test/model_test.dart)
+(cd packages/flutter_lua_bridge && "$dart_cmd" --suppress-analytics test \
+  test/codecs_test.dart test/runtime_test.dart)
 
 for contract in bridge/basic_api.dart bridge/scenarios.dart bridge/battle.dart; do
   (cd example && "$dart_cmd" --suppress-analytics run flutter_lua_bridge_codegen --input "$contract" --check)

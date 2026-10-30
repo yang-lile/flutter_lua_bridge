@@ -1,0 +1,33 @@
+name: Typed bridge (release integration)
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+
+concurrency:
+  group: typed-bridge-release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  ubuntu-integration:
+    name: Ubuntu full integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          cache: true
+      - run: flutter pub get
+      - name: Install native and Teal toolchains
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lua5.4 liblua5.4-dev luarocks
+          luarocks --lua-version=5.4 install tl 0.24.8-1
+          luarocks --lua-version=5.4 install cyan 0.4.1-1
+      - name: Build bundled Lua 5.4
+        run: make -C packages/flutter_lua_bridge/lua_src linux
+      - name: Run full integration gate
+        run: ./tool/ci.sh

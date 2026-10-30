@@ -13,6 +13,9 @@ The runtime package does not depend on the generator. Applications depend on
 the runtime at run time, and keep the annotation and generator packages in
 their development toolchain.
 
+The package responsibilities and test tiers are listed in
+[`docs/testing-matrix.md`](docs/testing-matrix.md).
+
 ## Contract and generated artifacts
 
 An application contract imports the annotation package:
@@ -78,25 +81,27 @@ The native hook builds the bundled Lua 5.4 source for the target platform.
 The four scenario tests in `example/test/scenarios` cover Lua-first, Teal-first,
 dynamic Lua and Dart-host implementations.
 
-The pull request gate is also available locally as `./tool/ci.sh`. It runs the
-same analyzer, generator drift checks, Cyan build, native bridge test and
-Flutter example tests used by the Linux CI job. `actionlint` can validate the
-workflow file itself. Full workflow emulation with `act` requires a Docker
-compatible daemon; it is optional and is not required for the local gate.
+The daily pull request gate is available locally as `./tool/ci_light.sh`. It
+runs the analyzer, code generator tests, generated contract checks and a small
+example unit test. The full `./tool/ci.sh` gate is reserved for the release
+workflow and adds Cyan, native bridge and Flutter integration checks.
+`actionlint` can validate the workflow files themselves. Full workflow
+emulation with `act` requires a Docker-compatible daemon.
 
 If Podman is available, `tool/ci_podman.sh` wraps the `act` options needed to
 run the workflow against the Podman machine:
 
 ```sh
 ./tool/ci_podman.sh dry-run       # parse the workflow and list its jobs
-./tool/ci_podman.sh teal          # run the Teal/Cyan job
-./tool/ci_podman.sh local-gate    # run the Linux gate in a container
+./tool/ci_podman.sh light         # run the daily lightweight workflow
+./tool/ci_podman.sh release       # run the release integration workflow
 ```
 
-The local gate uses a temporary x64 Flutter configuration because Flutter
-3.38.10 does not publish a Linux arm64 archive. On Apple Silicon, the native
-ASan test may still fail under amd64 emulation; use `./tool/ci.sh` on the host
-and the GitHub Linux job for the authoritative native check.
+The release workflow uses a temporary x64 Flutter configuration in the local
+Podman wrapper because Flutter 3.38.10 does not publish a Linux arm64 archive.
+On Apple Silicon, the native ASan test may still fail under amd64 emulation;
+use `./tool/ci.sh` on the host or the GitHub release workflow for the
+authoritative native check.
 
 ## Local playground
 
