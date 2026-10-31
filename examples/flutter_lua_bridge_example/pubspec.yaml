@@ -20,6 +20,14 @@ version: 1.0.0+1
 
 resolution: workspace
 
+hooks:
+  user_defines:
+    # Default Lua source for the example app's native asset.
+    flutter_lua_bridge:
+      lua_source: https://www.lua.org/ftp/lua-5.4.9.tar.gz
+      lua_version: 5.4.9
+      lua_sha256: 2335b6c582a52654f94612bf10d2f4672805d05329aa6568b1d8cd9e5c6fb8e6
+
 environment:
   sdk: ^3.8.1
 
