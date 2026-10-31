@@ -40,6 +40,8 @@ static flb_value *array(void) {
   return value;
 }
 int main(void) {
+  assert(flb_abi_version() == FLB_ABI_VERSION);
+  assert(flb_lua_version_num() > 0);
   flb_runtime *runtime = flb_create(callback, 1);
   assert(runtime);
   flb_value *methods = flb_value_new(5, 1);

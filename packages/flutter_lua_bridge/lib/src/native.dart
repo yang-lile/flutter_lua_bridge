@@ -31,6 +31,12 @@ final class NativeRuntime extends Opaque {}
 typedef NativeCallback =
     Pointer<NativeResult> Function(Int64, Pointer<NativeValue>);
 
+const expectedFlbAbiVersion = 1;
+
+@Native<Int Function()>()
+external int flb_abi_version();
+@Native<Int Function()>()
+external int flb_lua_version_num();
 @Native<Pointer<NativeValue> Function(Int, Size)>()
 external Pointer<NativeValue> flb_value_new(int kind, int length);
 @Native<Void Function(Pointer<NativeValue>)>()

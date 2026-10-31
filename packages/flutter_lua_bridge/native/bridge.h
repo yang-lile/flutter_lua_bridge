@@ -8,6 +8,8 @@
 #define FLB_API __attribute__((visibility("default")))
 #endif
 
+#define FLB_ABI_VERSION 1
+
 /* Private transport, shared only by the runtime and generated bindings.
  * Tables contain alternating key/value nodes. Strings carry byte lengths.
  * All owned values/results must be released by this library, not Dart calloc.
@@ -28,6 +30,8 @@ typedef struct flb_result {
 typedef flb_result *(*flb_callback)(int64_t id, const flb_value *arguments);
 typedef struct flb_runtime flb_runtime;
 
+FLB_API int flb_abi_version(void);
+FLB_API int flb_lua_version_num(void);
 FLB_API flb_value *flb_value_new(int kind, size_t length);
 FLB_API void flb_value_free(flb_value *value);
 FLB_API void flb_value_move(flb_value *target, flb_value *source);

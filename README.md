@@ -77,9 +77,31 @@ dart test --no-test-randomize-ordering-seed
 python3 packages/flutter_lua_bridge/tool/test_native.py
 ```
 
-The native hook builds the bundled Lua 5.4 source for the target platform.
+The native hook builds the bundled Lua 5.4 source by default for the target platform.
 The four scenario tests in `examples/flutter_lua_bridge_example/test/scenarios` cover Lua-first, Teal-first,
 dynamic Lua and Dart-host implementations.
+
+The Lua source tree can be overridden by the consuming application's workspace
+`pubspec.yaml`:
+
+```yaml
+hooks:
+  user_defines:
+    flutter_lua_bridge:
+      lua_source: third_party/lua-5.4
+      # Or an immutable archive URL:
+      # lua_source: https://example.com/lua-5.5.tar.gz
+      # lua_version: 5.5.0
+      # Optional: lua_sha256: <64-character SHA-256 digest>
+```
+
+The hook keeps a fixed Lua library source manifest, validates
+the required headers and sources, and compiles the selected tree through the
+stable `flb_*` bridge ABI. URL sources require a fixed version label and may
+optionally verify the archive with SHA-256. Without a digest, the URL and
+version label are used as the cache key. Lua version-specific API differences are handled by the C
+bridge and the selected source tree; the hook does not impose a Lua version.
+The default remains `packages/flutter_lua_bridge/lua_src`.
 
 The daily pull request gate is available locally as `./tool/ci_light.sh`. It
 runs the analyzer, code generator tests, generated contract checks and a small

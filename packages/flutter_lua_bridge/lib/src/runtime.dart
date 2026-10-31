@@ -6,7 +6,7 @@ import 'codecs.dart';
 import 'errors.dart';
 import 'native.dart';
 
-/// Owns one Lua 5.4 state, its modules and generated host bindings.
+/// Owns one Lua state, its modules and generated host bindings.
 ///
 /// Calls are synchronous and confined to the creating Dart isolate. Re-entering
 /// the runtime from a host callback is rejected. Always close it in a finally
@@ -15,6 +15,11 @@ class LuaRuntime {
   LuaRuntime._();
 
   static LuaRuntime create({bool openLibraries = true}) {
+    if (flb_abi_version() != expectedFlbAbiVersion) {
+      throw LuaBridgeException(
+        'Incompatible flutter_lua_bridge native ABI',
+      );
+    }
     final runtime = LuaRuntime._();
     runtime._callback = NativeCallable<NativeCallback>.isolateLocal(
       runtime._dispatch,

@@ -5,9 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if LUA_VERSION_NUM != 504
-#error flutter_lua_bridge requires Lua 5.4
-#endif
 typedef char flb_integer_must_be_64_bits[(sizeof(lua_Integer) == 8) ? 1 : -1];
 typedef char flb_number_must_be_double[(sizeof(lua_Number) == sizeof(double)) ? 1 : -1];
 #define FLB_MAX_DEPTH 64
@@ -33,6 +30,9 @@ struct flb_runtime {
   operation *active;
 };
 static const char modules_key = 0;
+
+int flb_abi_version(void) { return FLB_ABI_VERSION; }
+int flb_lua_version_num(void) { return LUA_VERSION_NUM; }
 
 static void clear_value(flb_value *v) {
   if (v->children) {
