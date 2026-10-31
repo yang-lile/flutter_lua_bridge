@@ -10,10 +10,10 @@ example:
 | `packages/flutter_lua_bridge` | Runtime API, Lua 5.4 bindings, codecs, result envelopes, native asset hook, and the bundled Lua C source. |
 | `packages/flutter_lua_bridge_codegen_annotation` | Dependency-free annotations that describe APIs, names, output paths, and optimization levels. |
 | `packages/flutter_lua_bridge_codegen` | Dart AST parser, contract model, fingerprinting, and Dart/Lua/Teal emitters plus the generator executable. |
-| `example/bridge` | Application contracts. These files are the source of generated Dart, Lua protocol, and Teal declarations. |
-| `example/lua/src` | Editable Teal business logic. |
-| `example/lua/build` | Cyan output consumed by Flutter as Lua assets. |
-| `example/lib` and `example/test` | Example application logic, generated clients, bridge scenarios, and widget/domain tests. |
+| `examples/flutter_lua_bridge_example/bridge` | Application contracts. These files are the source of generated Dart, Lua protocol, and Teal declarations. |
+| `examples/flutter_lua_bridge_example/lua/src` | Editable Teal business logic. |
+| `examples/flutter_lua_bridge_example/lua/build` | Cyan output consumed by Flutter as Lua assets. |
+| `examples/flutter_lua_bridge_example/lib` and `examples/flutter_lua_bridge_example/test` | Example application logic, generated clients, bridge scenarios, and widget/domain tests. |
 | `tool` | Generation, playground, light CI, full release CI, and Podman/act helpers. |
 | `.github/workflows` | A light PR/main workflow and a release-only Ubuntu integration workflow. |
 
@@ -65,7 +65,7 @@ and generated artifact drift.
 ### Example and Teal/Cyan
 
 - Card and skill parsing, defaults, numeric coercion, copying, and domain
-  values are covered by `example/test/game/card_loader_test.dart`.
+  values are covered by `examples/flutter_lua_bridge_example/test/game/card_loader_test.dart`.
 - macOS and Windows run the basic bridge and card-loader smoke tests.
 - The release gate runs the full scenario matrix: pure Lua, compiled Teal,
   dynamic Lua, and Dart-host implementations.

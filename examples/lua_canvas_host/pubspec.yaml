@@ -1,0 +1,54 @@
+name: lua_canvas_host
+description: Flutter 宿主，用 Lua 编排绘制逻辑的参考实现。
+publish_to: none
+version: 1.0.0
+
+resolution: workspace
+
+environment:
+  sdk: ^3.10.0
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.1.0
+  # Lua 运行时：源码内置 + Dart hooks 自动构建原生库
+  flutter_lua_bridge:
+    path: ../../packages/flutter_lua_bridge
+  rfw: ^1.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # 只被 lib/driver_main.dart 用（交互测试 / MCP 驱动），
+  # 不是正式入口的依赖，所以放 dev_dependencies。
+  flutter_driver:
+    sdk: flutter
+  # 只为 --dart-define=LUA_STUDIO_DRIVER=true 时的交互测试 / MCP 驱动服务，
+  # 见 lib/main.dart 的 kDriverEnabled。
+
+  flutter_lints: ^6.0.0
+flutter:
+  # SPM 需要 sandbox-exec 权限，在受限环境下会失败。
+  # Lua SDK 由 flutter_lua_bridge 的 code assets 自动构建，不需要 SPM。
+  config:
+    enable-swift-package-manager: false
+
+  uses-material-design: true
+
+  # ASSETS_BLOCK_BEGIN
+  # Lua 模块清单与各模块文件。
+  # 由 tools/gen_assets.sh 从 assets/lua/manifest.txt 生成，勿手改。
+  assets:
+    - assets/lua/canvas/init.lua
+    - assets/lua/guard.lua
+    - assets/lua/host/cli.lua
+    - assets/lua/host/init.lua
+    - assets/lua/manifest.txt
+    - assets/lua/perf.lua
+    - assets/lua/render/dashboard.lua
+    - assets/lua/render/svg.lua
+    - assets/lua/ui/init.lua
+    - assets/lua/ui/proto.lua
+  # ASSETS_BLOCK_END

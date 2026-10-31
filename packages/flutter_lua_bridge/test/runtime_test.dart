@@ -378,7 +378,7 @@ void main() {
     lua.loadModule('battle_bridge', source: battle.bridgeLuaSource);
     lua.loadModule(
       'battle',
-      source: File('../../example/lua/build/battle.lua').readAsStringSync(),
+      source: File('../../examples/flutter_lua_bridge_example/lua/build/battle.lua').readAsStringSync(),
     );
     final result = battle.BattleApi(runtime: lua).calculateDamage(
       const battle.Fighter(attack: 100, defense: 20),

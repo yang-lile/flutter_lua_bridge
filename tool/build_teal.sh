@@ -2,7 +2,7 @@
 set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-project_dir="$repo_root/example/lua"
+project_dir="$repo_root/examples/flutter_lua_bridge_example/lua"
 
 if ! command -v cyan >/dev/null 2>&1; then
   printf '%s\n' 'cyan is required; install it with: luarocks --lua-version=5.4 install cyan 0.4.1-1' >&2

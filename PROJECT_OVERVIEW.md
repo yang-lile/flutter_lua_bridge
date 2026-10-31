@@ -29,7 +29,7 @@ Dart AST、校验契约并同时生成 Dart、Lua 和 Teal 产物。`flutter_lua
 每个应用的 Lua 项目有一个 `tlconfig.lua`：
 
 ```text
-example/lua/
+examples/flutter_lua_bridge_example/lua/
 ├── tlconfig.lua
 ├── src/
 │   ├── basic.tl                 # 手写 Teal
@@ -58,5 +58,5 @@ example/lua/
 dart analyze --fatal-infos
 dart test
 python3 packages/flutter_lua_bridge/tool/test_native.py
-cd example/lua && cyan build
+cd examples/flutter_lua_bridge_example/lua && cyan build
 ```

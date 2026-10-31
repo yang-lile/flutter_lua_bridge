@@ -1,0 +1,71 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# ---- 本项目的生成物 ----
+
+# gen_gallery.lua 的产物。可由 `lua tools/gen_gallery.lua` 重新生成。
+/assets/lua/out/
+
+# 手写 FFI 时代的遗留：Lua 5.4.8 源码与手动编译的 dylib。
+# 现在 SDK 由 flutter_lua_bridge 的 code assets 自动构建，不再需要。
+/native/
+
+# 归档的历史文件。留着当参考，但不进版本库：
+#   build_macos.sh       —— 已被 dev.sh / run.sh 取代
+#   verify_sandbox.py    —— 早期的 Python 版冒烟测试，已被 Lua + Dart 脚本取代
+#   Makefile.old         —— 旧 Makefile（引用了用不了的 flutter test）
+#   liblua.dylib         —— 手写 FFI 时代手动编译的产物
+#   project.pbxproj.bak  —— 改工程文件前的备份
+#   display_list_test.dart / contract_test.dart
+#                      —— flutter test 版本，受限环境跑不了；
+#                         逻辑已迁到 verify_contract.py 与 verify_snippets.dart
+/archive/
+
+# Lua is packaged from assets/lua; do not keep a second manual macOS bundle.
+/macos/Runner/assets/lua/
+
+# Xcode 27 per-user build specification cache.
+/macos/com.apple.DeveloperTools/

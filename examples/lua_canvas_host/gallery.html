@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lua 画布 API 对照</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --panel: #14171f;
+    --panel-2: #1a1e28;
+    --border: #262b38;
+    --border-hi: #333a4a;
+    --text: #e6e9ef;
+    --text-dim: #98a1b3;
+    --text-mute: #6b7488;
+    --accent: #4a9eff;
+    --green: #30a46c;
+    --amber: #f5a524;
+    --purple: #a78bfa;
+    --radius: 10px;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
+            "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ============ 顶部 ============ */
+  header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 500;
+  }
+  header p {
+    margin: 0;
+    color: var(--text-dim);
+    max-width: 760px;
+  }
+  .chain {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .chain .step {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: var(--text-dim);
+  }
+  .chain .step.hl { border-color: var(--accent); color: var(--accent); }
+  .chain .arrow { color: var(--text-mute); }
+
+  /* ============ 示例选择 ============ */
+  nav.tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 32px 0;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+  }
+  nav.tabs button {
+    background: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+  nav.tabs button:hover { color: var(--text); background: var(--panel); }
+  nav.tabs button[aria-selected="true"] {
+    background: var(--panel);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  /* ============ 对照主体 ============ */
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0;
+    margin: 0;
+  }
+  @media (max-width: 980px) {
+    .split { grid-template-columns: 1fr; }
+  }
+
+  .col {
+    min-width: 0;
+    padding: 24px 32px;
+  }
+  .col-left { border-right: 1px solid var(--border); }
+  @media (max-width: 980px) {
+    .col-left { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  .col-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .col-head h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .col-head .note {
+    color: var(--text-mute);
+    font-size: 12px;
+  }
+
+  /* 代码块 */
+  pre.code {
+    margin: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    tab-size: 2;
+  }
+  pre.code code { white-space: pre; }
+
+  /* 语法高亮 */
+  .k  { color: #c98bdf; }   /* keyword */
+  .f  { color: #7fc9ff; }   /* function */
+  .s  { color: #a5e075; }   /* string */
+  .n  { color: #f0a868; }   /* number */
+  .c  { color: var(--text-mute); } /* comment */
+  .t  { color: var(--text-dim); }   /* type / module */
+
+  /* 渲染结果 */
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+    overflow: auto;
+  }
+  .stage svg { max-width: 100%; height: auto; display: block; }
+
+  .meta {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+  .chip b { color: var(--text); font-weight: 500; }
+
+  .desc {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0 0 14px;
+  }
+
+  /* ============ API 参考 ============ */
+  section.api {
+    padding: 32px;
+    border-top: 1px solid var(--border);
+  }
+  section.api h2 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  section.api > p {
+    margin: 0 0 20px;
+    color: var(--text-dim);
+    max-width: 760px;
+  }
+
+  .api-group { margin-bottom: 28px; }
+  .api-group h3 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    color: var(--text-mute);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 0 12px 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 9px 12px 9px 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  td code {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #7fc9ff;
+    background: var(--panel-2);
+    border-radius: 4px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+  td.params {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+    white-space: normal;
+  }
+  td.params em {
+    color: var(--amber);
+    font-style: normal;
+  }
+
+  footer {
+    padding: 20px 32px 40px;
+    border-top: 1px solid var(--border);
+    color: var(--text-mute);
+    font-size: 12px;
+  }
+  footer code {
+    font-family: var(--mono);
+    background: var(--panel-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Lua 画布 API 对照</h1>
+  <p>
+    左边的 Lua 代码产出的是<strong>显示列表</strong>（纯数据），
+    右边是这份数据被真实渲染出来的结果。左侧每一张图都由 Lua 实际执行生成，
+    经过 <code>canvas → display list → 后端</code> 完整链路，不是手绘的示意图。
+  </p>
+  <div class="chain">
+    <span class="step hl">Lua 场景图</span>
+    <span class="arrow">→</span>
+    <span class="step">c:build() 产出显示列表</span>
+    <span class="arrow">→</span>
+    <span class="step">JSON 跨语言</span>
+    <span class="arrow">→</span>
+    <span class="step hl">宿主渲染</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main>
+  <div class="split">
+    <section class="col col-left">
+      <div class="col-head">
+        <h2>Lua 代码</h2>
+        <span class="note">业务逻辑</span>
+      </div>
+      <pre class="code"><code id="src"></code></pre>
+    </section>
+
+    <section class="col col-right">
+      <div class="col-head">
+        <h2>渲染结果</h2>
+        <span class="note">宿主执行显示列表</span>
+      </div>
+      <p class="desc" id="desc"></p>
+      <div class="stage" id="stage"></div>
+      <div class="meta" id="meta"></div>
+    </section>
+  </div>
+
+  <section class="api">
+    <h2>常用 API 参考</h2>
+    <p>
+      Lua 侧画布能力一共有 5 个绘制方法 + 3 个输出方法。
+      所有方法都只往显示列表里追加数据，不会立即触发任何绘制。
+    </p>
+
+    <div class="api-group">
+      <h3>创建</h3>
+      <table>
+        <thead><tr>
+          <th style="width:190px">方法</th>
+          <th style="width:280px">参数</th><th>说明</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><code>canvas.new(opts)</code></td>
+            <td class="params">width, height, background</td>
+            <td>创建画布。缺省800×600，深色背景 <code>#0f1116</code>。尺寸是逻辑值，宿主按DPR 缩放。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-group">
+      <h3>绘制 — 五种图元</h3>
+      <table>
+        <thead><tr>
+          <th style="width:190px">方法</th>
+          <th style="width:280px">参数</th><th>说明</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><code>c:circle(x, y, r, style)</code></td>
+            <td class="params">圆心 x,y 半径 r<br>
+              style: <em>fill</em>, <em>stroke</em>, <em>stroke_width</em></td>
+            <td>圆形。可只填色、只描边或两者都有。</td>
+          </tr>
+          <tr>
+            <td><code>c:rect(x, y, w, h, style)</code></td>
+            <td class="params">左上角 x,y 宽高 w,h<br>
+              style: <em>radius</em>, <em>fill</em>, <em>stroke</em>, <em>stroke_width</em></td>
+            <td>矩形。<code>radius</code> 给圆角，0 为直角。</td>
+          </tr>
+          <tr>
+            <td><code>c:line(x1, y1, x2, y2, style)</code></td>
+            <td class="params">起点 x1,y1 终点 x2,y2<br>
+              style: <em>stroke</em>（默认白）, <em>stroke_width</em>（默认 1）</td>
+            <td>直线。坐标轴、网格线、引线都用它。</td>
+          </tr>
+          <tr>
+            <td><code>c:polygon(points, style)</code></td>
+            <td class="params">{x=,y=} 数组，至少 3 个<br>
+              style: <em>fill</em>, <em>stroke</em>, <em>stroke_width</em></td>
+            <td>多边形。折线也走这个（不闭合时按折线处理）。</td>
+          </tr>
+          <tr>
+            <td><code>c:text(x, y, str, style)</code></td>
+            <td class="params">基线起点 x,y<br>
+              style: <em>size</em>(14), <em>color</em>(白), <em>align</em>(left)</td>
+            <td>文本。<code>align</code> 可选 <code>left</code> / <code>center</code> / <code>right</code>，y 是基线不是顶边。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-group">
+      <h3>输出</h3>
+      <table>
+        <thead><tr>
+          <th style="width:190px">方法</th>
+          <th style="width:280px">返回</th><th>说明</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><code>c:build()</code></td>
+            <td class="params">显示列表 table</td>
+            <td>
+              交给宿主消费的最终产物。
+              结构：<code>{version, width, height, background, ops[], op_count, fingerprint}</code>。
+            </td>
+          </tr>
+          <tr>
+            <td><code>c:hash()</code></td>
+            <td class="params">8 位十六进制字符串</td>
+            <td>
+              内容指纹。宿主用它判断是否需要重绘——
+              指纹相同就跳过整帧。<strong>数据变了才会变</strong>。
+            </td>
+          </tr>
+          <tr>
+            <td><code>c:clear()</code></td>
+            <td class="params">画布自身</td>
+            <td>清空图元但保留尺寸和背景，可链式调用。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-group">
+      <h3>能力契约层</h3>
+      <table>
+        <thead><tr>
+          <th style="width:190px">方法</th>
+          <th style="width:280px">参数</th><th>说明</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><code>require_cap(name, opts)</code></td>
+            <td class="params">opts: <em>min_version</em>, <em>reason</em></td>
+            <td>业务侧声明必需能力。缺了立刻报错并带上声明理由；版本不达标也报错。</td>
+          </tr>
+          <tr>
+            <td><code>cap(name)</code></td>
+            <td class="params">—</td>
+            <td>可选能力，缺失返回 <code>nil</code>，用于降级分支。</td>
+          </tr>
+          <tr>
+            <td><code>provide(name, impl, opts)</code></td>
+            <td class="params">opts: <em>version</em>, <em>desc</em></td>
+            <td>宿主侧注册能力。重复注册会报错，便于发现拼写错误。</td>
+          </tr>
+          <tr>
+            <td><code>verify()</code></td>
+            <td class="params">—</td>
+            <td>启动时统一校验所有声明过的依赖，返回缺失清单。避免运行到一半才崩。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-group">
+      <h3>样式字段速查</h3>
+      <table>
+        <thead><tr>
+          <th style="width:190px">字段</th>
+          <th style="width:280px">取值</th><th>说明</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><code>fill</code> / <code>stroke</code></td>
+            <td class="params"><em>#rgb</em> / <em>#rrggbb</em> / <em>#aarrggbb</em></td>
+            <td>
+              颜色。<code>#aarrggbb</code> 的 alpha 用于渐隐效果。
+              非十六进制会在 Lua 侧直接报错。
+            </td>
+          </tr>
+          <tr>
+            <td><code>stroke_width</code></td>
+            <td class="params">数字，0 表示不描边</td>
+            <td>描边宽度。0.5 常用于网格线做抗锯齿。</td>
+          </tr>
+          <tr>
+            <td><code>radius</code></td>
+            <td class="params">数字，0 为直角</td>
+            <td>圆角半径，矩形专用。</td>
+          </tr>
+          <tr>
+            <td><code>size</code></td>
+            <td class="params">数字（逻辑像素）</td>
+            <td>字号。宿主按设备像素比缩放。</td>
+          </tr>
+          <tr>
+            <td><code>align</code></td>
+            <td class="params"><em>"left"</em> / <em>"center"</em> / <em>"right"</em></td>
+            <td>文本对齐。右对齐时 <code>x</code> 表示文本右边缘。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-group">
+      <h3>常用绘制辅助模式</h3>
+      <table>
+        <thead><tr>
+          <th style="width:190px">模式</th>
+          <th style="width:280px">做法</th><th>说明</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><code>canvas.OP</code></td>
+            <td class="params">circle / rect / line / text / polygon</td>
+            <td>图元类型常量表。做分发逻辑时用，别硬编码字符串。</td>
+          </tr>
+          <tr>
+            <td>动画循环</td>
+            <td class="params">tick(data) 只改数据<br>draw(data) 只读数据</td>
+            <td>
+              严格分离。tick 不碰画布，draw 不改数据。
+              每帧跑 tick + draw，指纹变了宿主才重绘。
+            </td>
+          </tr>
+          <tr>
+            <td>图表坐标映射</td>
+            <td class="params">to_x(i, n) / to_y(v) 纯函数</td>
+            <td>
+              数值到像素的映射写成纯函数，不含绘制逻辑，
+              因此可以脱离渲染单独测试。
+            </td>
+          </tr>
+          <tr>
+            <td>状态配色</td>
+            <td class="params">status_color(status)</td>
+            <td>业务规则映射到视觉表现。规则在 Lua，宿主只管照着画。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>
+  重新生成页面数据：<code>lua tools/gen_gallery.lua</code>
+  （在 <code>examples/lua_canvas_host/</code> 目录下执行）
+</footer>
+
+<script>
+const DATA_URL = "assets/lua/out/gallery.json";
+
+/* 极简 Lua 语法高亮。仅覆盖常用词，不追求完备。 */
+const KEYWORDS = /\b(local|function|end|for|in|do|while|if|then|else|elseif|return|break|and|or|not|nil|true|false|repeat|until)\b/g;
+const BUILTINS = /\b(require|ipairs|pairs|tonumber|tostring|table|math|string|pcall|error|print|setmetatable|getmetatable|select|type)\b/g;
+
+function highlightLua(src) {
+  const esc = src.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  // 先抽出注释与字符串，避免内部内容被后续规则误伤
+  const slots = [];
+  let s = esc.replace(/(--\[\[[\s\S]*?\]\]|--[^\n]*)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(\b\d+\.?\d*\b)/g,
+    (m, cmt, str, num) => {
+      if (cmt) { slots.push('<span class="c">' + cmt + "</span>"); return "\u0000" + (slots.length-1) + "\u0000"; }
+      if (str) { slots.push('<span class="s">' + str + "</span>"); return "\u0000" + (slots.length-1) + "\u0000"; }
+      if (num) { slots.push('<span class="n">' + num + "</span>"); return "\u0000" + (slots.length-1) + "\u0000"; }
+      return m;
+    });
+  s = s.replace(/\b(\w+)(\s*\()/g, '<span class="f">$1</span>$2');
+  s = s.replace(KEYWORDS, '<span class="k">$1</span>');
+  s = s.replace(BUILTINS, '<span class="t">$1</span>');
+  s = s.replace(/\u0000(\d+)\u0000/g, (_, i) => slots[+i]);
+  return s;
+}
+
+const state = { list: [], idx: 0 };
+
+function render() {
+  const ex = state.list[state.idx];
+
+  document.getElementById("src").innerHTML = highlightLua(ex.code);
+  document.getElementById("desc").textContent = ex.desc;
+  document.getElementById("stage").innerHTML = ex.svg;
+
+  document.getElementById("meta").innerHTML = [
+    `<span class="chip">图元 <b>${ex.op_count}</b></span>`,
+    `<span class="chip">尺寸 <b>${ex.width}×${ex.height}</b></span>`,
+    `<span class="chip">构成 <b>${ex.breakdown}</b></span>`,
+    `<span class="chip">指纹 <b>${ex.fingerprint}</b></span>`,
+  ].join("");
+
+  document.querySelectorAll("#tabs button").forEach((b, i) => {
+    b.setAttribute("aria-selected", i === state.idx ? "true" : "false");
+  });
+}
+
+function buildTabs() {
+  const nav = document.getElementById("tabs");
+  state.list.forEach((ex, i) => {
+    const b = document.createElement("button");
+    b.textContent = ex.title;
+    b.onclick = () => { state.idx = i; render(); };
+    nav.appendChild(b);
+  });
+}
+
+fetch(DATA_URL)
+  .then(r => r.json())
+  .then(d => {
+    state.list = d.examples;
+    buildTabs();
+    render();
+  })
+  .catch(e => {
+    document.getElementById("stage").innerHTML =
+      `<div style="color:#e5484d;font-family:var(--mono);font-size:13px">
+        无法加载 ${DATA_URL}<br><br>
+        请在 examples/lua_canvas_host 目录下运行：<br>
+        <code>lua tools/gen_gallery.lua</code><br><br>
+        若浏览器拦截本地文件请求，请用本地服务器打开。
+      </div>`;
+  });
+</script>
+</body>
+</html>

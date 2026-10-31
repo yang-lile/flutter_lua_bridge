@@ -9,4 +9,5 @@ workspace:
   - packages/flutter_lua_bridge
   - packages/flutter_lua_bridge_codegen_annotation
   - packages/flutter_lua_bridge_codegen
-  - example
+  - examples/flutter_lua_bridge_example
+  - examples/lua_canvas_host

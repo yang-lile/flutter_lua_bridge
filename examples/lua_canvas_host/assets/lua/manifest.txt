@@ -1,0 +1,21 @@
+# Lua 模块清单
+#
+# Flutter assets 不会递归列出目录内容，所以维护这份清单。
+# 格式：相对项目根的 assets 路径，一行一个，# 开头为注释。
+#
+# 打包前用 tools/check_manifest.sh 校验它与实际文件一致。
+#
+# 不包含的：
+#   bootstrap.lua  —— CLI 场景用，打包后由 rootBundle 注入 package.path
+#   demo.lua       —— 演示脚本
+#   spec/          —— 测试
+
+assets/lua/canvas/init.lua
+assets/lua/host/cli.lua
+assets/lua/host/init.lua
+assets/lua/render/dashboard.lua
+assets/lua/render/svg.lua
+assets/lua/guard.lua
+assets/lua/perf.lua
+assets/lua/ui/init.lua
+assets/lua/ui/proto.lua

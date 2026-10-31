@@ -17,11 +17,11 @@ fi
 (cd packages/flutter_lua_bridge && "$dart_cmd" --suppress-analytics test test/codecs_test.dart)
 
 for contract in bridge/basic_api.dart bridge/scenarios.dart bridge/battle.dart; do
-  (cd example && "$dart_cmd" --suppress-analytics run flutter_lua_bridge_codegen --input "$contract" --check)
+  (cd examples/flutter_lua_bridge_example && "$dart_cmd" --suppress-analytics run flutter_lua_bridge_codegen --input "$contract" --check)
 done
 
 if command -v flutter >/dev/null 2>&1; then
-  (cd example && flutter test test/game/card_loader_test.dart)
+  (cd examples/flutter_lua_bridge_example && flutter test test/game/card_loader_test.dart)
 else
   printf '%s\n' 'flutter is unavailable; skipped the example unit test.' >&2
 fi

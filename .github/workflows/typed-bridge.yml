@@ -42,4 +42,4 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter test test/bridge/basic_bridge_test.dart test/game/card_loader_test.dart
-        working-directory: example
+        working-directory: examples/flutter_lua_bridge_example

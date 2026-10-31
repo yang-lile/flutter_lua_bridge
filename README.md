@@ -43,8 +43,8 @@ declaration file from the same contract:
 
 The generated Lua companion contains protocol validation/error handling and
 the contract fingerprint. Business logic lives in an editable `.tl` file. The example keeps
-that project in [`example/lua`](example/lua): Cyan checks every Teal source and
-writes Lua 5.4 modules into `example/lua/build`.
+that project in [`examples/flutter_lua_bridge_example/lua`](examples/flutter_lua_bridge_example/lua): Cyan checks every Teal source and
+writes Lua 5.4 modules into `examples/flutter_lua_bridge_example/lua/build`.
 
 Generated calls use GCC-style safety levels. `O1` is the default and emits Lua
 type validators plus `pcall`, returning `LuaCallResult<T>` with
@@ -59,7 +59,7 @@ dart run flutter_lua_bridge_codegen --input bridge/basic_api.dart -O1
 ```
 
 ```sh
-cd example/lua
+cd examples/flutter_lua_bridge_example/lua
 cyan build
 ```
 
@@ -78,7 +78,7 @@ python3 packages/flutter_lua_bridge/tool/test_native.py
 ```
 
 The native hook builds the bundled Lua 5.4 source for the target platform.
-The four scenario tests in `example/test/scenarios` cover Lua-first, Teal-first,
+The four scenario tests in `examples/flutter_lua_bridge_example/test/scenarios` cover Lua-first, Teal-first,
 dynamic Lua and Dart-host implementations.
 
 The daily pull request gate is available locally as `./tool/ci_light.sh`. It
@@ -102,6 +102,19 @@ Podman wrapper because Flutter 3.38.10 does not publish a Linux arm64 archive.
 On Apple Silicon, the native ASan test may still fail under amd64 emulation;
 use `./tool/ci.sh` on the host or the GitHub release workflow for the
 authoritative native check.
+
+## rfw hot-update example
+
+The workspace also includes [`examples/lua_canvas_host`](examples/lua_canvas_host),
+a Flutter host that turns Lua output into an `rfw` remote widget library. It
+uses the local `packages/flutter_lua_bridge` package and keeps the Lua, canvas,
+widget-tree and interaction checks together:
+
+```sh
+cd examples/lua_canvas_host
+make test
+make run
+```
 
 ## Local playground
 
