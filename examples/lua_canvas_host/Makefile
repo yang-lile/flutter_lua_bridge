@@ -54,45 +54,45 @@ test-lua:
 	@$(LUA) assets/lua/spec/canvas_spec.lua
 	@$(LUA) assets/lua/spec/ui_spec.lua
 
-test-dart:
+test-dart: gallery
 	@python3 tools/verify_contract.py
 
 test-worker:
-	@$(DART) run tools/verify_worker.dart
+	@$(DART) --suppress-analytics run tools/verify_worker.dart
 
 test-guard:
-	@$(DART) run tools/verify_guard.dart
+	@$(DART) --suppress-analytics run tools/verify_guard.dart
 
 test-snippets:
-	@$(DART) run tools/verify_snippets.dart
+	@$(DART) --suppress-analytics run tools/verify_snippets.dart
 
 # UI 链路：预设示例
 test-ui:
-	@$(DART) run tools/verify_ui_snippets.dart
+	@$(DART) --suppress-analytics run tools/verify_ui_snippets.dart
 
 # UI 链路：契约 -> rfw blob 的端到端校验
 test-ui-ast:
-	@$(DART) run tools/verify_ui_ast.dart
+	@$(DART) --suppress-analytics run tools/verify_ui_ast.dart
 
 # 字节码预编译：证明执行时真的走了字节码（删掉源码仍能跑）
 test-bytecode:
-	@$(DART) run tools/verify_bytecode.dart
+	@$(DART) --suppress-analytics run tools/verify_bytecode.dart
 
 # 内容变化检测：漏更新的表现是静默的，必须逐字段验
 test-change-detect:
-	@$(DART) run tools/verify_change_detect.dart
+	@$(DART) --suppress-analytics run tools/verify_change_detect.dart
 
 # 原型：Lua 直接产出 rfw 文本，且 rfw 自己的解析器认它
 test-proto-text:
-	@$(DART) run tools/verify_proto_text.dart
+	@$(DART) --suppress-analytics run tools/verify_proto_text.dart
 
 # 交互分层：本地状态必须编成 SetStateHandler（不回 Lua），业务事件才是 EventHandler
 test-ui-native-state:
-	@$(DART) run tools/verify_ui_native_state.dart
+	@$(DART) --suppress-analytics run tools/verify_ui_native_state.dart
 
 # 性能基准（不进 make test，结果随机器波动，只在需要时手动跑）
 bench:
-	@$(DART) run tools/bench_pipeline.dart
+	@$(DART) --suppress-analytics run tools/bench_pipeline.dart
 
 # 注意：flutter test 在受限环境下不可用（flutter_tester 需要与
 # 工具建立本地 WebSocket，会被拦）。上面这组是等价替代——

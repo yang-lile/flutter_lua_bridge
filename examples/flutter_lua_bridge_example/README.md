@@ -22,3 +22,10 @@ files carry a `Do not edit` header.
 The game demo continues to exercise the raw API, while `test/scenarios` covers
 four typed bridge strategies: handwritten Lua, Teal compiled to Lua, dynamic
 Lua and Lua calling registered Dart functions.
+
+在 macOS 上可用下面的脚本构建。它会先生成 Flutter 配置并安装 CocoaPods，
+然后依次构建 Pods 和 Runner，避开 Xcode 27 对 Flutter workspace 的兼容问题：
+
+```sh
+bash tools/build_macos.sh debug
+```
