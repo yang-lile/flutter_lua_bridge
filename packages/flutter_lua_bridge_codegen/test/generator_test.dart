@@ -7,54 +7,102 @@ import 'package:test/test.dart';
 const _import =
     "import 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';";
 
-/// Resolves [sources] (library name to content) and reads the contract in
-/// the library `contract`.
-Future<BridgeSchema?> read(
-  Map<String, String> sources, {
-  BridgeOptimization optimization = BridgeOptimization.o1,
-}) => resolveSources(
-  {
-    for (final entry in sources.entries)
-      'a|lib/${entry.key}.dart': '$_import\n${entry.value}',
-  },
-  (resolver) async => readBridgeSchema(
-    await resolver.libraryFor(AssetId('a', 'lib/contract.dart')),
-    name: 'contract',
-    optimization: optimization,
-  ),
-  readAllSourcesFromFilesystem: true,
-);
+/// One contract to resolve. Every case is declared while `main` runs, and
+/// all of them are resolved together in `setUpAll`: one analysis context for
+/// the whole file instead of one per case.
+class Case {
+  Case(this.libraries, this.optimizations);
 
-Future<BridgeSchema> parse(
+  /// Library name to content; the contract is the library `contract`.
+  final Map<String, String> libraries;
+  final List<BridgeOptimization> optimizations;
+  final _outcomes = <BridgeOptimization, Object?>{};
+
+  Future<BridgeSchema?> schema([
+    BridgeOptimization optimization = BridgeOptimization.o1,
+  ]) {
+    assert(_outcomes.containsKey(optimization), 'level not requested');
+    final outcome = _outcomes[optimization];
+    return outcome is InvalidGenerationSource
+        ? Future.error(outcome)
+        : Future.value(outcome as BridgeSchema?);
+  }
+}
+
+final _cases = <Case>[];
+
+Case read(
+  Map<String, String> sources, {
+  List<BridgeOptimization> optimizations = const [BridgeOptimization.o1],
+}) {
+  final contract = Case(sources, optimizations);
+  _cases.add(contract);
+  return contract;
+}
+
+Case parse(
   String methods, {
   String data = '',
   String annotation = "@LuaApi(module: 'test')",
-  BridgeOptimization optimization = BridgeOptimization.o1,
-}) async => (await read({
+  List<BridgeOptimization> optimizations = const [BridgeOptimization.o1],
+}) => read({
   'contract': '$data\n$annotation\nabstract class TestApi { $methods }',
-}, optimization: optimization))!;
+}, optimizations: optimizations);
+
+Future<void> _resolveAll() => resolveSources(
+  {
+    for (final (index, contract) in _cases.indexed)
+      for (final entry in contract.libraries.entries)
+        'a|lib/c$index/${entry.key}.dart': '$_import\n${entry.value}',
+  },
+  (resolver) async {
+    for (final (index, contract) in _cases.indexed) {
+      final library = await resolver.libraryFor(
+        AssetId('a', 'lib/c$index/contract.dart'),
+      );
+      for (final level in contract.optimizations) {
+        try {
+          contract._outcomes[level] = readBridgeSchema(
+            library,
+            name: 'contract',
+            optimization: level,
+          );
+        } on InvalidGenerationSource catch (error) {
+          contract._outcomes[level] = error;
+        }
+      }
+    }
+  },
+  readAllSourcesFromFilesystem: true,
+);
 
 final Matcher rejects = throwsA(isA<InvalidGenerationSource>());
 
 void main() {
+  setUpAll(_resolveAll);
+
+  final add = parse('int add(int value);');
   test('emits all three artifacts from one schema', () async {
-    final schema = await parse('int add(int value);');
+    final schema = (await add.schema())!;
     expect(schema.bridgeModule, 'contract_bridge');
     expect(emitDart(schema), contains('class TestApiClient'));
     expect(emitLua(schema), contains('bindTestApi'));
     expect(emitTeal(schema), contains('record TestApi'));
   });
 
+  final plain = read({'contract': 'class Plain { final int a = 1; }'});
   test('ignores libraries without an API', () async {
-    expect(
-      await read({'contract': 'class Plain { final int a = 1; }'}),
-      isNull,
-    );
+    expect(await plain.schema(), isNull);
   });
 
+  final levels = parse(
+    'int add(int value);',
+    optimizations: BridgeOptimization.values,
+  );
+  final structured = parse('List<int> values();');
   test('emits the requested safety level', () async {
-    Future<BridgeSchema> schema(BridgeOptimization level) =>
-        parse('int add(int value);', optimization: level);
+    Future<BridgeSchema> schema(BridgeOptimization level) async =>
+        (await levels.schema(level))!;
     final o1 = await schema(BridgeOptimization.o1);
     expect(emitLua(o1), contains('runtime type checks + pcall'));
     expect(emitLua(o1), contains('_check_int'));
@@ -62,8 +110,10 @@ void main() {
     expect(emitLua(o1), contains('__mode = "k"'));
     expect(emitDart(o1), contains('LuaCallResult<int> add(int value)'));
     expect(emitDart(o1), isNot(contains('implements TestApi')));
-    final structured = await parse('List<int> values();');
-    expect(emitLua(structured), contains('maximum nesting depth exceeded'));
+    expect(
+      emitLua((await structured.schema())!),
+      contains('maximum nesting depth exceeded'),
+    );
     final o2 = await schema(BridgeOptimization.o2);
     expect(emitLua(o2), contains('pcall'));
     expect(emitLua(o2), isNot(contains('_check_int')));
@@ -76,15 +126,19 @@ void main() {
     expect(emitDart(o3), isNot(contains('LuaCallResult')));
   });
 
-  test('an interface can choose its own safety level', () async {
-    final schema = (await read({
+  final mixed = read(
+    {
       'contract': '''
 @LuaApi(module: 'a', optimization: LuaOptimization.o3)
 abstract class Fast { int get_(); }
 @LuaApi(module: 'b')
 abstract class Safe { int get_(); }
 ''',
-    }, optimization: BridgeOptimization.o2))!;
+    },
+    optimizations: [BridgeOptimization.o2],
+  );
+  test('an interface can choose its own safety level', () async {
+    final schema = (await mixed.schema(BridgeOptimization.o2))!;
     expect(schema.apis.map((api) => api.optimization), [
       BridgeOptimization.o3,
       BridgeOptimization.o2,
@@ -96,7 +150,7 @@ abstract class Safe { int get_(); }
   });
 
   test('generated artifacts carry no contract fingerprint', () async {
-    final schema = await parse('int add(int value);');
+    final schema = (await add.schema())!;
     for (final artifact in [
       emitDart(schema),
       emitLua(schema),
@@ -106,9 +160,8 @@ abstract class Safe { int get_(); }
     }
   });
 
-  test('data classes and enums may come from other libraries', () async {
-    final schema = (await read({
-      'models': '''
+  final crossLibrary = read({
+    'models': '''
 enum Mode { @LuaName('easy_mode') easy, hard }
 class Unused { final dynamic ignored; Unused(this.ignored); }
 class Result {
@@ -118,7 +171,7 @@ class Result {
   final List<int> scores;
 }
 ''',
-      'contract': '''
+    'contract': '''
 import 'models.dart';
 @LuaApi(module: 'game')
 abstract class GameApi {
@@ -126,7 +179,9 @@ abstract class GameApi {
   Result run(int seed, {required String mode});
 }
 ''',
-    }))!;
+  });
+  test('data classes and enums may come from other libraries', () async {
+    final schema = (await crossLibrary.schema())!;
     expect(schema.apis.single.methods.single.luaName, 'run_game');
     expect(schema.apis.single.methods.single.parameters.last.named, isTrue);
     final result = schema.data.single;
@@ -148,18 +203,18 @@ abstract class GameApi {
     );
   });
 
+  final named = parse('int add(int value, {required int bonus});');
   test('supports required named parameters', () async {
-    final schema = await parse('int add(int value, {required int bonus});');
+    final schema = (await named.schema())!;
     expect(emitDart(schema), contains('required int bonus'));
     expect(emitTeal(schema), contains('function(integer, integer): integer'));
   });
 
+  final renamed = parse('@LuaName("finish") int end();');
+  final keyword = parse('int end();');
   test('allows explicit renaming of Lua keywords in Dart members', () async {
-    expect(
-      emitLua(await parse('@LuaName("finish") int end();')),
-      contains('"finish"'),
-    );
-    expect(parse('int end();'), rejects);
+    expect(emitLua((await renamed.schema())!), contains('"finish"'));
+    expect(keyword.schema(), rejects);
   });
 
   final unsupported = {
@@ -182,78 +237,52 @@ abstract class GameApi {
     'no methods': '',
   };
   for (final entry in unsupported.entries) {
+    final contract = parse(entry.value);
     test('rejects ${entry.key}', () {
-      expect(parse(entry.value), rejects);
+      expect(contract.schema(), rejects);
     });
   }
 
+  final dataCases = {
+    'recursive': 'class Data { final Data? child; Data(this.child); }',
+    'inheritance':
+        'class Base {} class Data extends Base { final int value; Data(this.value); }',
+    'mutable field': 'class Data { int value; Data(this.value); }',
+    'field outside the constructor':
+        'class Data { final int value; final int extra = 1; Data(this.value); }',
+    'optional constructor parameter':
+        'class Data { final int value; Data([this.value = 1]); }',
+    'no unnamed constructor':
+        'class Data { final int value; Data.named(this.value); }',
+    'duplicate Lua field':
+        'class Data { @LuaName("v") final int a; @LuaName("v") final int b; Data(this.a, this.b); }',
+    'Object member field':
+        'class Data { final int toString; Data(this.toString); }',
+    'enhanced enum': 'enum Data { a; int get code => 1; }',
+  }.map((name, data) => MapEntry(name, parse('Data get_();', data: data)));
   test('rejects unsupported data classes', () {
-    final cases = {
-      'recursive': 'class Data { final Data? child; Data(this.child); }',
-      'inheritance':
-          'class Base {} class Data extends Base { final int value; Data(this.value); }',
-      'mutable field': 'class Data { int value; Data(this.value); }',
-      'field outside the constructor':
-          'class Data { final int value; final int extra = 1; Data(this.value); }',
-      'optional constructor parameter':
-          'class Data { final int value; Data([this.value = 1]); }',
-      'no unnamed constructor':
-          'class Data { final int value; Data.named(this.value); }',
-      'duplicate Lua field':
-          'class Data { @LuaName("v") final int a; @LuaName("v") final int b; Data(this.a, this.b); }',
-      'Object member field':
-          'class Data { final int toString; Data(this.toString); }',
-      'enhanced enum': 'enum Data { a; int get code => 1; }',
-    };
-    for (final entry in cases.entries) {
-      expect(
-        parse('Data get_();', data: entry.value),
-        rejects,
-        reason: entry.key,
-      );
+    for (final entry in dataCases.entries) {
+      expect(entry.value.schema(), rejects, reason: entry.key);
     }
   });
 
-  test('rejects invalid API declarations', () {
-    expect(
-      read({
-        'contract': '''
+  final invalidApis = {
+    'duplicate module': '''
 @LuaApi(module: "a") abstract class A { int get_(); }
 @DartApi(module: "a") abstract class B { int get_(); }
 ''',
-      }),
-      rejects,
-      reason: 'duplicate module',
-    );
-    expect(
-      read({
-        'contract':
-            '@LuaApi(module: "a") @DartApi(module: "b") abstract class A { int get_(); }',
-      }),
-      rejects,
-      reason: 'both directions',
-    );
-    expect(
-      read({'contract': '@LuaApi(module: "a") class A { int get_() => 1; }'}),
-      rejects,
-      reason: 'concrete class',
-    );
-    expect(
-      read({
-        'contract': '@LuaApi(module: "a b") abstract class A { int get_(); }',
-      }),
-      rejects,
-      reason: 'module name',
-    );
-    expect(
-      read({
-        'contract': '''
+    'both directions':
+        '@LuaApi(module: "a") @DartApi(module: "b") abstract class A { int get_(); }',
+    'concrete class': '@LuaApi(module: "a") class A { int get_() => 1; }',
+    'module name': '@LuaApi(module: "a b") abstract class A { int get_(); }',
+    'API passed as data': '''
 @LuaApi(module: "a") abstract class A { int get_(); }
 @LuaApi(module: "b") abstract class B { A get_(); }
 ''',
-      }),
-      rejects,
-      reason: 'API passed as data',
-    );
+  }.map((name, source) => MapEntry(name, read({'contract': source})));
+  test('rejects invalid API declarations', () {
+    for (final entry in invalidApis.entries) {
+      expect(entry.value.schema(), rejects, reason: entry.key);
+    }
   });
 }
