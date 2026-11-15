@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_lua_bridge_example/scenarios.g.dart';
+import 'package:flutter_lua_bridge_example/bridge/scenarios.dart';
 import 'scenario_test_helpers.dart';
 
 class ScenarioHost implements ScenarioHostApi {
@@ -15,8 +15,8 @@ void main() {
   testWidgets('Lua calls pre-registered Dart host functions', (tester) async {
     final lua = newRuntime();
     try {
-      ScenarioHostApi.setUp(ScenarioHost(), runtime: lua);
-      final api = DartHostLuaApi.load(
+      registerScenarioHostApi(ScenarioHost(), runtime: lua);
+      final api = DartHostLuaApiClient.load(
         runtime: lua,
         source: await source('dart_host.lua'),
       );

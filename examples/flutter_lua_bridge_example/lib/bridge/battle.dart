@@ -1,4 +1,6 @@
-import 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+
+part 'battle.g.dart';
 
 class Fighter {
   const Fighter({required this.attack, required this.defense});
@@ -12,11 +14,6 @@ class DamageResult {
   final bool critical;
 }
 
-@ConfigureLuaBridge(
-  dartOut: 'lib/battle.g.dart',
-  luaOut: 'lua/src/battle_bridge.lua',
-  tealOut: 'lua/src/battle_bridge.d.tl',
-)
 @LuaApi(module: 'battle')
 abstract class BattleApi {
   @LuaName('calculate_damage')

@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
-import 'package:flutter_lua_bridge_example/scenarios.g.dart';
+import 'package:flutter_lua_bridge_example/bridge/scenarios.dart';
 
 CalculationInput input({
   int base = 7,
@@ -15,11 +15,8 @@ CalculationInput input({
   operation: operation,
 );
 
-Future<String> source(String name) => rootBundle.loadString(
-  name == 'pure_teal.lua'
-      ? 'lua/build/pure_teal.lua'
-      : 'assets/scenarios/$name',
-);
+Future<String> source(String name) =>
+    rootBundle.loadString('assets/lua/$name');
 
 LuaRuntime newRuntime() {
   TestWidgetsFlutterBinding.ensureInitialized();

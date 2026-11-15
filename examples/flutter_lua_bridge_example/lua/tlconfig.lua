@@ -1,12 +1,8 @@
--- Cyan project for the Lua modules shipped with the Flutter example.
--- Teal sources live in src/ and compiled Lua is written to build/.
+-- For editor tooling only (for example the Teal language server).
+-- `dart run build_runner build` compiles the sources with the Teal compiler
+-- bundled in flutter_lua_bridge_codegen and does not read this file.
 return {
   source_dir = "src",
-  -- Compatibility with tl 0.24.x; newer tl versions infer this from source_dir.
-  include_dir = { "src" },
-  build_dir = "build",
-  include = { "**/*.tl" },
-  -- Cyan's portable target is 5.3; the generated Lua runs on our 5.4 VM.
-  gen_target = "5.3",
+  include_dir = { "src", "types" },
   gen_compat = "off",
 }

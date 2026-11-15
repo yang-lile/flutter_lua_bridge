@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 import 'package:flutter_lua_bridge_example/bridge/basic_bridge_demo.dart';
-import 'package:flutter_lua_bridge_example/bridge/basic_api.g.dart';
+import 'package:flutter_lua_bridge_example/bridge/basic_api.dart';
 
 void main() {
   setUpAll(() {

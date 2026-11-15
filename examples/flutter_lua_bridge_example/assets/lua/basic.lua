@@ -1,4 +1,4 @@
-local bridge = require("basic_bridge")
+local bridge = require("basic_api_bridge")
 
 local implementation = {
    run = function()

@@ -1,4 +1,6 @@
-import 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+
+part 'scenarios.g.dart';
 
 /// One DTO is shared by all four examples so the tests exercise the same
 /// generated boundary with different implementation strategies.
@@ -23,11 +25,6 @@ class CalculationResult {
   final String implementation;
 }
 
-@ConfigureLuaBridge(
-  dartOut: 'lib/scenarios.g.dart',
-  luaOut: 'lua/src/scenarios_bridge.lua',
-  tealOut: 'lua/src/scenarios_bridge.d.tl',
-)
 @LuaApi(module: 'pure_lua')
 abstract class PureLuaApi {
   CalculationResult calculate(CalculationInput input);

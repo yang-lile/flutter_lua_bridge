@@ -1,0 +1,18 @@
+# build_runner reads only the directories listed under `sources`. This is its
+# default list plus `lua/**`, where the Teal and Lua sources live.
+targets:
+  $default:
+    sources:
+      - $package$
+      - pubspec.yaml
+      - pubspec.lock
+      - lib/**
+      - lua/**
+      - assets/**
+      - bin/**
+      - test/**
+      - integration_test/**
+      - tool/**
+      - web/**
+      - example/**
+      - benchmark/**

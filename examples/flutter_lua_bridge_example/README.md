@@ -1,25 +1,26 @@
 # Flutter example
 
-`bridge/basic_api.dart` and `bridge/battle.dart` are application contracts.
-Generate their Dart proxies, Lua companions and Teal declarations with:
+`lib/bridge/basic_api.dart`, `lib/bridge/battle.dart` and
+`lib/bridge/scenarios.dart` are application contracts. Their Dart part files,
+Teal declarations and compiled Lua are generated with:
 
 ```sh
-dart run flutter_lua_bridge_codegen --input bridge/basic_api.dart
+dart run build_runner build
 ```
 
-The editable Teal implementation is [`lua/src/basic.tl`](lua/src/basic.tl).
-Build it with Cyan from the Lua project directory:
+| Path | Content |
+| --- | --- |
+| `lib/bridge/*.g.dart` | Generated clients, host registration and codecs |
+| `lua/types/*_bridge.d.tl` | Generated Teal declarations |
+| `lua/src/` | Editable Teal and Lua, for example [`lua/src/basic.tl`](lua/src/basic.tl) |
+| `assets/lua/` | Compiled Teal and copied Lua, packaged as Flutter assets |
 
-```sh
-cd lua
-cyan build
-```
+`BasicBridgeDemo` loads `assets/lua/basic.lua` through `BasicApiClient.load`.
+The Teal compiler is bundled in the generator; no Lua toolchain is installed
+and nothing is compiled on the device. Generated files carry a `Do not edit`
+header.
 
-The resulting `lua/build/basic.lua` is packaged as a Flutter asset and loaded
-by `BasicBridgeDemo`; Teal and Cyan are not needed on the device. Generated
-files carry a `Do not edit` header.
-
-The game demo continues to exercise the raw API, while `test/scenarios` covers
+The game demo exercises `LuaRuntime` directly, while `test/scenarios` covers
 four typed bridge strategies: handwritten Lua, Teal compiled to Lua, dynamic
 Lua and Lua calling registered Dart functions.
 

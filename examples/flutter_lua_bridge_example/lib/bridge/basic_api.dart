@@ -1,4 +1,6 @@
-import 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+
+part 'basic_api.g.dart';
 
 class RandomResult {
   const RandomResult({
@@ -11,11 +13,6 @@ class RandomResult {
   final int b;
 }
 
-@ConfigureLuaBridge(
-  dartOut: 'lib/bridge/basic_api.g.dart',
-  luaOut: 'lua/src/basic_bridge.lua',
-  tealOut: 'lua/src/basic_bridge.d.tl',
-)
 @LuaApi(module: 'basic')
 abstract class BasicApi {
   RandomResult run();
