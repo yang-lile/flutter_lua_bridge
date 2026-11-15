@@ -1,4 +1,4 @@
-import 'package:flutter_lua_bridge/generated.dart';
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 import 'package:test/test.dart';
 
 void main() {

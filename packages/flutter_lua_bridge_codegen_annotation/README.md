@@ -1,8 +1,15 @@
 # flutter_lua_bridge_codegen_annotation
 
 Small, dependency free annotations for describing a Dart/Lua bridge contract.
-Application packages import this library in their contract files; generated
-code and the runtime do not need to expose the generator implementation.
+`package:flutter_lua_bridge/flutter_lua_bridge.dart` re-exports them, so a
+contract library needs only that one import.
 
-`ConfigureLuaBridge.optimization` accepts `O1`, `O2` or `O3`; command line
-options on the code generator can override the contract setting.
+| Annotation | Meaning |
+| --- | --- |
+| `@LuaApi(module: 'battle')` | The interface is implemented in Lua or Teal and called from Dart. |
+| `@DartApi(module: 'host')` | The interface is implemented in Dart and called from Lua. |
+| `@LuaName('calculate_damage')` | The name of a method, field or enum value on the Lua side. |
+
+`LuaApi.optimization` (`LuaOptimization.o1`, `o2` or `o3`) overrides, for one
+interface, the default safety level set in the generator's `build.yaml`
+options.

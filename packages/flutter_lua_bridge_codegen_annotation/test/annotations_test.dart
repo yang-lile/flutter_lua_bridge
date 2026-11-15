@@ -10,33 +10,20 @@ void main() {
     expect(dart.module, 'host.commands');
   });
 
+  test('LuaApi leaves the optimization to the builder by default', () {
+    expect(const LuaApi(module: 'game').optimization, isNull);
+    expect(
+      const LuaApi(
+        module: 'game',
+        optimization: LuaOptimization.o3,
+      ).optimization,
+      LuaOptimization.o3,
+    );
+  });
+
   test('LuaName retains an explicit Lua identifier', () {
     const annotation = LuaName('finish');
 
     expect(annotation.name, 'finish');
-  });
-
-  test('ConfigureLuaBridge keeps output paths and defaults to O1', () {
-    const annotation = ConfigureLuaBridge(
-      dartOut: 'lib/api.g.dart',
-      luaOut: 'lua/api.lua',
-      tealOut: 'lua/api.d.tl',
-    );
-
-    expect(annotation.dartOut, 'lib/api.g.dart');
-    expect(annotation.luaOut, 'lua/api.lua');
-    expect(annotation.tealOut, 'lua/api.d.tl');
-    expect(annotation.optimization, 'O1');
-  });
-
-  test('ConfigureLuaBridge accepts an explicit optimization level', () {
-    const annotation = ConfigureLuaBridge(
-      dartOut: 'a.dart',
-      luaOut: 'a.lua',
-      tealOut: 'a.d.tl',
-      optimization: 'O3',
-    );
-
-    expect(annotation.optimization, 'O3');
   });
 }

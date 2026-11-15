@@ -4,9 +4,17 @@
 /// and functions with it, and hosts the generated typed bindings.
 library;
 
+export 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';
+
+// Support for generated `.g.dart` parts: a contract library needs this one
+// import only. These names can change between releases; applications use the
+// generated classes instead.
+export 'src/codecs.dart';
 export 'src/errors.dart';
 export 'src/runtime.dart'
     show
+        BridgeHostMethod,
+        LuaBinding,
         LuaCallback,
         LuaFunction,
         LuaLibrary,

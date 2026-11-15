@@ -161,7 +161,6 @@ final class LuaRuntime implements Finalizable {
   final _hostErrors = <int, (Object, StackTrace)>{};
   final _moduleTables = <String, LuaTable>{};
   final _moduleIds = <String, Map<String, int>>{};
-  final _contracts = <String, String>{};
   final _loadedSources = <String, String>{};
   int _nextId = 1;
   int _depth = 0;
@@ -337,7 +336,6 @@ final class LuaRuntime implements Finalizable {
       _hostErrors.clear();
       _moduleTables.clear();
       _moduleIds.clear();
-      _contracts.clear();
       _loadedSources.clear();
     }
   }
@@ -380,12 +378,10 @@ final class LuaRuntime implements Finalizable {
   /// Generator support; application code uses the generated API constructor.
   LuaBinding bindLua({
     required String module,
-    required String contract,
     required List<String> methods,
   }) {
     _moduleName(module);
     final table = _moduleTable(module);
-    _checkContract(table, contract);
     for (final method in methods) {
       final value = table.get(method, raw: true);
       if (value is! LuaFunction) {
@@ -394,27 +390,20 @@ final class LuaRuntime implements Finalizable {
       }
       value.release();
     }
-    return LuaBinding._(this, module, contract, table);
+    return LuaBinding._(this, module);
   }
 
   /// Generator support; passing null unregisters an interface.
   void registerDart({
     required String module,
-    required String contract,
     required Map<String, BridgeHostMethod>? methods,
   }) {
     _moduleName(module);
-    if (_contracts[module] != null && _contracts[module] != contract) {
-      throw LuaBridgeException(
-        'Dart module $module is already registered with another contract; unregister it first',
-      );
-    }
     final previous = _moduleIds[module] ?? const <String, int>{};
     if (methods == null) {
       setModule(module, null);
       previous.values.forEach(_functions.remove);
       _moduleIds.remove(module);
-      _contracts.remove(module);
       return;
     }
     final ids = <String, int>{
@@ -438,7 +427,7 @@ final class LuaRuntime implements Finalizable {
     _functions.addAll(handlers);
     try {
       _enter((arena) {
-        final entries = <Object, Object?>{'__flb_contract': contract};
+        final entries = <Object, Object?>{};
         final created = <LuaFunction>[];
         try {
           for (final entry in ids.entries) {
@@ -476,7 +465,6 @@ final class LuaRuntime implements Finalizable {
       if (!handlers.containsKey(id)) _functions.remove(id);
     }
     _moduleIds[module] = ids;
-    _contracts[module] = contract;
   }
 
   LuaTable _moduleTable(String module) {
@@ -488,16 +476,6 @@ final class LuaRuntime implements Finalizable {
     return table;
   }
 
-  void _checkContract(LuaTable table, String contract) {
-    final actual = table.get('__flb_contract', raw: true);
-    if (actual is LuaRef) actual.release();
-    if (actual != contract) {
-      throw LuaBridgeException(
-        'bridge contract mismatch; regenerate both Dart and Lua bindings',
-      );
-    }
-  }
-
   Object? _callBinding(
     LuaBinding binding,
     String method,
@@ -505,10 +483,6 @@ final class LuaRuntime implements Finalizable {
     bool isVoid,
   ) {
     final table = _moduleTable(binding._module);
-    if (!identical(table, binding._verified)) {
-      _checkContract(table, binding._contract);
-      binding._verified = table;
-    }
     return _enter((arena) {
       _ok(
         flb_call_field(
@@ -1032,10 +1006,9 @@ final class LuaUserdata extends LuaRef {
 
 /// Generator support: the Lua side of one generated interface.
 class LuaBinding {
-  LuaBinding._(this._runtime, this._module, this._contract, this._verified);
+  LuaBinding._(this._runtime, this._module);
   final LuaRuntime _runtime;
-  final String _module, _contract;
-  LuaTable _verified;
+  final String _module;
   Object? call(String method, List<Object?> arguments, {bool isVoid = false}) =>
       _runtime._callBinding(this, method, arguments, isVoid);
 }
