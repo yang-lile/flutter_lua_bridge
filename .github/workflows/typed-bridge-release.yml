@@ -27,7 +27,5 @@ jobs:
           sudo apt-get install -y clang lua5.4 liblua5.4-dev luarocks
           luarocks --lua-version=5.4 install tl 0.24.8-1
           luarocks --lua-version=5.4 install cyan 0.4.1-1
-      - name: Build bundled Lua 5.4
-        run: make -C packages/flutter_lua_bridge/lua_src linux
       - name: Run full integration gate
         run: ./tool/ci.sh

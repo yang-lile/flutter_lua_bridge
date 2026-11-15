@@ -37,6 +37,7 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 127
 fi
 python3 packages/flutter_lua_bridge/tool/test_native.py
+DART_CMD="$dart_cmd" ./tool/test_lua_versions.sh
 
 if command -v flutter >/dev/null 2>&1; then
   (cd examples/flutter_lua_bridge_example && flutter test \
