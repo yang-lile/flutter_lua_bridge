@@ -89,8 +89,8 @@ return json.encode(c:build())
   // ---- 4. print 收集 ----
   stdout.writeln('\n=== 4. print 收集 ===');
   final r4 = sandbox.run('''
-stdout.writeln("第一条", 42)
-stdout.writeln("第二条")
+print("第一条", 42)
+print("第二条")
 local c = canvas.new({ width = 100, height = 100 })
 c:circle(50, 50, 20)
 return json.encode(c:build())
@@ -114,7 +114,7 @@ return json.encode(c:build())
   stdout.writeln('\n=== 6. 返回 nil ===');
   final r6 = sandbox.run('''
 local c = canvas.new()
-stdout.writeln("只打印不返回")
+print("只打印不返回")
 ''', libraryPath: path);
   check('无错误', r6.error == null, r6.error);
   check('结果为 null', r6.displayListJson == null);
