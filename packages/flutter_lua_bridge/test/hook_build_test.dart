@@ -7,19 +7,39 @@ import 'package:test/test.dart';
 import '../hook/build.dart' as lua_hook;
 
 void main() {
-  test('build hook accepts a configured Lua source path', () async {
-    final packageRoot = Directory.current.absolute;
-    final luaRoot = Directory.fromUri(packageRoot.uri.resolve('lua_src/'));
+  final packageRoot = Directory.current.absolute;
 
-    await testCodeBuildHook(
-      mainMethod: lua_hook.main,
-      userDefines: PackageUserDefines(
-        workspacePubspec: PackageUserDefinesSource(
-          defines: {'lua_source': luaRoot.path},
-          basePath: packageRoot.uri,
+  for (final release in ['5.3.6', '5.4.9', '5.5.0']) {
+    test('build hook compiles a configured Lua $release source path', () async {
+      final luaRoot = Directory.fromUri(
+        packageRoot.uri.resolve('third_party/lua-$release/'),
+      );
+
+      await testCodeBuildHook(
+        mainMethod: lua_hook.main,
+        userDefines: PackageUserDefines(
+          workspacePubspec: PackageUserDefinesSource(
+            defines: {'lua_source': luaRoot.path},
+            basePath: packageRoot.uri,
+          ),
         ),
-      ),
-      check: (_, _) {},
-    );
-  });
+        check: (_, _) {},
+      );
+    });
+  }
+
+  for (final line in ['5.3', '5.4', '5.5']) {
+    test('build hook compiles the bundled Lua $line line', () async {
+      await testCodeBuildHook(
+        mainMethod: lua_hook.main,
+        userDefines: PackageUserDefines(
+          workspacePubspec: PackageUserDefinesSource(
+            defines: {'lua_version': line},
+            basePath: packageRoot.uri,
+          ),
+        ),
+        check: (_, _) {},
+      );
+    });
+  }
 }

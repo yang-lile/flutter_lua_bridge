@@ -10,6 +10,8 @@ Future<void> main(List<String> args) async {
     if (input.config.buildCodeAssets) {
       String? readStringDefine(String key) {
         final value = input.userDefines[key];
+        // YAML reads an unquoted `lua_version: 5.4` as a number.
+        if (value is num) return value.toString();
         if (value != null && value is! String) {
           throw FormatException('$key must be a string.');
         }
@@ -27,7 +29,7 @@ Future<void> main(List<String> args) async {
       );
       final sources = [
         ...luaSource.sourceFiles.map((file) => file.toFilePath()),
-        "native/bridge.c",
+        "native/flb.c",
       ];
 
       // assetName 必须与 FFI 代码中的 @DefaultAsset 注解匹配

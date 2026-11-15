@@ -40,10 +40,9 @@ void main() {
 
       expect(list.decode(list.encode([1, 2], 'items'), 'items'), [1, 2]);
       expect(list.decode(null, 'items'), isNull);
-      expect(
-        map.decode(map.encode({'name': 'Lua'}, 'labels'), 'labels'),
-        {'name': 'Lua'},
-      );
+      expect(map.decode(map.encode({'name': 'Lua'}, 'labels'), 'labels'), {
+        'name': 'Lua',
+      });
     });
 
     test('nullable codecs preserve null and delegate non-null values', () {
@@ -85,11 +84,7 @@ void main() {
         bridgeInt.decode,
       );
       final failure = decodeLuaResult<int>(
-        BridgeTable({
-          'status': 'error',
-          'kind': 'runtime',
-          'message': 'boom',
-        }),
+        BridgeTable({'status': 'error', 'kind': 'runtime', 'message': 'boom'}),
         'call',
         bridgeInt.decode,
       );

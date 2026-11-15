@@ -159,18 +159,11 @@ void main() {
     expect(api.text('test'), contains('host failed'));
     expect(api.add(1, b: 2), 3);
   });
-  test('rejects re-entry and close during host callbacks', () {
-    callbacks.onNotify = () => api.add(1, b: 2);
-    expect(
-      () => api.notify('test'),
-      throwsA(
-        isA<LuaBridgeException>().having(
-          (e) => e.message,
-          'message',
-          contains('re-entered'),
-        ),
-      ),
-    );
+  test('allows re-entry but rejects close during host callbacks', () {
+    var sum = 0;
+    callbacks.onNotify = () => sum = api.add(1, b: 2);
+    api.notify('test');
+    expect(sum, 3);
     callbacks.onNotify = lua.close;
     expect(
       () => api.notify('test'),
@@ -300,11 +293,14 @@ void main() {
     expect(
       () => api.add(1, b: 2),
       throwsA(
-        isA<LuaBridgeException>().having(
-          (e) => e.message,
-          'traceback',
-          contains('stack traceback'),
-        ),
+        isA<LuaBridgeException>()
+            .having((e) => e.message, 'message', contains('script failed'))
+            .having((e) => e.status, 'status', LuaStatus.runtime)
+            .having(
+              (e) => e.traceback,
+              'traceback',
+              contains('stack traceback'),
+            ),
       ),
     );
     load(script());
@@ -378,7 +374,9 @@ void main() {
     lua.loadModule('battle_bridge', source: battle.bridgeLuaSource);
     lua.loadModule(
       'battle',
-      source: File('../../examples/flutter_lua_bridge_example/lua/build/battle.lua').readAsStringSync(),
+      source: File(
+        '../../examples/flutter_lua_bridge_example/lua/build/battle.lua',
+      ).readAsStringSync(),
     );
     final result = battle.BattleApi(runtime: lua).calculateDamage(
       const battle.Fighter(attack: 100, defense: 20),

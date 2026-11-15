@@ -18,9 +18,39 @@ void main() {
     );
 
     expect(source.sourceFiles.length, luaLibrarySources.length);
+    expect(source.sourceDirectory.path, contains('third_party/lua-5.4.'));
+  });
+
+  test('bundles the three supported Lua release lines', () {
+    final versions = bundledLuaVersions(_packageRoot());
+    expect(versions.map((v) => v.substring(0, 3)), ['5.3', '5.4', '5.5']);
+  });
+
+  for (final line in ['5.3', '5.4', '5.5']) {
+    test('selects the bundled Lua $line release by lua_version', () async {
+      final cache = Directory.systemTemp.createTempSync('flb-lua-bundled-');
+      addTearDown(() => cache.deleteSync(recursive: true));
+
+      final source = await resolveLuaSource(
+        packageRoot: _packageRoot(),
+        outputDirectoryShared: cache.uri,
+        version: line,
+      );
+      expect(source.sourceDirectory.path, contains('third_party/lua-$line.'));
+      expect(source.sourceFiles.length, luaLibrarySources.length);
+    });
+  }
+
+  test('rejects a lua_version that is not bundled', () {
     expect(
-      source.sourceDirectory.path,
-      contains('${Platform.pathSeparator}lua_src${Platform.pathSeparator}src'),
+      () => bundledLuaSource(packageRoot: _packageRoot(), version: '5.1'),
+      throwsA(
+        isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          contains('Bundled releases: 5.3.6, 5.4.9, 5.5.0'),
+        ),
+      ),
     );
   });
 
@@ -150,7 +180,7 @@ void main() {
 
 Uri _packageRoot() {
   final current = Directory.current.absolute;
-  if (Directory.fromUri(current.uri.resolve('lua_src/')).existsSync()) {
+  if (Directory.fromUri(current.uri.resolve('third_party/')).existsSync()) {
     return current.uri;
   }
   return Directory.fromUri(

@@ -1,8 +1,8 @@
 # flutter_lua_bridge
 
-Runtime package for typed, synchronous Dart/Lua calls. It bundles the Lua
-engine as a Dart native asset and exposes `LuaRuntime`, generated codecs and a
-`raw.dart` migration surface.
+Runtime package for synchronous Dart/Lua calls. It bundles the Lua engine as
+a Dart native asset and exposes one entry point, `LuaRuntime`, used both
+directly and by generated typed APIs.
 
 Application contracts and code generation live in the sibling packages
 `flutter_lua_bridge_codegen_annotation` and `flutter_lua_bridge_codegen`.
@@ -12,18 +12,32 @@ Lua companions stay in the application's Cyan project.
 ```dart
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
-final runtime = LuaRuntime.create();
+final lua = LuaRuntime.create(); // LuaLibrary.safe by default
 try {
-  // Use the generated API for the application's contract.
+  lua['greet'] = lua.function((args) => 'hello ${args.first}');
+  print(lua.eval('return greet("lua")')); // hello lua
+
+  final config = lua.eval('return { size = 3, tags = { "a", "b" } }') as LuaTable;
+  print(config.toDart()); // {size: 3, tags: [a, b]}
+
+  // Or use the generated API for the application's contract.
 } finally {
-  runtime.close();
+  lua.close();
 }
 ```
 
-The package supports strict primitive, enum, DTO, nullable, list and
-string-keyed map conversions. Calls are synchronous and confined to the
-creating isolate. The old stack-oriented bindings remain available through
-`package:flutter_lua_bridge/raw.dart` for migration.
+Values cross the boundary as `null`, `bool`, `int`, `double`, `String`,
+`Uint8List`, or a handle (`LuaTable`, `LuaFunction`, `LuaThread`,
+`LuaUserdata`); Dart `Map` and `List` arguments are copied into new tables.
+There is no stack API: every operation runs protected inside the native shim
+and failures surface as `LuaBridgeException` with a `status`, the Lua
+`message` and a separate `traceback`. Standard libraries are selected with
+`LuaLibrary` flags; the default `LuaLibrary.safe` omits `io`, `os`, `debug`
+and native module loading.
+
+Generated code adds strict primitive, enum, DTO, nullable, list and
+string-keyed map conversions on top. Calls are synchronous and confined to the
+creating isolate.
 
 The bundled Lua source can be replaced by the consuming application's build
 configuration. Put the path to a Lua source tree (containing `src/lua.h` and
@@ -33,8 +47,11 @@ the required Lua library sources) in the workspace root `pubspec.yaml`:
 hooks:
   user_defines:
     flutter_lua_bridge:
-      lua_source: third_party/lua-5.4
-      # For a downloaded archive, also set:
+      # One of the bundled release lines: 5.3, 5.4 (default) or 5.5.
+      lua_version: "5.5"
+      # Or a local source tree:
+      # lua_source: third_party/lua-5.4
+      # For a downloaded archive, set lua_source to the URL and also:
       # lua_version: 5.5.0
       # Optional: lua_sha256: <64-character SHA-256 digest>
 ```
@@ -45,9 +62,10 @@ verifies the downloaded archive; verified archives are cached under the hook's
 shared output directory. Without a digest, the URL and version label still
 form the cache key; bump `lua_version` when the remote content changes.
 The selected tree must contain `src/lua.h` and the required Lua library
-sources. The standalone `lua.c` and `luac.c` programs are never included. Lua
-version compatibility is determined by the C bridge's API usage rather than a
-hard-coded version check.
+sources. The standalone `lua.c` and `luac.c` programs are never included. Lua 5.3,
+5.4 and 5.5 are supported; the differences between them are absorbed by the
+`flb_*` shim (`native/flb.h`), so the Dart bindings generated from that
+header are identical for every release.
 
 Generated O1/O2 APIs return `LuaCallResult<T>`; inspect `status`, or pattern
 match `LuaSuccess<T>` and `LuaFailure<T>`. Native load/protocol failures remain

@@ -2,4 +2,4 @@
 *.lua text eol=lf
 *.tl text eol=lf
 # Keep upstream Lua sources byte-for-byte, including upstream whitespace.
-packages/flutter_lua_bridge/lua_src/** text=auto eol=lf -whitespace
+packages/flutter_lua_bridge/third_party/** -text -whitespace

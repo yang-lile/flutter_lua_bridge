@@ -8,6 +8,13 @@ const luaSourceUserDefine = 'lua_source';
 const luaVersionUserDefine = 'lua_version';
 const luaSha256UserDefine = 'lua_sha256';
 
+/// Directory, relative to the package root, holding the bundled Lua releases
+/// as unmodified `lua-<version>/` trees.
+const bundledLuaDirectory = 'third_party/';
+
+/// The bundled release line used when the application selects nothing.
+const defaultLuaVersion = '5.4';
+
 /// The Lua library sources required by the bridge.
 ///
 /// Keep this list explicit. The Lua source directory also contains the
@@ -115,9 +122,8 @@ Future<LuaSource> resolveLuaSource({
 }) async {
   final source = configuredSource?.trim();
   if (source == null || source.isEmpty) {
-    return LuaSource.fromRoot(
-      configuredRoot ?? packageRoot.resolve('lua_src/'),
-    );
+    if (configuredRoot != null) return LuaSource.fromRoot(configuredRoot);
+    return bundledLuaSource(packageRoot: packageRoot, version: version);
   }
 
   final uri = Uri.tryParse(source);
@@ -143,6 +149,61 @@ Future<LuaSource> resolveLuaSource({
   }
 
   return LuaSource.fromRoot(configuredRoot ?? packageRoot.resolve(source));
+}
+
+/// The bundled Lua versions, oldest first (for example `5.3.6`, `5.4.9`).
+List<String> bundledLuaVersions(Uri packageRoot) {
+  final directory = Directory.fromUri(packageRoot.resolve(bundledLuaDirectory));
+  if (!directory.existsSync()) return const [];
+  final versions = <String>[
+    for (final entry in directory.listSync().whereType<Directory>())
+      if (_bundledName(entry) case final name? when name.startsWith('lua-'))
+        name.substring('lua-'.length),
+  ];
+  return versions..sort(_compareVersions);
+}
+
+/// Selects a bundled Lua release.
+///
+/// [version] may be a release line (`5.4`) or an exact release (`5.4.9`). A
+/// release line selects its newest bundled release. Without a version the
+/// [defaultLuaVersion] line is used.
+LuaSource bundledLuaSource({required Uri packageRoot, String? version}) {
+  final requested = switch (version?.trim()) {
+    null || '' => defaultLuaVersion,
+    final value => value,
+  };
+  final available = bundledLuaVersions(packageRoot);
+  final matches = [
+    for (final candidate in available)
+      if (candidate == requested || candidate.startsWith('$requested.'))
+        candidate,
+  ];
+  if (matches.isEmpty) {
+    throw FormatException(
+      'No bundled Lua release matches lua_version "$requested". '
+      'Bundled releases: ${available.join(', ')}. '
+      'Set lua_source to use another source tree.',
+    );
+  }
+  return LuaSource.fromRoot(
+    packageRoot.resolve('${bundledLuaDirectory}lua-${matches.last}/'),
+  );
+}
+
+String? _bundledName(Directory directory) {
+  final segments = directory.uri.pathSegments.where((s) => s.isNotEmpty);
+  return segments.isEmpty ? null : segments.last;
+}
+
+int _compareVersions(String left, String right) {
+  final a = left.split('.').map(int.tryParse).toList();
+  final b = right.split('.').map(int.tryParse).toList();
+  for (var i = 0; i < a.length && i < b.length; i++) {
+    final difference = (a[i] ?? 0).compareTo(b[i] ?? 0);
+    if (difference != 0) return difference;
+  }
+  return a.length.compareTo(b.length);
 }
 
 Future<LuaSource> _downloadLuaSource({
