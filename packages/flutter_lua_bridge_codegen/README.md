@@ -17,6 +17,11 @@ dart run flutter_lua_bridge_codegen:init   # once: directories, build.yaml, tlco
 dart run build_runner build                # or: watch
 ```
 
+Before Dart 3.12 (Flutter 3.38 ships Dart 3.10), add `--force-jit`:
+`dart compile` there refuses packages whose dependencies have build hooks, and
+`flutter_lua_bridge` has one, so build_runner cannot AOT-compile its build
+script. The flag works on every SDK.
+
 ## Layout
 
 | Path | Written by | Content |
