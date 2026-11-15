@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:build/build.dart';
 
-/// Lines of the worker protocol start with this marker; anything else on the
+/// Lines of the worker protocol carry this marker; anything else on the
 /// worker's stdout (tool chatter) is ignored.
 const tealWorkerMarker = 'FLB-TEAL:';
 
@@ -63,9 +63,12 @@ class TealWorkerClient {
   }
 
   void _onLine(String line) {
-    if (!line.startsWith(tealWorkerMarker)) return;
+    // `dart run` may print progress such as "Running build hooks..." without
+    // a line break, so the marker is not always at the start of the line.
+    final start = line.indexOf(tealWorkerMarker);
+    if (start < 0) return;
     final message =
-        jsonDecode(line.substring(tealWorkerMarker.length))
+        jsonDecode(line.substring(start + tealWorkerMarker.length))
             as Map<String, Object?>;
     if (message['ready'] == true) {
       if (!_ready.isCompleted) _ready.complete();
