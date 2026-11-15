@@ -1,13 +1,11 @@
 // 战斗模拟器
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
-import 'package:flutter_lua_bridge/raw.dart';
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
 import 'models.dart';
 
 /// 战斗模拟器
 class BattleSimulator {
-  final Pointer<lua_State> lua;
+  final LuaRuntime lua;
   int _turn = 0;
   final List<BattleLog> _logs = [];
 
@@ -226,58 +224,41 @@ class BattleSimulator {
     }
   }
 
+  /// 调用 formulas.lua 中的公式函数
+  List<Object?> _callFormula(String name, List<Object?> arguments) {
+    final formulas = lua['_FORMULAS'];
+    if (formulas is! LuaTable) {
+      throw LuaBridgeException('formulas are not loaded');
+    }
+    try {
+      return formulas.call(name, arguments);
+    } finally {
+      formulas.release();
+    }
+  }
+
   /// 计算伤害
   _DamageResult _calculateDamage(MonsterCard attacker, MonsterCard defender, Skill skill) {
-    // 将怪物属性推入 Lua
-    _pushMonsterTable(attacker, 'attacker');
-    _pushMonsterTable(defender, 'defender');
-
-    // 调用公式函数
     final funcName = skill.type == DamageType.physical ? 'calculatePhysicalDamage' : 'calculateMagicDamage';
-
-    final formulasPtr = '_FORMULAS'.toNativeUtf8().cast<Char>();
-    final funcPtr = funcName.toNativeUtf8().cast<Char>();
     try {
-      FlutterLuaBridge.cApi.lua_getglobal(lua, formulasPtr);
-      FlutterLuaBridge.cApi.lua_getfield(lua, -1, funcPtr);
-    } finally {
-      calloc.free(formulasPtr);
-      calloc.free(funcPtr);
-    }
-
-    // 参数: attacker, defender, multiplier
-    final attackerPtr = 'attacker'.toNativeUtf8().cast<Char>();
-    final defenderPtr = 'defender'.toNativeUtf8().cast<Char>();
-    try {
-      FlutterLuaBridge.cApi.lua_getglobal(lua, attackerPtr);
-      FlutterLuaBridge.cApi.lua_getglobal(lua, defenderPtr);
-      FlutterLuaBridge.cApi.lua_pushnumber(lua, skill.multiplier);
-    } finally {
-      calloc.free(attackerPtr);
-      calloc.free(defenderPtr);
-    }
-
-    final result = FlutterLuaBridge.cApi.lua_pcallk(lua, 3, 2, 0, 0, nullptr);
-
-    if (LuaStatusCode(result).isError) {
+      // 参数: attacker, defender, multiplier；返回值: damage, isCrit
+      final results = _callFormula(funcName, [
+        _monsterTable(attacker),
+        _monsterTable(defender),
+        skill.multiplier,
+      ]);
+      final damage = results.isNotEmpty ? results[0] : null;
+      return _DamageResult(
+        damage: damage is num ? damage.toInt() : 0,
+        isCrit: results.length > 1 && results[1] == true,
+      );
+    } on LuaBridgeException {
       // 公式调用失败，使用默认计算
-      FlutterLuaBridge.cApi.lua_settop(lua, -2); // pop error
-      final damage = _defaultDamageCalculation(attacker, defender, skill);
-      // 清理
-      FlutterLuaBridge.cApi.lua_settop(lua, -2); // 弹出 _FORMULAS
-      return _DamageResult(damage: damage, isCrit: false);
+      return _DamageResult(
+        damage: _defaultDamageCalculation(attacker, defender, skill),
+        isCrit: false,
+      );
     }
-
-    // 返回值: damage, isCrit
-    final isCrit = FlutterLuaBridge.cApi.lua_toboolean(lua, -1) != 0;
-    FlutterLuaBridge.cApi.lua_pop(lua, 1);
-    final damage = FlutterLuaBridge.cApi.lua_tointegerx(lua, -1, nullptr);
-    FlutterLuaBridge.cApi.lua_pop(lua, 1);
-
-    // 清理
-    FlutterLuaBridge.cApi.lua_settop(lua, -2); // 弹出 _FORMULAS
-
-    return _DamageResult(damage: damage, isCrit: isCrit);
   }
 
   /// 带无视防御的伤害计算
@@ -296,36 +277,17 @@ class BattleSimulator {
 
   /// 计算治疗量
   int _calculateHeal(MonsterCard caster, Skill skill) {
-    _pushMonsterTable(caster, 'caster');
-
-    final formulasPtr = '_FORMULAS'.toNativeUtf8().cast<Char>();
-    final funcPtr = 'calculateHeal'.toNativeUtf8().cast<Char>();
-    final casterPtr = 'caster'.toNativeUtf8().cast<Char>();
+    final base = skill.healBase ?? 100;
     try {
-      FlutterLuaBridge.cApi.lua_getglobal(lua, formulasPtr);
-      FlutterLuaBridge.cApi.lua_getfield(lua, -1, funcPtr);
-      FlutterLuaBridge.cApi.lua_getglobal(lua, casterPtr);
-      FlutterLuaBridge.cApi.lua_pushnumber(lua, skill.healBase?.toDouble() ?? 100);
-    } finally {
-      calloc.free(formulasPtr);
-      calloc.free(funcPtr);
-      calloc.free(casterPtr);
+      final results = _callFormula('calculateHeal', [
+        _monsterTable(caster),
+        base.toDouble(),
+      ]);
+      final heal = results.isNotEmpty ? results[0] : null;
+      return heal is num ? heal.toInt() : base;
+    } on LuaBridgeException {
+      return base;
     }
-
-    final result = FlutterLuaBridge.cApi.lua_pcallk(lua, 2, 1, 0, 0, nullptr);
-
-    int heal = skill.healBase ?? 100;
-
-    if (LuaStatusCode(result).isOk) {
-      heal = FlutterLuaBridge.cApi.lua_tointegerx(lua, -1, nullptr);
-      FlutterLuaBridge.cApi.lua_settop(lua, -2);
-    } else {
-      FlutterLuaBridge.cApi.lua_settop(lua, -2);
-    }
-
-    FlutterLuaBridge.cApi.lua_settop(lua, -2); // 弹出 _FORMULAS
-
-    return heal;
   }
 
   /// 默认伤害计算（当 Lua 调用失败时）
@@ -348,36 +310,20 @@ class BattleSimulator {
     target.hp = (target.hp - actualDamage).clamp(0, target.maxHp);
   }
 
-  /// 将怪物属性推入 Lua 全局表
-  void _pushMonsterTable(MonsterCard monster, String name) {
-    FlutterLuaBridge.cApi.lua_createtable(lua, 0, 10);
-
-    _setField('name', monster.name);
-    _setField('hp', monster.hp.toDouble());
-    _setField('maxHp', monster.maxHp.toDouble());
-    _setField('attack', monster.attack.toDouble());
-    _setField('magicAttack', monster.magicAttack.toDouble());
-    _setField('physicalDefense', monster.physicalDefense.toDouble());
-    _setField('magicDefense', monster.magicDefense.toDouble());
-    _setField('speed', monster.speed.toDouble());
-    _setField('critRate', monster.critRate);
-    _setField('critDamage', monster.critDamage);
-    _setField('magicCritRate', monster.magicCritRate);
-
-    FlutterLuaBridge.cApi.lua_setglobal(lua, name.toNativeUtf8().cast<Char>());
-  }
-
-  void _setField(String key, dynamic value) {
-    FlutterLuaBridge.cApi.lua_pushstring(lua, key.toNativeUtf8().cast<Char>());
-    if (value is double) {
-      FlutterLuaBridge.cApi.lua_pushnumber(lua, value);
-    } else if (value is int) {
-      FlutterLuaBridge.cApi.lua_pushinteger(lua, value);
-    } else if (value is String) {
-      FlutterLuaBridge.cApi.lua_pushstring(lua, value.toNativeUtf8().cast<Char>());
-    }
-    FlutterLuaBridge.cApi.lua_settable(lua, -3);
-  }
+  /// 怪物属性；作为参数传给 Lua 时会成为一张新表
+  Map<String, Object> _monsterTable(MonsterCard monster) => {
+    'name': monster.name,
+    'hp': monster.hp.toDouble(),
+    'maxHp': monster.maxHp.toDouble(),
+    'attack': monster.attack.toDouble(),
+    'magicAttack': monster.magicAttack.toDouble(),
+    'physicalDefense': monster.physicalDefense.toDouble(),
+    'magicDefense': monster.magicDefense.toDouble(),
+    'speed': monster.speed.toDouble(),
+    'critRate': monster.critRate,
+    'critDamage': monster.critDamage,
+    'magicCritRate': monster.magicCritRate,
+  };
 
   /// 检查战斗结果
   String _checkBattleResult(List<MonsterCard> teamA, List<MonsterCard> teamB) {

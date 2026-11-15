@@ -7,7 +7,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_lua_bridge/raw.dart';
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
 /// Lua 模块加载结果。
 class LuaModules {
@@ -133,7 +133,7 @@ LuaModules loadLuaModulesFromDisk({String assetsDir = 'assets/lua'}) {
 //
 // ## 为什么需要
 //
-// 沙箱每次执行都重建 LuaState（这是有意的：复用会导致全局变量泄漏，
+// 沙箱每次执行都重建 LuaRuntime（这是有意的：复用会导致全局变量泄漏，
 // 出现"删了一行代码但行为没变"这类难查的问题）。
 // 代价是**每次执行都要把全部 Lua 模块重新解析一遍**。
 //
@@ -183,20 +183,16 @@ List<String> precompileLuaModules(String root, List<String> modules) {
     return compiled;
   }
 
-  LuaState? lua;
+  LuaRuntime? lua;
   try {
     // 这里**必须**开全套库：要 io 写文件，也要 require 走 package.path。
-    lua = LuaState.newState();
-    lua.openLibs();
+    lua = LuaRuntime.create(libraries: LuaLibrary.all);
 
-    lua.pushString(root);
-    lua.setGlobal('__pre_root');
-    lua.pushString(bcRoot);
-    lua.setGlobal('__pre_out');
-    lua.pushString(modules.join(','));
-    lua.setGlobal('__pre_modules');
+    lua['__pre_root'] = root;
+    lua['__pre_out'] = bcRoot;
+    lua['__pre_modules'] = modules.join(',');
 
-    final r = lua.doString(r'''
+    final done = lua.eval(r'''
 local root, out, mods = __pre_root, __pre_out, __pre_modules
 local done = {}
 for name in mods:gmatch("[^,]+") do
@@ -226,11 +222,8 @@ end
 return table.concat(done, ",")
 ''');
 
-    if (r.isOk && !lua.isNil(-1)) {
-      final raw = lua.getString(-1);
-      if (raw != null && raw.isNotEmpty) {
-        compiled.addAll(raw.split(','));
-      }
+    if (done is String && done.isNotEmpty) {
+      compiled.addAll(done.split(','));
     }
   } catch (_) {
     // 预编译失败就走源码路径，不影响功能
