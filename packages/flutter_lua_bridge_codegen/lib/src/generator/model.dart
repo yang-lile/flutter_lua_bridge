@@ -1,4 +1,4 @@
-/// Shared contract model. A future Teal frontend can target this same model.
+/// Contract model shared by the Dart, Lua and Teal emitters.
 class BridgeType {
   const BridgeType(
     this.name, {
@@ -35,6 +35,8 @@ BridgeOptimization parseBridgeOptimization(String value) =>
     };
 
 class BridgeField {
+  /// [named] tells how the value is passed in Dart: as a named argument of
+  /// the method, or of the data class constructor.
   const BridgeField(this.name, this.luaName, this.type, {this.named = false});
   final String name, luaName;
   final BridgeType type;
@@ -49,10 +51,22 @@ class BridgeMethod {
 }
 
 class BridgeApi {
-  const BridgeApi(this.name, this.module, this.isLua, this.methods);
+  const BridgeApi(
+    this.name,
+    this.module,
+    this.isLua,
+    this.methods, {
+    this.optimization = BridgeOptimization.o1,
+  });
   final String name, module;
+
+  /// True for an interface implemented in Lua, false for one implemented in
+  /// Dart.
   final bool isLua;
   final List<BridgeMethod> methods;
+
+  /// Only meaningful for Lua-implemented interfaces.
+  final BridgeOptimization optimization;
 }
 
 class BridgeData {
@@ -69,23 +83,19 @@ class BridgeEnum {
 
 class BridgeSchema {
   const BridgeSchema({
+    required this.name,
     required this.apis,
     required this.data,
     required this.enums,
-    this.outputs = const {},
-    this.optimization = BridgeOptimization.o1,
   });
+
+  /// The contract library's name, e.g. `battle` for `lib/bridge/battle.dart`.
+  final String name;
   final List<BridgeApi> apis;
   final List<BridgeData> data;
   final List<BridgeEnum> enums;
-  final Map<String, String> outputs;
-  final BridgeOptimization optimization;
 
-  BridgeSchema withOptimization(BridgeOptimization value) => BridgeSchema(
-    apis: apis,
-    data: data,
-    enums: enums,
-    outputs: outputs,
-    optimization: value,
-  );
+  /// The Lua module holding the generated protocol glue. Lua and Teal
+  /// implementations `require` it.
+  String get bridgeModule => '${name}_bridge';
 }

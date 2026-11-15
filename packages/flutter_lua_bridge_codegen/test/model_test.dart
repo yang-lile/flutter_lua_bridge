@@ -1,49 +1,8 @@
 import 'package:flutter_lua_bridge_codegen/flutter_lua_bridge_codegen.dart';
+import 'package:flutter_lua_bridge_codegen/src/builders/options.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('parses annotation options into the shared schema model', () {
-    const source = '''
-import 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';
-
-@ConfigureLuaBridge(
-  dartOut: 'lib/game.g.dart',
-  luaOut: 'lua/game.lua',
-  tealOut: 'lua/game.d.tl',
-  optimization: 'O2',
-)
-@LuaApi(module: 'game')
-abstract class GameApi {
-  @LuaName('run_game')
-  Result run(int seed, {required String mode});
-}
-
-enum Mode { @LuaName('easy_mode') easy, hard }
-
-class Result {
-  final Mode mode;
-  final List<int> scores;
-  Result(this.mode, this.scores);
-}
-''';
-
-    final schema = parseBridgeSchema(source);
-    expect(schema.optimization, BridgeOptimization.o2);
-    expect(schema.outputs, {
-      'dartOut': 'lib/game.g.dart',
-      'luaOut': 'lua/game.lua',
-      'tealOut': 'lua/game.d.tl',
-    });
-    expect(schema.apis.single.module, 'game');
-    expect(schema.apis.single.methods.single.luaName, 'run_game');
-    expect(schema.apis.single.methods.single.parameters.last.named, isTrue);
-    expect(schema.data.single.fields.map((field) => field.name), [
-      'mode',
-      'scores',
-    ]);
-    expect(schema.enums.single.values['easy'], 'easy_mode');
-  });
-
   test('formats nested nullable bridge types', () {
     const type = BridgeType(
       'Map',
@@ -86,5 +45,39 @@ class Result {
     expect(parseBridgeOptimization('O2'), BridgeOptimization.o2);
     expect(parseBridgeOptimization('o3'), BridgeOptimization.o3);
     expect(() => parseBridgeOptimization('O4'), throwsFormatException);
+  });
+
+  test('builder options default to the conventional layout', () {
+    final options = BridgeOptions.parse(const {});
+    expect(options.contracts, 'lib/bridge');
+    expect(options.types, 'lua/types');
+    expect(options.sources, 'lua/src');
+    expect(options.output, 'assets/lua');
+    expect(options.optimization, BridgeOptimization.o1);
+  });
+
+  test('builder options are validated', () {
+    final options = BridgeOptions.parse(const {
+      'contracts': 'lib/api',
+      'optimization': 'O3',
+    });
+    expect(options.contracts, 'lib/api');
+    expect(options.optimization, BridgeOptimization.o3);
+    expect(() => BridgeOptions.parse(const {'typo': 1}), throwsArgumentError);
+    expect(
+      () => BridgeOptions.parse(const {'output': '../elsewhere'}),
+      throwsArgumentError,
+    );
+    expect(
+      () => BridgeOptions.parse(const {'optimization': 'O9'}),
+      throwsFormatException,
+    );
+  });
+
+  test('contract names follow the path below the contracts directory', () {
+    const options = BridgeOptions();
+    expect(options.contractName('lib/bridge/battle.dart'), 'battle');
+    expect(options.contractName('lib/bridge/game/battle.dart'), 'game.battle');
+    expect(options.contractName('lib/other/battle.dart'), 'battle');
   });
 }

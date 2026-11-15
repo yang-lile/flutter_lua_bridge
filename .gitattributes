@@ -3,3 +3,5 @@
 *.tl text eol=lf
 # Keep upstream Lua sources byte-for-byte, including upstream whitespace.
 packages/flutter_lua_bridge/third_party/** -text -whitespace
+# The Teal compiler is vendored unmodified from the upstream release.
+packages/flutter_lua_bridge_codegen/lib/src/teal/tl.lua -text -whitespace

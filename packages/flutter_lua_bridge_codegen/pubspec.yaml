@@ -1,5 +1,5 @@
 name: flutter_lua_bridge_codegen
-description: Generates typed Dart, Lua and Teal bridge artifacts for flutter_lua_bridge.
+description: build_runner builders that generate typed Dart/Lua bindings and Teal declarations for flutter_lua_bridge, and compile Teal to Lua.
 version: 0.0.2
 homepage: https://github.com/yang-lile/flutter_lua_bridge
 repository: https://github.com/yang-lile/flutter_lua_bridge
@@ -11,17 +11,18 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  analyzer: ^8.4.1
-  crypto: ^3.0.6
-  dart_style: ^3.1.2
+  analyzer: ">=8.4.1 <11.0.0"
+  build: ^4.0.0
+  flutter_lua_bridge: ^0.0.2
   flutter_lua_bridge_codegen_annotation: ^0.0.2
+  glob: ^2.1.2
+  source_gen: ^4.0.0
 
 dev_dependencies:
+  build_runner: ^2.10.0
+  build_test: ^3.5.0
   flutter_lints: ^6.0.0
   test: ^1.25.8
-
-executables:
-  flutter_lua_bridge_codegen:
 
 topics:
   - lua

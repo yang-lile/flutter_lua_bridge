@@ -1,0 +1,51 @@
+builders:
+  # Dart side of a contract: codecs, Lua clients and Dart host registration,
+  # written into the contract library's `.g.dart` part.
+  bridge:
+    import: "package:flutter_lua_bridge_codegen/builder.dart"
+    builder_factories: ["bridgeBuilder"]
+    build_extensions: {".dart": [".flutter_lua_bridge.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen:combining_builder"]
+
+  # Teal declarations of a contract.
+  teal_types:
+    import: "package:flutter_lua_bridge_codegen/builder.dart"
+    builder_factories: ["tealTypesBuilder"]
+    build_extensions:
+      "^lib/bridge/{{}}.dart": ["lua/types/{{}}_bridge.d.tl"]
+    auto_apply: dependents
+    build_to: source
+    runs_before: ["flutter_lua_bridge_codegen:teal"]
+
+  # Teal to Lua.
+  teal:
+    import: "package:flutter_lua_bridge_codegen/builder.dart"
+    builder_factories: ["tealBuilder"]
+    build_extensions:
+      "^lua/src/{{}}.tl": ["assets/lua/{{}}.lua"]
+      "^lua/src/{{}}.lua": ["assets/lua/{{}}.lua"]
+    auto_apply: dependents
+    build_to: source
+
+# The package's own tests are generated with its own builders.
+targets:
+  $default:
+    builders:
+      source_gen:combining_builder:
+        enabled: true
+      flutter_lua_bridge_codegen:bridge:
+        enabled: true
+        generate_for: ["test/fixtures/**.dart"]
+        options: &fixtures
+          contracts: test/fixtures
+          types: test/fixtures/lua/types
+          sources: test/fixtures/lua/src
+          output: test/fixtures/lua/out
+      flutter_lua_bridge_codegen:teal_types:
+        enabled: true
+        options: *fixtures
+      flutter_lua_bridge_codegen:teal:
+        enabled: true
+        options: *fixtures
