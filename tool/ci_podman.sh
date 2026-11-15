@@ -130,7 +130,11 @@ PY
   if [[ "${RELEASE_DRY_RUN:-}" == 1 ]]; then
     extra_args+=(--dryrun)
   fi
-  run_workflow release "$TEMP_WORKFLOW" -j ubuntu-integration "${extra_args[@]}"
+  # The desktop-smoke job needs macOS and Windows runners; act runs Linux only.
+  local job
+  for job in native dart; do
+    run_workflow release "$TEMP_WORKFLOW" -j "$job" "${extra_args[@]}"
+  done
 }
 
 case "$MODE" in

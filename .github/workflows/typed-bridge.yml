@@ -1,3 +1,5 @@
+# Runs on GitHub Actions and on Gitea Actions (which reads .github/workflows
+# when the repository has no .gitea/workflows).
 name: Typed bridge (light)
 on:
   pull_request:
@@ -11,35 +13,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  unit:
-    name: Unit and generated contracts
+  light:
+    name: Analyzer, generated files and unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Install a C compiler for the native asset hook
+        run: |
+          command -v clang >/dev/null && exit 0
+          sudo=$(command -v sudo || true)
+          $sudo apt-get update
+          $sudo apt-get install -y --no-install-recommends clang
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.38.10'
           cache: true
       - run: flutter pub get
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y clang
-      - run: ./tool/ci_light.sh
-
-  desktop-smoke:
-    name: Desktop smoke (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.38.10'
-          cache: true
-      - run: flutter pub get
-      - run: flutter test test/bridge/basic_bridge_test.dart test/game/card_loader_test.dart
-        working-directory: examples/flutter_lua_bridge_example
+      - run: ./tool/ci.sh light

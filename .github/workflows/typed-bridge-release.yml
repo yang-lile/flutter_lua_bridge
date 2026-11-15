@@ -1,19 +1,63 @@
+# The full gate, run when a release is published. The stages of tool/ci.sh run
+# as parallel jobs; the native job needs no Flutter SDK.
 name: Typed bridge (release integration)
 on:
   release:
     types: [published]
+  workflow_dispatch:
 permissions:
   contents: read
 
 concurrency:
-  group: typed-bridge-release-${{ github.event.release.tag_name }}
+  group: typed-bridge-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  ubuntu-integration:
-    name: Ubuntu full integration
+  native:
+    name: Native shim (ASan/UBSan, every Lua)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang
+        run: |
+          command -v clang >/dev/null && exit 0
+          sudo=$(command -v sudo || true)
+          $sudo apt-get update
+          $sudo apt-get install -y --no-install-recommends clang
+      - run: ./tool/ci.sh native
+
+  dart:
+    name: ${{ matrix.stage }}
+    strategy:
+      fail-fast: false
+      matrix:
+        stage: [light, versions, example]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install a C compiler for the native asset hook
+        run: |
+          command -v clang >/dev/null && exit 0
+          sudo=$(command -v sudo || true)
+          $sudo apt-get update
+          $sudo apt-get install -y --no-install-recommends clang
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          cache: true
+      - run: flutter pub get
+      - run: ./tool/ci.sh ${{ matrix.stage }}
+
+  desktop-smoke:
+    name: Desktop smoke (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -21,9 +65,5 @@ jobs:
           flutter-version: '3.38.10'
           cache: true
       - run: flutter pub get
-      - name: Install the native toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang
-      - name: Run full integration gate
-        run: ./tool/ci.sh
+      - run: flutter test test/bridge/basic_bridge_test.dart test/game/card_loader_test.dart
+        working-directory: examples/flutter_lua_bridge_example

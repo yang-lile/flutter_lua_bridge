@@ -1,7 +1,17 @@
 #!/usr/bin/env sh
-# The full release gate. It needs Dart/Flutter, a C compiler and python3;
-# Teal is compiled by the bundled tl.lua, so no Lua toolchain is required.
+# The full release gate, split into stages that CI runs as parallel jobs:
 #
+#   ./tool/ci.sh                  # every stage, in order
+#   ./tool/ci.sh native versions  # selected stages
+#
+#   light     analyzer, builders with drift check, generator and runtime tests
+#             on the default Lua release, example unit test (= ci_light.sh)
+#   native    C tests of the flb shim with ASan/UBSan on every bundled Lua
+#             (needs clang and python3, not Dart)
+#   versions  runtime and generator tests on the other bundled Lua releases
+#   example   Flutter tests of the example app
+#
+# Teal is compiled by the bundled tl.lua, so no Lua toolchain is required.
 # Set DART_CMD / FLUTTER_CMD to use another launcher, for example
 # DART_CMD="fvm dart" FLUTTER_CMD="fvm flutter".
 set -eu
@@ -11,35 +21,52 @@ cd "$repo_root"
 
 dart_cmd=${DART_CMD:-dart}
 flutter_cmd=${FLUTTER_CMD:-flutter}
-if ! command -v "${dart_cmd%% *}" >/dev/null 2>&1; then
-  printf '%s\n' "${dart_cmd%% *} is required; install Flutter/Dart before running CI." >&2
-  exit 127
-fi
 
-$dart_cmd --suppress-analytics analyze --fatal-infos
+require() {
+  if ! command -v "${1%% *}" >/dev/null 2>&1; then
+    printf '%s\n' "${1%% *} is required for the $2 stage." >&2
+    exit 127
+  fi
+}
 
-(cd packages/flutter_lua_bridge_codegen_annotation && $dart_cmd --suppress-analytics test)
-(cd packages/flutter_lua_bridge && $dart_cmd --suppress-analytics test)
+stage_light() {
+  DART_CMD="$dart_cmd" FLUTTER_CMD="$flutter_cmd" ./tool/ci_light.sh
+  (cd packages/flutter_lua_bridge && $dart_cmd --suppress-analytics test)
+}
 
-# Runs the builders, including the Teal compiler, and fails on drift.
-DART_CMD="$dart_cmd" ./tool/generate_example.sh --check
-(cd packages/flutter_lua_bridge_codegen && $dart_cmd --suppress-analytics test)
+stage_native() {
+  require python3 native
+  python3 packages/flutter_lua_bridge/tool/test_native.py
+}
 
-if ! command -v python3 >/dev/null 2>&1; then
-  printf '%s\n' 'python3 is required for native bridge checks.' >&2
-  exit 127
-fi
-python3 packages/flutter_lua_bridge/tool/test_native.py
-DART_CMD="$dart_cmd" ./tool/test_lua_versions.sh
+stage_versions() {
+  require "$dart_cmd" versions
+  DART_CMD="$dart_cmd" ./tool/test_lua_versions.sh --skip-default
+}
 
-if command -v "${flutter_cmd%% *}" >/dev/null 2>&1; then
+stage_example() {
+  require "$flutter_cmd" example
   (cd examples/flutter_lua_bridge_example && $flutter_cmd test \
     test/bridge \
     test/scenarios \
-    test/widget_test.dart \
-    test/game/card_loader_test.dart)
-else
-  printf '%s\n' 'flutter is unavailable; skipped Flutter example tests.' >&2
-fi
+    test/widget_test.dart)
+}
 
-printf '%s\n' 'Local CI checks passed.'
+if [ "$#" -eq 0 ]; then
+  set -- light native versions example
+fi
+for stage in "$@"; do
+  case "$stage" in
+    light | native | versions | example) ;;
+    *)
+      printf '%s\n' "Unknown stage: $stage" >&2
+      exit 64
+      ;;
+  esac
+done
+for stage in "$@"; do
+  printf '%s\n' "== $stage"
+  "stage_$stage"
+done
+
+printf '%s\n' "CI stages passed: $*"
