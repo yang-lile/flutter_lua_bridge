@@ -1,62 +1,62 @@
 # 项目架构
 
-仓库使用 Dart workspace 管理运行时、注解和生成器三个独立包。依赖方向
-只有应用 → 运行时，应用开发工具 → 注解/生成器；运行时不依赖 AST 解析器，
-因此发布包不会把代码生成依赖带进 Flutter 应用。
+仓库使用 Dart workspace 管理运行时、注解和生成器三个独立包。应用在运行期只
+依赖运行时；注解由运行时再导出；生成器和 `build_runner` 是开发期依赖。运行
+时不依赖生成器，生成器依赖运行时（用它来运行 Teal 编译器）。
 
 ```mermaid
 flowchart LR
-  Contract[bridge/*.dart\n注解契约] --> Generator[flutter_lua_bridge_codegen]
-  Generator --> Dart[lib/*.g.dart]
-  Generator --> Companion[lua/src/*_bridge.lua]
-  Generator --> Types[lua/src/*_bridge.d.tl]
-  Logic[lua/src/*.tl\n业务逻辑] --> Cyan[Cyan]
-  Types --> Cyan
-  Cyan --> Lua[lua/build/*.lua]
+  Contract[lib/bridge/*.dart\n手写契约] --> Builders[flutter_lua_bridge_codegen\nbuild_runner]
+  Builders --> Dart[lib/bridge/*.g.dart]
+  Builders --> Types[lua/types/*_bridge.d.tl]
+  Logic[lua/src/*.tl / *.lua\n业务逻辑] --> Teal[内置 tl.lua]
+  Types --> Teal
+  Teal --> Lua[assets/lua/*.lua]
   Dart --> Runtime[flutter_lua_bridge]
-  Companion --> Runtime
   Lua --> Runtime
-  Runtime --> Native[Lua 5.4 native asset]
+  Runtime --> Native[Lua 5.3 / 5.4 / 5.5 native asset]
 ```
 
 `flutter_lua_bridge_codegen_annotation` 只包含 `@LuaApi`、`@DartApi`、
-`@LuaName` 和 `@ConfigureLuaBridge`。`flutter_lua_bridge_codegen` 负责解析
-Dart AST、校验契约并同时生成 Dart、Lua 和 Teal 产物。`flutter_lua_bridge`
-只负责 Runtime、值编解码、Native Assets 和保留的 raw API。
+`@LuaName` 和 `LuaOptimization`。`flutter_lua_bridge_codegen` 提供三个
+Builder：生成 Dart part、生成 Teal 声明、把 Teal 编译成 Lua。
+`flutter_lua_bridge` 负责 `LuaRuntime`、值编解码和 Native Assets。
 
-## Teal/Cyan 目录约定
-
-每个应用的 Lua 项目有一个 `tlconfig.lua`：
+## 目录约定
 
 ```text
-examples/flutter_lua_bridge_example/lua/
-├── tlconfig.lua
-├── src/
-│   ├── basic.tl                 # 手写 Teal
-│   ├── basic_bridge.lua         # 生成的协议胶水
-│   └── basic_bridge.d.tl        # 生成的 Teal 声明
-└── build/
-    └── basic.lua                # Cyan 编译产物，作为 Flutter asset
+examples/flutter_lua_bridge_example/
+├── build.yaml                   # 把 lua/** 加入构建输入
+├── lib/bridge/
+│   ├── battle.dart              # 手写契约
+│   └── battle.g.dart            # 生成：客户端、注册函数、编解码
+├── lua/
+│   ├── tlconfig.lua             # 仅供编辑器使用
+│   ├── src/battle.tl            # 手写 Teal / Lua
+│   └── types/battle_bridge.d.tl # 生成：Teal 声明
+└── assets/lua/battle.lua        # 生成：编译产物，作为 Flutter asset
 ```
 
-`cyan build` 会检查 `src/` 中的 Teal 并把结果写入 `build/`。运行时只接收
-编译后的 Lua 文本；Teal、Cyan 和生成器都属于开发期工具链。
+`dart run build_runner build` 一条命令完成全部生成。运行时只接收编译后的 Lua
+文本；Teal 和生成器都属于开发期工具链，不需要 LuaRocks、Cyan 或系统 Lua。
 
 生成器支持三档安全级别：
 
 - `O1`（默认）：Lua 参数/返回值运行时类型检查，方法体用 `pcall` 捕获，
   返回 `LuaCallResult<T>`；
 - `O2`：去掉 Lua 类型检查，只保留 `pcall` 和错误结果；
-- `O3`：原样直调，不生成额外包装，未捕获错误直接抛出。
+- `O3`：直接调用，返回 `T`，未捕获错误以 `LuaBridgeException` 抛出。
 
-可以使用 `-O1`、`-O2`、`-O3`，也可以在 `ConfigureLuaBridge` 中配置
-`optimization: 'O1'`。
+默认级别在 `build.yaml` 的 `optimization` 选项里配置，
+`@LuaApi(optimization: LuaOptimization.o3)` 可以按接口覆盖。
+
+设计细节见 [`docs/codegen-design.md`](docs/codegen-design.md)。
 
 ## 验证入口
 
 ```sh
-dart analyze --fatal-infos
-dart test
-python3 packages/flutter_lua_bridge/tool/test_native.py
-cd examples/flutter_lua_bridge_example/lua && cyan build
+./tool/ci_light.sh                                        # 日常门禁
+./tool/ci.sh                                              # 发布门禁
+python3 packages/flutter_lua_bridge/tool/test_native.py   # C 层，全部内置 Lua
+./tool/test_lua_versions.sh                               # 运行时与生成器，全部内置 Lua
 ```

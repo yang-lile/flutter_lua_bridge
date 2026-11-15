@@ -1,72 +1,109 @@
 # flutter_lua_bridge
 
-`flutter_lua_bridge` is a typed, synchronous Dart/Lua 5.4 bridge for Flutter.
-The repository is a Dart workspace with three packages:
+`flutter_lua_bridge` is a typed, synchronous Dart/Lua bridge for Flutter. It
+bundles Lua 5.3, 5.4 and 5.5. The repository is a Dart workspace with three
+packages:
 
 | Package | Responsibility |
 | --- | --- |
-| [`flutter_lua_bridge`](packages/flutter_lua_bridge) | Lua runtime, codecs, native assets and the low level migration API |
-| [`flutter_lua_bridge_codegen_annotation`](packages/flutter_lua_bridge_codegen_annotation) | Small, dependency free contract annotations |
-| [`flutter_lua_bridge_codegen`](packages/flutter_lua_bridge_codegen) | Dart AST validation and Dart/Lua/Teal artifact generation |
+| [`flutter_lua_bridge`](packages/flutter_lua_bridge) | Lua runtime (`LuaRuntime`), codecs and native assets |
+| [`flutter_lua_bridge_codegen_annotation`](packages/flutter_lua_bridge_codegen_annotation) | Dependency free contract annotations, re-exported by the runtime |
+| [`flutter_lua_bridge_codegen`](packages/flutter_lua_bridge_codegen) | `build_runner` builders: Dart clients, Teal declarations and the Teal compiler |
 
-The runtime package does not depend on the generator. Applications depend on
-the runtime at run time, and keep the annotation and generator packages in
-their development toolchain.
+Applications depend on the runtime, and add the generator and `build_runner`
+as development dependencies. The runtime does not depend on the generator.
 
-The package responsibilities and test tiers are listed in
+The design of the code generator is described in
+[`docs/codegen-design.md`](docs/codegen-design.md); the package
+responsibilities and test tiers are listed in
 [`docs/testing-matrix.md`](docs/testing-matrix.md).
 
-## Contract and generated artifacts
+## Contracts and generated code
 
-An application contract imports the annotation package:
+A contract is a plain Dart library under `lib/bridge/`. Interfaces and data
+classes are written by hand; the generator adds a part file next to them:
 
 ```dart
-import 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';
+// lib/bridge/battle.dart
+import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
-@ConfigureLuaBridge(
-  dartOut: 'lib/bridge/basic_api.g.dart',
-  luaOut: 'lua/src/basic_bridge.lua',
-  tealOut: 'lua/src/basic_bridge.d.tl',
-)
-@LuaApi(module: 'basic')
-abstract class BasicApi {
-  RandomResult run();
+part 'battle.g.dart';
+
+class Fighter {
+  const Fighter({required this.attack, required this.defense});
+  final int attack;
+  final int defense;
+}
+
+/// Implemented in Lua or Teal, called from Dart.
+@LuaApi(module: 'battle')
+abstract class BattleApi {
+  @LuaName('calculate_damage')
+  int calculateDamage(Fighter attacker, Fighter defender);
+}
+
+/// Implemented in Dart, called from Lua (callbacks and host services).
+@DartApi(module: 'host')
+abstract class HostApi {
+  void log(String message);
 }
 ```
 
-The generator emits a Dart proxy, a Lua protocol companion and a Teal
-declaration file from the same contract:
+One command generates everything:
 
 ```sh
-./tool/generate_example.sh
+dart run build_runner build      # or: dart run build_runner watch
 ```
 
-The generated Lua companion contains protocol validation/error handling and
-the contract fingerprint. Business logic lives in an editable `.tl` file. The example keeps
-that project in [`examples/flutter_lua_bridge_example/lua`](examples/flutter_lua_bridge_example/lua): Cyan checks every Teal source and
-writes Lua 5.4 modules into `examples/flutter_lua_bridge_example/lua/build`.
+| Input | Output | Content |
+| --- | --- | --- |
+| `lib/bridge/battle.dart` | `lib/bridge/battle.g.dart` | `BattleApiClient`, `registerHostApi` and the codecs |
+| `lib/bridge/battle.dart` | `lua/types/battle_bridge.d.tl` | Teal declarations of `require("battle_bridge")` |
+| `lua/src/*.tl` | `assets/lua/*.lua` | Type checked and compiled Teal |
+| `lua/src/*.lua` | `assets/lua/*.lua` | Handwritten Lua, copied |
 
-Generated calls use GCC-style safety levels. `O1` is the default and emits Lua
-type validators plus `pcall`, returning `LuaCallResult<T>` with
-`LuaResultStatus.ok` or `LuaResultStatus.error`. `O2` keeps the `pcall` result
-fallback but omits Lua validators. `O3` emits the original direct call path;
-uncaught Lua failures propagate as `LuaBridgeException`.
+The implementation is an editable Teal (or Lua) module:
 
-Select a level on the command line or in `@ConfigureLuaBridge`:
+```lua
+-- lua/src/battle.tl
+local bridge = require("battle_bridge")
+local host = bridge.getHostApi()
 
-```sh
-dart run flutter_lua_bridge_codegen --input bridge/basic_api.dart -O1
+local implementation: bridge.BattleApi = {
+  calculate_damage = function(attacker: bridge.Fighter, defender: bridge.Fighter): integer
+    host.log("attack")
+    return math.max(0, attacker.attack - defender.defense)
+  end,
+}
+return bridge.bindBattleApi(implementation)
 ```
 
-```sh
-cd examples/flutter_lua_bridge_example/lua
-cyan build
+and the application calls it through the generated client:
+
+```dart
+final lua = LuaRuntime.create();
+registerHostApi(MyHost(), runtime: lua);
+final battle = BattleApiClient.load(
+  runtime: lua,
+  source: await rootBundle.loadString('assets/lua/battle.lua'),
+);
+final result = battle.calculateDamage(attacker, defender); // LuaCallResult<int>
 ```
 
-Flutter packages the compiled Lua files as assets. Generated Dart code embeds
-the companion source and loads the compiled module through `LuaRuntime`, so the
-application does not need a separate Lua interpreter or a Teal compiler at
-runtime.
+Teal is compiled by the `tl.lua` compiler bundled in the generator package,
+running on the bundled Lua runtime. No LuaRocks, Cyan or system Lua is
+involved, and the device never needs a Teal compiler: only the Lua files under
+`assets/lua/` are shipped. A new package is prepared with
+`dart run flutter_lua_bridge_codegen:init`.
+
+Generated calls have three safety levels. `O1` is the default: generated Lua
+validates argument and result types and wraps the call in `pcall`, and the
+client returns `LuaCallResult<T>` (`LuaSuccess` or `LuaFailure`). `O2` keeps
+`pcall` and the result envelope but omits the validators. `O3` is the direct
+path: the client implements the contract interface, returns `T` and throws
+`LuaBridgeException`. The default level is the `optimization` option in
+`build.yaml`; `@LuaApi(module: 'battle', optimization: LuaOptimization.o3)`
+overrides it for one interface.
 
 ## Development checks
 
@@ -111,9 +148,12 @@ Without any setting the hook builds the bundled Lua 5.4 release. These
 settings are only read from the workspace root `pubspec.yaml`.
 
 The daily pull request gate is available locally as `./tool/ci_light.sh`. It
-runs the analyzer, code generator tests, generated contract checks and a small
-example unit test. The full `./tool/ci.sh` gate is reserved for the release
-workflow and adds Cyan, native bridge and Flutter integration checks.
+runs the analyzer, the builders with a drift check on every generated file,
+the code generator tests and a small example unit test. The full
+`./tool/ci.sh` gate is reserved for the release workflow and adds the native
+bridge tests, every bundled Lua release and the Flutter integration checks.
+Both scripts honour `DART_CMD` and `FLUTTER_CMD` (for example
+`DART_CMD="fvm dart"`).
 `actionlint` can validate the workflow files themselves. Full workflow
 emulation with `act` requires a Docker-compatible daemon.
 
@@ -144,16 +184,3 @@ cd examples/lua_canvas_host
 make test
 make run
 ```
-
-## Local playground
-
-For a disposable end-to-end test, generate the ignored `playground/` directory:
-
-```sh
-./tool/create_playground.sh
-dart run playground/bin/demo.dart
-```
-
-It creates a small O1 contract, its Teal implementation, generated bridge code
-and a Dart runner. The expected output is `O1 success: 42`; the generated files
-are intentionally excluded from Git.
