@@ -32,7 +32,7 @@ examples/flutter_lua_bridge_example/
 │   └── battle.g.dart            # 生成：客户端、注册函数、编解码
 ├── lua/
 │   ├── tlconfig.lua             # 仅供编辑器使用
-│   ├── src/battle.tl            # 手写 Teal / Lua
+│   ├── src/cards.tl             # 手写 Teal / Lua
 │   └── types/battle_bridge.d.tl # 生成：Teal 声明
 └── assets/lua/battle.lua        # 生成：编译产物，作为 Flutter asset
 ```

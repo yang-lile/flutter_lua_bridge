@@ -25,9 +25,9 @@ DART_CMD="$dart_cmd" ./tool/generate_example.sh --check
 (cd packages/flutter_lua_bridge_codegen && $dart_cmd --suppress-analytics test)
 
 if command -v "${flutter_cmd%% *}" >/dev/null 2>&1; then
-  (cd examples/flutter_lua_bridge_example && $flutter_cmd test test/game/card_loader_test.dart)
+  (cd examples/flutter_lua_bridge_example && $flutter_cmd test test/game)
 else
-  printf '%s\n' 'flutter is unavailable; skipped the example unit test.' >&2
+  printf '%s\n' 'flutter is unavailable; skipped the example game tests.' >&2
 fi
 
 printf '%s\n' 'Light CI checks passed.'

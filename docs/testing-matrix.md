@@ -72,8 +72,13 @@ and checked for drift.
 
 ### Example
 
-- Card and skill parsing, defaults, numeric coercion, copying, and domain
-  values are covered by `examples/flutter_lua_bridge_example/test/game/card_loader_test.dart`.
+- The card game (`test/game`) loads its typed card catalog, passives and
+  skill effects from Lua, and checks that the same seeded battle gives the
+  same events with the Dart reference formulas and with the Lua formulas at
+  O1, O2 and O3. A deliberately faulty script shows how each level reports a
+  wrong result type and a runtime error, and the benchmark runs for every
+  backend. Widget tests drive the game page, the arena and the safety level
+  page.
 - macOS and Windows run the basic bridge and card-loader smoke tests.
 - The release gate runs the full scenario matrix: pure Lua, compiled Teal,
   dynamic Lua, and Dart-host implementations.

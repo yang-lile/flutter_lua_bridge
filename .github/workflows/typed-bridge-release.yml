@@ -65,5 +65,5 @@ jobs:
           flutter-version: '3.38.10'
           cache: true
       - run: flutter pub get
-      - run: flutter test test/bridge/basic_bridge_test.dart test/game/card_loader_test.dart
+      - run: flutter test test/bridge/basic_bridge_test.dart test/game/battle_simulator_test.dart
         working-directory: examples/flutter_lua_bridge_example
