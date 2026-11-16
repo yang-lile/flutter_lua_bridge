@@ -93,7 +93,8 @@ void main() {
   });
 
   test('O3 implements the interface and throws on failure', () {
-    final DirectApi api = DirectApiClient.load(
+    // The O3 client implements the API and the interface it inherits from.
+    final Halver api = DirectApiClient.load(
       runtime: lua,
       source: implementation('bindDirectApi'),
     );
@@ -109,5 +110,52 @@ void main() {
       ),
     );
     expect(() => api.half(1), throwsA(isA<LuaTypeException>()));
+  });
+
+  test('one table cannot be bound to APIs of different levels', () {
+    // The O1 wrappers replace the functions of the table in place, so
+    // binding the same table again as O3 must fail instead of handing O3
+    // the O1 result envelopes.
+    lua.loadModule(
+      'shared',
+      source: '''
+return {
+  half = function(value) return value // 2 end,
+  move = function(point, by) return point end,
+  ping = function() end,
+}
+''',
+    );
+    expect(
+      () => CheckedApiClient.load(
+        runtime: lua,
+        source:
+            'return require("levels_bridge").bindCheckedApi(require("shared"))',
+      ),
+      returnsNormally,
+    );
+    expect(
+      () => DirectApiClient.load(
+        runtime: lua,
+        source:
+            'return require("levels_bridge").bindDirectApi(require("shared"))',
+      ),
+      throwsA(
+        isA<LuaBridgeException>().having(
+          (e) => e.message,
+          'message',
+          contains('already bound as CheckedApi'),
+        ),
+      ),
+    );
+    // Binding the same table to the same API again is harmless.
+    expect(
+      CheckedApiClient.load(
+        runtime: lua,
+        source:
+            'return require("levels_bridge").bindCheckedApi(require("shared"))',
+      ).half(8),
+      isA<LuaSuccess<int>>().having((r) => r.value, 'value', 4),
+    );
   });
 }

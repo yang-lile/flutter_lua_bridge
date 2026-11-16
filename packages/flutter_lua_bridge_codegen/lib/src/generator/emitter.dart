@@ -483,17 +483,30 @@ String emitLua(BridgeSchema schema) {
         '  assert(type(rawget(implementation, ${_luaString(method.luaName)})) == "function", "${api.name}.${method.luaName} is missing")',
       );
     }
-    if (api.isLua && api.optimization.catchesErrors) {
-      out.writeln('  if not _flb_wrapped[implementation] then');
-      for (final method in api.methods) {
-        final wrapper =
-            '_wrap_${_safeLuaName(api.name)}_${_safeLuaName(method.luaName)}';
-        out.writeln(
-          '    rawset(implementation, ${_luaString(method.luaName)}, $wrapper(rawget(implementation, ${_luaString(method.luaName)})))',
-        );
-      }
-      out.writeln('    _flb_wrapped[implementation] = true');
+    // Wrappers replace the functions of the table in place, so one table
+    // can be bound to one API only: binding it again for an API of another
+    // level would silently reuse the first wrappers.
+    final tracksBindings = luaApis.any((api) => api.optimization.catchesErrors);
+    if (api.isLua && tracksBindings) {
+      final name = _luaString(api.name);
+      out.writeln('  local bound = _flb_wrapped[implementation]');
+      out.writeln('  if bound ~= nil and bound ~= $name then');
+      out.writeln(
+        '    error("${api.name}: the table is already bound as " .. bound .. "; bind a separate table", 2)',
+      );
       out.writeln('  end');
+      if (api.optimization.catchesErrors) {
+        out.writeln('  if bound == nil then');
+        for (final method in api.methods) {
+          final wrapper =
+              '_wrap_${_safeLuaName(api.name)}_${_safeLuaName(method.luaName)}';
+          out.writeln(
+            '    rawset(implementation, ${_luaString(method.luaName)}, $wrapper(rawget(implementation, ${_luaString(method.luaName)})))',
+          );
+        }
+        out.writeln('  end');
+      }
+      out.writeln('  _flb_wrapped[implementation] = $name');
     }
     out.writeln('  return implementation\nend');
   }

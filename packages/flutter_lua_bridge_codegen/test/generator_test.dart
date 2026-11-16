@@ -217,6 +217,72 @@ abstract class GameApi {
     expect(keyword.schema(), rejects);
   });
 
+  final inherited = read({
+    'contract': '''
+abstract interface class Base { int add(int value); }
+abstract interface class Shared implements Base {
+  @LuaName('sub_one') int subOne(int value);
+}
+@LuaApi(module: 'fast', optimization: LuaOptimization.o3)
+abstract class FastApi implements Shared {}
+@LuaApi(module: 'safe')
+abstract class SafeApi implements Shared { void reset(); }
+@DartApi(module: 'host')
+abstract class HostApi implements Base {}
+''',
+  });
+  test('APIs may inherit methods from plain abstract interfaces', () async {
+    final schema = (await inherited.schema())!;
+    expect(
+      {
+        for (final api in schema.apis)
+          api.name: [for (final m in api.methods) m.luaName],
+      },
+      {
+        'FastApi': ['sub_one', 'add'],
+        'SafeApi': ['reset', 'sub_one', 'add'],
+        'HostApi': ['add'],
+      },
+    );
+    final dart = emitDart(schema);
+    expect(dart, contains('class FastApiClient implements FastApi'));
+    expect(dart, contains('int subOne(int value)'));
+    expect(emitTeal(schema), contains('sub_one: function(integer): integer'));
+    expect(emitLua(schema), contains('_wrap_SafeApi_add'));
+  });
+
+  final invalidInterfaces = {
+    'extends': '''
+abstract class Base { int add(int value); }
+@LuaApi(module: "a") abstract class A extends Base {}
+''',
+    'mixin': '''
+mixin Base { int add(int value); }
+@LuaApi(module: "a") abstract class A with Base {}
+''',
+    'generic interface': '''
+abstract interface class Base<T> { T get_(); }
+@LuaApi(module: "a") abstract class A implements Base<int> {}
+''',
+    'concrete interface method': '''
+abstract interface class Base { int add(int value) => value; }
+@LuaApi(module: "a") abstract class A implements Base {}
+''',
+    'interface field': '''
+abstract interface class Base { int get size; int add(int value); }
+@LuaApi(module: "a") abstract class A implements Base {}
+''',
+    'another API': '''
+@LuaApi(module: "a") abstract class A { int add(int value); }
+@LuaApi(module: "b") abstract class B implements A {}
+''',
+  }.map((name, source) => MapEntry(name, read({'contract': source})));
+  test('rejects unsupported API inheritance', () {
+    for (final entry in invalidInterfaces.entries) {
+      expect(entry.value.schema(), rejects, reason: entry.key);
+    }
+  });
+
   final unsupported = {
     'Future': 'Future<int> get_();',
     'Stream': 'Stream<int> get_();',

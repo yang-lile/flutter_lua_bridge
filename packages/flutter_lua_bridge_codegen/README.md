@@ -52,6 +52,30 @@ For `@DartApi(module: 'host') abstract class HostApi` it contains
 `registerHostApi(HostApi? api, {required LuaRuntime runtime})`; pass `null` to
 unregister. Lua obtains the implementation with `bridge.getHostApi()`.
 
+An API may implement plain abstract interfaces and inherits their methods.
+This declares an interface once and binds it at several safety levels:
+
+```dart
+abstract interface class BattleFormulas {
+  Damage physicalDamage(Fighter attacker, Fighter defender, double multiplier, Roll roll);
+}
+
+@LuaApi(module: 'formulas_o1', optimization: LuaOptimization.o1)
+abstract class FormulasO1Api implements BattleFormulas {}
+
+@LuaApi(module: 'formulas_o3', optimization: LuaOptimization.o3)
+abstract class FormulasO3Api implements BattleFormulas {}
+```
+
+The O3 client then also implements `BattleFormulas`. Interfaces must be
+abstract, without type arguments, annotations or members other than abstract
+instance methods; `extends` and mixins are rejected.
+
+Binding wraps the functions of the Lua table in place, so a table can be bound
+to one API only. Binding it again to an API of another level fails with
+"already bound as ..."; give each binding its own table, for example
+`bridge.bindFormulasO1Api({ physicalDamage = formulas.physicalDamage })`.
+
 Data classes are your own classes: one unnamed constructor whose required
 parameters each initialise a final field of the same name. Supported types are
 `bool`, `int`, `double`, `String`, simple enums, data classes, `List<T>`,

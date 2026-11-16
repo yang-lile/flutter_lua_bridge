@@ -114,15 +114,7 @@ class _Reader {
       _fail('API classes must be public: $apiName', element);
     }
     if (!element.isAbstract) _fail('API classes must be abstract', element);
-    if (element.typeParameters.isNotEmpty ||
-        element.interfaces.isNotEmpty ||
-        element.mixins.isNotEmpty ||
-        !(element.supertype?.isDartCoreObject ?? true)) {
-      _fail(
-        'Inheritance and generic classes are unsupported: $apiName',
-        element,
-      );
-    }
+    _checkInterface(element, apiName);
     final annotation = (lua ?? dart)!;
     final module = annotation.getField('module')!.toStringValue()!;
     if (!_modulePattern.hasMatch(module)) {
@@ -134,14 +126,10 @@ class _Reader {
       level =
           BridgeOptimization.values[override.getField('index')!.toIntValue()!];
     }
-    if (element.fields.any((field) => !field.isStatic) ||
-        element.getters.any((getter) => !getter.isStatic) ||
-        element.setters.any((setter) => !setter.isStatic)) {
-      _fail('APIs contain abstract instance methods only', element);
-    }
     final methods = <BridgeMethod>[];
-    for (final method in element.methods) {
-      if (method.isStatic) continue;
+    final seen = <String>{};
+    for (final method in _interfaceMethods(element)) {
+      if (!seen.add(method.name!)) continue;
       if (!method.isAbstract || method.typeParameters.isNotEmpty) {
         _fail('APIs contain abstract instance methods only', method);
       }
@@ -189,6 +177,55 @@ class _Reader {
       methods,
       optimization: level,
     );
+  }
+
+  /// Rejects generics, `extends`, mixins and members other than abstract
+  /// instance methods, in [element] and in every interface it implements.
+  /// An API may implement plain abstract interfaces (for example one
+  /// interface shared by several APIs that differ in their optimization);
+  /// their methods become methods of the API.
+  void _checkInterface(ClassElement element, String apiName) {
+    if (element.typeParameters.isNotEmpty ||
+        element.mixins.isNotEmpty ||
+        !(element.supertype?.isDartCoreObject ?? true)) {
+      _fail(
+        'Generic classes, extends and mixins are unsupported: $apiName',
+        element,
+      );
+    }
+    if (element.fields.any((field) => !field.isStatic) ||
+        element.getters.any((getter) => !getter.isStatic) ||
+        element.setters.any((setter) => !setter.isStatic)) {
+      _fail('APIs contain abstract instance methods only', element);
+    }
+    for (final interface in element.interfaces) {
+      final base = interface.element;
+      if (base is! ClassElement ||
+          !base.isAbstract ||
+          interface.typeArguments.isNotEmpty ||
+          base.library.isInSdk) {
+        _fail(
+          'An API can only implement abstract interfaces without type '
+          'arguments: ${interface.getDisplayString()}',
+          element,
+        );
+      }
+      if (_luaApi.hasAnnotationOfExact(base) ||
+          _dartApi.hasAnnotationOfExact(base)) {
+        _fail('An API cannot implement another API: ${base.name}', element);
+      }
+      _checkInterface(base, apiName);
+    }
+  }
+
+  /// The instance methods of [element], then those of its interfaces.
+  Iterable<MethodElement> _interfaceMethods(ClassElement element) sync* {
+    for (final method in element.methods) {
+      if (!method.isStatic) yield method;
+    }
+    for (final interface in element.interfaces) {
+      yield* _interfaceMethods(interface.element as ClassElement);
+    }
   }
 
   BridgeType _type(DartType type, Element owner, {bool result = false}) {
