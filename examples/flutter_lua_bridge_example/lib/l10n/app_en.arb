@@ -12,7 +12,7 @@
   "randomValueB": "Random value B",
   "runBridgeTest": "Run Bridge Test",
   "gameDemoTest": "Card Battle Game Test",
-  "gameDemoSubtitle": "Load Lua card configs and run battle simulation",
+  "gameDemoSubtitle": "Typed Lua cards and formulas, switchable between O1/O2/O3",
   "gameDemo": "Game Demo",
   "gameDemoTitle": "Card Battle Game Demo",
   "availableCards": "Available Cards",
@@ -244,5 +244,40 @@
   "requiredField": "Required",
   "pleaseEnterNumber": "Please enter a number",
   "pleaseEnterInteger": "Please enter an integer",
-  "switchLanguage": "Switch Language"
+  "switchLanguage": "Switch Language",
+  "formulaBackend": "Formula backend",
+  "formulaBackendHint": "The same Lua formulas bound at three safety levels, or the Dart reference",
+  "animateBattle": "Animate the battle",
+  "instantBattleHint": "Off: simulate instantly and show the result and time",
+  "simulatedIn": "{backend}: simulated in {ms} ms",
+  "@simulatedIn": {
+    "placeholders": {
+      "backend": {
+        "type": "String"
+      },
+      "ms": {
+        "type": "String"
+      }
+    }
+  },
+  "formulaFailed": "Formula failed: {message}",
+  "@formulaFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "safetyLevels": "Safety levels",
+  "safetyLevelsSubtitle": "What O1, O2 and O3 do with a bug, and what they cost",
+  "scriptLabel": "Lua script",
+  "correctScript": "Correct formulas.lua",
+  "faultyScript": "Faulty formulas_faulty.lua",
+  "faultyScriptHint": "physicalDamage returns a string amount, magicDamage raises an error, heal returns a float",
+  "callResults": "One call per method",
+  "benchmark": "Benchmark",
+  "benchmarkHint": "Runs in a background isolate with its own LuaRuntime; formula calls in µs, full battles in ms (they include the O1 card API calls)",
+  "runBenchmark": "Run benchmark",
+  "benchmarkRunning": "Running…",
+  "perBattle": "battle"
 }

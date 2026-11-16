@@ -1,21 +1,33 @@
 // 战斗竞技场页面 - 带动画效果
-import 'dart:async';
-import 'dart:math';
-
+//
+// 每一步由 BattleSimulator 计算（公式来自所选的 BattleFormulas，被动和
+// 技能特效来自 Lua 的 CardApi），页面只负责把事件播放成动画。
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import 'battle_simulator.dart';
+import 'battle_text.dart';
+import 'formulas.dart';
+import 'game_scripts.dart';
 import 'models.dart';
 
 class BattleArenaPage extends StatefulWidget {
+  const BattleArenaPage({
+    super.key,
+    required this.scripts,
+    required this.backend,
+    required this.teamA,
+    required this.teamB,
+    required this.seed,
+  });
+
+  final GameScripts scripts;
+  final FormulaBackend backend;
   final List<MonsterCard> teamA;
   final List<MonsterCard> teamB;
 
-  const BattleArenaPage({
-    super.key,
-    required this.teamA,
-    required this.teamB,
-  });
+  /// 同一个种子重放同一场战斗（重置后也一样）
+  final int seed;
 
   @override
   State<BattleArenaPage> createState() => _BattleArenaPageState();
@@ -23,15 +35,17 @@ class BattleArenaPage extends StatefulWidget {
 
 class _BattleArenaPageState extends State<BattleArenaPage>
     with TickerProviderStateMixin {
-  late List<MonsterCard> _teamA;
-  late List<MonsterCard> _teamB;
-  
+  late BattleSimulator _simulator;
+  List<MonsterCard> get _teamA => _simulator.teamA;
+  List<MonsterCard> get _teamB => _simulator.teamB;
+
   // 战斗状态
   bool _isBattleRunning = false;
   bool _isPaused = false;
+  bool _isLooping = false;
   int _currentTurn = 0;
   String _battleStatus = '';
-  
+
   // 动画状态
   int? _activeAttacker;
   int? _activeTarget;
@@ -39,21 +53,27 @@ class _BattleArenaPageState extends State<BattleArenaPage>
   int? _damageDealt;
   bool _isCritical = false;
   String? _actionText;
-  
+
   // 战斗日志
-  final List<BattleRound> _rounds = [];
+  final List<_LogLine> _rounds = [];
   final ScrollController _logScrollController = ScrollController();
-  
+
   // 速度控制
   double _speed = 1.0;
-  Timer? _battleTimer;
 
   @override
   void initState() {
     super.initState();
-    _teamA = widget.teamA.map((m) => m.copy()).toList();
-    _teamB = widget.teamB.map((m) => m.copy()).toList();
+    _simulator = _newSimulator();
   }
+
+  BattleSimulator _newSimulator() => BattleSimulator(
+    scripts: widget.scripts,
+    formulas: widget.scripts.formulas(widget.backend),
+    teamA: widget.teamA.map((m) => m.copy()).toList(),
+    teamB: widget.teamB.map((m) => m.copy()).toList(),
+    seed: widget.seed,
+  );
 
   @override
   void didChangeDependencies() {
@@ -66,23 +86,20 @@ class _BattleArenaPageState extends State<BattleArenaPage>
 
   @override
   void dispose() {
-    _battleTimer?.cancel();
+    _isBattleRunning = false;
     _logScrollController.dispose();
     super.dispose();
   }
 
   void _startBattle() {
+    if (_simulator.outcome != null) _resetBattle();
     final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isBattleRunning = true;
       _isPaused = false;
-      _currentTurn = 1;
-      _rounds.clear();
-      _battleStatus = l10n.turnNumber(1);
+      _battleStatus = l10n.turnNumber(_simulator.turn);
     });
-    
-    // 使用微任务确保状态更新后再开始
-    Future.microtask(() => _runBattleStep());
+    _runBattle();
   }
 
   void _pauseBattle() {
@@ -91,14 +108,13 @@ class _BattleArenaPageState extends State<BattleArenaPage>
       _isPaused = !_isPaused;
       _battleStatus = _isPaused ? l10n.battlePaused : l10n.battleResumed;
     });
+    if (!_isPaused) _runBattle();
   }
 
   void _resetBattle() {
     final l10n = AppLocalizations.of(context)!;
-    _battleTimer?.cancel();
     setState(() {
-      _teamA = widget.teamA.map((m) => m.copy()).toList();
-      _teamB = widget.teamB.map((m) => m.copy()).toList();
+      _simulator = _newSimulator();
       _isBattleRunning = false;
       _isPaused = false;
       _currentTurn = 0;
@@ -107,167 +123,115 @@ class _BattleArenaPageState extends State<BattleArenaPage>
       _activeAttacker = null;
       _activeTarget = null;
       _isAttacking = false;
+      _damageDealt = null;
+      _actionText = null;
     });
   }
 
-  void _runBattleStep() {
-    if (!_isBattleRunning || _isPaused) return;
-
-    // 检查战斗是否结束
-    final result = _checkBattleResult();
-    if (result != null) {
-      setState(() {
-        _battleStatus = result;
-        _isBattleRunning = false;
-      });
-      return;
-    }
-
-    // 获取行动顺序
-    final allMonsters = [..._teamA, ..._teamB];
-    final actionOrder = _getActionOrder(allMonsters);
-    
-    if (actionOrder.isEmpty) {
-      final l10n = AppLocalizations.of(context)!;
-      setState(() {
-        _battleStatus = l10n.battleEndedNoAction;
-        _isBattleRunning = false;
-      });
-      return;
-    }
-
-    _executeTurn(actionOrder, allMonsters);
-  }
-
-  Future<void> _executeTurn(List<_ActionOrder> actionOrder, List<MonsterCard> allMonsters) async {
+  /// 逐步执行模拟器并播放每个事件，直到结束、暂停或离开页面
+  Future<void> _runBattle() async {
+    if (_isLooping) return;
+    _isLooping = true;
     final l10n = AppLocalizations.of(context)!;
-    for (final action in actionOrder) {
-      if (!_isBattleRunning || _isPaused) return;
-
-      final attacker = allMonsters[action.index];
-      if (!attacker.isAlive) continue;
-
-      // 跳过眩晕
-      if (attacker.stunned) {
-        if (!mounted) return;
-        setState(() {
-          attacker.stunned = false;
-          _actionText = l10n.stunnedCannotAct(attacker.name);
-        });
-        await _delay(1000);
-        continue;
+    final simulator = _simulator;
+    try {
+      while (mounted &&
+          _isBattleRunning &&
+          !_isPaused &&
+          identical(simulator, _simulator)) {
+        final List<BattleEvent>? events;
+        try {
+          events = simulator.step();
+        } on Exception catch (error) {
+          setState(() {
+            _battleStatus = l10n.formulaFailed('$error');
+            _isBattleRunning = false;
+          });
+          return;
+        }
+        if (events == null) {
+          setState(() {
+            _battleStatus = switch (simulator.outcome!) {
+              BattleOutcome.teamA => l10n.teamAWins,
+              BattleOutcome.teamB => l10n.teamBWins,
+              BattleOutcome.draw => l10n.draw,
+            };
+            _isBattleRunning = false;
+            _actionText = null;
+          });
+          return;
+        }
+        if (simulator.turn != _currentTurn) {
+          setState(() {
+            _currentTurn = simulator.turn;
+            _battleStatus = l10n.turnNumber(_currentTurn);
+          });
+        }
+        for (final event in events) {
+          if (!mounted || !identical(simulator, _simulator)) return;
+          await _play(event);
+        }
+        await _delay(300);
       }
-
-      // 选择目标
-      final isTeamA = action.index < _teamA.length;
-      final enemies = isTeamA ? _teamB : _teamA;
-      final target = _selectTarget(enemies);
-      
-      if (target == null) continue;
-
-      // 执行攻击动画
-      await _performAttack(attacker, target, action.index, 
-          isTeamA ? _teamA.length + enemies.indexOf(target) : enemies.indexOf(target));
-
-      // 检查目标死亡
-      if (!target.isAlive) {
-        await _performDeath(target);
-      }
-
-      // 检查战斗结束
-      final result = _checkBattleResult();
-      if (result != null) {
-        if (!mounted) return;
-        setState(() {
-          _battleStatus = result;
-          _isBattleRunning = false;
-        });
-        return;
-      }
-
-      await _delay(500 ~/ _speed);
-    }
-
-    // 下一回合
-    if (!_isBattleRunning || _isPaused) return;
-    
-    if (!mounted) return;
-    setState(() {
-      _currentTurn++;
-      _battleStatus = l10n.turnNumber(_currentTurn);
-    });
-
-    // 延迟后执行下一回合
-    await Future.delayed(Duration(milliseconds: (1000 ~/ _speed).toInt()));
-    if (mounted && _isBattleRunning && !_isPaused) {
-      _runBattleStep();
+    } finally {
+      _isLooping = false;
     }
   }
 
-  Future<void> _performAttack(MonsterCard attacker, MonsterCard target,
-      int attackerIndex, int targetIndex) async {
+  Future<void> _play(BattleEvent event) async {
     final l10n = AppLocalizations.of(context)!;
-    // 显示攻击者
-    if (!mounted) return;
-    setState(() {
-      _activeAttacker = attackerIndex;
-      _actionText = l10n.preparingAttack(attacker.name);
-    });
-    await _delay(300);
-    if (!mounted) return;
-
-    // 移动到目标
-    setState(() {
-      _activeTarget = targetIndex;
-      _isAttacking = true;
-      _actionText = l10n.attackArrow(attacker.name, target.name);
-    });
-    await _delay(200);
-    if (!mounted) return;
-
-    // 计算伤害（简化版）
-    final isSkill = attacker.currentCooldown == 0 && _randomBool();
-    final skill = isSkill ? attacker.skill : attacker.normalAttack;
-    
-    if (isSkill) {
-      attacker.currentCooldown = skill.cooldown;
-    }
-
-    // 计算伤害值
-    final damage = _calculateDamage(attacker, target, skill);
-    final isCrit = _randomCrit(attacker.critRate);
-    final finalDamage = isCrit ? (damage * attacker.critDamage).toInt() : damage;
-
-    // 应用伤害
-    target.hp = (target.hp - finalDamage).clamp(0, target.maxHp);
-
-    // 显示伤害
-    if (!mounted) return;
-    setState(() {
-      _damageDealt = finalDamage;
-      _isCritical = isCrit;
-      _actionText = isSkill ? l10n.usesSkill(attacker.name, skill.name)
-                            : l10n.normalAttackAction(attacker.name);
-    });
-
-    // 添加战斗记录
-    _rounds.add(BattleRound(
-      turn: _currentTurn,
-      attacker: attacker.name,
-      target: target.name,
-      action: skill.name,
-      damage: finalDamage,
-      isCrit: isCrit,
-      targetHpLeft: target.hp,
-    ));
-
-    // 滚动日志
+    final fighters = _simulator.fighters;
+    final actor = fighters[event.actor];
+    _rounds.add(
+      _LogLine(
+        event.turn,
+        describeEvent(l10n, event, fighters),
+        damage:
+            event.kind == BattleEventKind.attack ||
+            event.kind == BattleEventKind.skill,
+        critical: event.critical,
+      ),
+    );
     _scrollToBottom();
-
-    await _delay(800);
+    switch (event.kind) {
+      case BattleEventKind.attack || BattleEventKind.skill:
+        final target = fighters[event.target!];
+        setState(() {
+          _activeAttacker = event.actor;
+          _actionText = l10n.preparingAttack(actor.name);
+        });
+        await _delay(300);
+        if (!mounted) return;
+        setState(() {
+          _activeTarget = event.target;
+          _isAttacking = true;
+          _actionText = l10n.attackArrow(actor.name, target.name);
+        });
+        await _delay(200);
+        if (!mounted) return;
+        setState(() {
+          _damageDealt = event.amount;
+          _isCritical = event.critical;
+          _actionText = event.kind == BattleEventKind.skill
+              ? l10n.usesSkill(actor.name, event.action ?? '')
+              : l10n.normalAttackAction(actor.name);
+        });
+        await _delay(800);
+      case BattleEventKind.heal || BattleEventKind.effect:
+        setState(() {
+          _activeAttacker = event.actor;
+          _activeTarget = event.target;
+          _actionText = describeEvent(l10n, event, fighters);
+        });
+        await _delay(700);
+      case BattleEventKind.stunned || BattleEventKind.defeated:
+        setState(() {
+          _activeAttacker = event.actor;
+          _actionText = describeEvent(l10n, event, fighters);
+        });
+        await _delay(800);
+    }
     if (!mounted) return;
-
-    // 重置动画状态
     setState(() {
       _isAttacking = false;
       _activeAttacker = null;
@@ -275,75 +239,12 @@ class _BattleArenaPageState extends State<BattleArenaPage>
       _damageDealt = null;
       _isCritical = false;
     });
-
-    // 减少冷却
-    if (attacker.currentCooldown > 0) {
-      attacker.currentCooldown--;
-    }
-  }
-
-  Future<void> _performDeath(MonsterCard monster) async {
-    final l10n = AppLocalizations.of(context)!;
-    if (!mounted) return;
-    setState(() {
-      _actionText = l10n.fallenDown(monster.name);
-    });
-    await _delay(1000);
   }
 
   Future<void> _delay(int milliseconds) async {
-    await Future.delayed(Duration(milliseconds: (milliseconds / _speed).toInt()));
-  }
-
-  int _calculateDamage(MonsterCard attacker, MonsterCard defender, Skill skill) {
-    final isPhysical = skill.type == DamageType.physical;
-    final attack = isPhysical ? attacker.attack : attacker.magicAttack;
-    final defense = isPhysical ? defender.physicalDefense : defender.magicDefense;
-    
-    final baseDamage = attack * skill.multiplier;
-    final damageReduction = defense / (defense + 100);
-    final damage = baseDamage * (1 - damageReduction);
-    
-    // 随机波动
-    final variance = 0.9 + Random().nextDouble() * 0.2;
-    return (damage * variance).toInt().clamp(1, 9999);
-  }
-
-  bool _randomCrit(double critRate) {
-    return Random().nextDouble() < critRate;
-  }
-
-  bool _randomBool() {
-    return Random().nextBool();
-  }
-
-  String? _checkBattleResult() {
-    final l10n = AppLocalizations.of(context)!;
-    final teamAAlive = _teamA.any((m) => m.isAlive);
-    final teamBAlive = _teamB.any((m) => m.isAlive);
-    
-    if (teamAAlive && !teamBAlive) return l10n.teamAWins;
-    if (teamBAlive && !teamAAlive) return l10n.teamBWins;
-    if (!teamAAlive && !teamBAlive) return l10n.draw;
-    return null;
-  }
-
-  MonsterCard? _selectTarget(List<MonsterCard> enemies) {
-    final aliveEnemies = enemies.where((m) => m.isAlive).toList();
-    if (aliveEnemies.isEmpty) return null;
-    aliveEnemies.sort((a, b) => a.hp.compareTo(b.hp));
-    return aliveEnemies.first;
-  }
-
-  List<_ActionOrder> _getActionOrder(List<MonsterCard> monsters) {
-    final order = <_ActionOrder>[];
-    for (int i = 0; i < monsters.length; i++) {
-      if (monsters[i].isAlive) {
-        order.add(_ActionOrder(index: i, speed: monsters[i].speed));
-      }
-    }
-    order.sort((a, b) => b.speed.compareTo(a.speed));
-    return order;
+    await Future.delayed(
+      Duration(milliseconds: (milliseconds / _speed).toInt()),
+    );
   }
 
   void _scrollToBottom() {
@@ -363,16 +264,20 @@ class _BattleArenaPageState extends State<BattleArenaPage>
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.battleArenaTitle),
+        title: Text('${l10n.battleArenaTitle} · ${widget.backend.label}'),
         actions: [
           // 战斗开始后才显示暂停/继续按钮
           if (_isBattleRunning)
             TextButton.icon(
               onPressed: _pauseBattle,
-              icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause, 
-                  color: Colors.white),
-              label: Text(_isPaused ? l10n.continueLabel : l10n.pauseLabel, 
-                  style: const TextStyle(color: Colors.white)),
+              icon: Icon(
+                _isPaused ? Icons.play_arrow : Icons.pause,
+                color: Colors.white,
+              ),
+              label: Text(
+                _isPaused ? l10n.continueLabel : l10n.pauseLabel,
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           // 重置按钮始终显示
           IconButton(
@@ -386,26 +291,26 @@ class _BattleArenaPageState extends State<BattleArenaPage>
         children: [
           // 状态栏
           _buildStatusBar(),
-          
+
           // 战斗场地
           Expanded(
             child: Row(
               children: [
                 // 蓝方队伍
                 Expanded(child: _buildTeamColumn(_teamA, true)),
-                
+
                 // 中间战斗区域
                 SizedBox(
                   width: 120,
                   child: Center(child: _buildBattleEffects()),
                 ),
-                
+
                 // 红方队伍
                 Expanded(child: _buildTeamColumn(_teamB, false)),
               ],
             ),
           ),
-          
+
           // 战斗日志
           _buildBattleLog(),
         ],
@@ -437,7 +342,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
             ),
           ),
           const SizedBox(width: 16),
-          
+
           // 战斗状态
           Expanded(
             child: Text(
@@ -449,7 +354,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
               ),
             ),
           ),
-          
+
           // 速度控制
           Row(
             children: [
@@ -481,7 +386,9 @@ class _BattleArenaPageState extends State<BattleArenaPage>
     final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-      color: isTeamA ? Colors.blue.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+      color: isTeamA
+          ? Colors.blue.withValues(alpha: 0.1)
+          : Colors.red.withValues(alpha: 0.1),
       child: Column(
         children: [
           // 队伍标识
@@ -500,7 +407,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // 队员列表
           Expanded(
             child: ListView.builder(
@@ -508,17 +415,20 @@ class _BattleArenaPageState extends State<BattleArenaPage>
               itemBuilder: (context, index) {
                 final monster = team[index];
                 final globalIndex = isTeamA ? index : _teamA.length + index;
-                final isActive = _activeAttacker == globalIndex || 
-                                _activeTarget == globalIndex;
-                final isAttacking = _activeAttacker == globalIndex && _isAttacking;
-                
+                final isActive =
+                    _activeAttacker == globalIndex ||
+                    _activeTarget == globalIndex;
+                final isAttacking =
+                    _activeAttacker == globalIndex && _isAttacking;
+
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   transform: isAttacking
-                      ? (Matrix4.identity()..translateByDouble(isTeamA ? 30.0 : -30.0, 0, 0, 1))
+                      ? (Matrix4.identity()
+                          ..translateByDouble(isTeamA ? 30.0 : -30.0, 0, 0, 1))
                       : Matrix4.identity(),
                   child: _buildMonsterCard(
-                    monster, 
+                    monster,
                     isActive,
                     _activeTarget == globalIndex && _damageDealt != null,
                   ),
@@ -531,7 +441,11 @@ class _BattleArenaPageState extends State<BattleArenaPage>
     );
   }
 
-  Widget _buildMonsterCard(MonsterCard monster, bool isActive, bool showDamage) {
+  Widget _buildMonsterCard(
+    MonsterCard monster,
+    bool isActive,
+    bool showDamage,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final hpPercent = monster.hp / monster.maxHp;
     Color hpColor;
@@ -561,17 +475,18 @@ class _BattleArenaPageState extends State<BattleArenaPage>
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      decoration: monster.isAlive ? null : TextDecoration.lineThrough,
+                      decoration: monster.isAlive
+                          ? null
+                          : TextDecoration.lineThrough,
                       color: monster.isAlive ? null : Colors.grey,
                     ),
                   ),
                 ),
-                if (showDamage)
-                  _buildDamagePopup(),
+                if (showDamage) _buildDamagePopup(),
               ],
             ),
             const SizedBox(height: 8),
-            
+
             // HP条
             LayoutBuilder(
               builder: (context, constraints) {
@@ -609,20 +524,32 @@ class _BattleArenaPageState extends State<BattleArenaPage>
                     ),
                   ],
                 );
-              }
+              },
             ),
             const SizedBox(height: 8),
-            
+
             // 关键属性
             Wrap(
               spacing: 8,
               children: [
-                _buildMiniStat(Icons.flash_on, Colors.orange, monster.attack.toString()),
-                _buildMiniStat(Icons.shield, Colors.blue, monster.physicalDefense.toString()),
-                _buildMiniStat(Icons.speed, Colors.green, monster.speed.toString()),
+                _buildMiniStat(
+                  Icons.flash_on,
+                  Colors.orange,
+                  monster.attack.toString(),
+                ),
+                _buildMiniStat(
+                  Icons.shield,
+                  Colors.blue,
+                  monster.physicalDefense.toString(),
+                ),
+                _buildMiniStat(
+                  Icons.speed,
+                  Colors.green,
+                  monster.speed.toString(),
+                ),
               ],
             ),
-            
+
             // 冷却指示
             if (monster.currentCooldown > 0)
               Padding(
@@ -684,7 +611,11 @@ class _BattleArenaPageState extends State<BattleArenaPage>
         const SizedBox(width: 2),
         Text(
           value,
-          style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 12,
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -715,11 +646,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.play_arrow,
-              size: 40,
-              color: Colors.white,
-            ),
+            const Icon(Icons.play_arrow, size: 40, color: Colors.white),
             Text(
               l10n.startBattle,
               style: const TextStyle(
@@ -769,7 +696,7 @@ class _BattleArenaPageState extends State<BattleArenaPage>
             ),
           ),
         const SizedBox(height: 20),
-        
+
         // 行动文字
         if (_actionText != null)
           Container(
@@ -842,24 +769,12 @@ class _BattleArenaPageState extends State<BattleArenaPage>
                       ),
                       Expanded(
                         child: Text(
-                          l10n.battleLogEntry(round.attacker, round.action, round.target),
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ),
-                      Text(
-                        l10n.damageLabel(round.damage, round.isCrit ? ' ⚡' : ''),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: round.isCrit ? Colors.red : Colors.orange,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        l10n.hpLeftLabel(round.targetHpLeft),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[600],
+                          round.text,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: round.damage ? FontWeight.bold : null,
+                            color: round.critical ? Colors.red : null,
+                          ),
                         ),
                       ),
                     ],
@@ -874,29 +789,16 @@ class _BattleArenaPageState extends State<BattleArenaPage>
   }
 }
 
-class BattleRound {
-  final int turn;
-  final String attacker;
-  final String target;
-  final String action;
-  final int damage;
-  final bool isCrit;
-  final int targetHpLeft;
-
-  BattleRound({
-    required this.turn,
-    required this.attacker,
-    required this.target,
-    required this.action,
+class _LogLine {
+  const _LogLine(
+    this.turn,
+    this.text, {
     required this.damage,
-    required this.isCrit,
-    required this.targetHpLeft,
+    required this.critical,
   });
-}
 
-class _ActionOrder {
-  final int index;
-  final int speed;
-  
-  _ActionOrder({required this.index, required this.speed});
+  final int turn;
+  final String text;
+  final bool damage;
+  final bool critical;
 }

@@ -38,7 +38,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gameDemoSubtitle =>
-      'Load Lua card configs and run battle simulation';
+      'Typed Lua cards and formulas, switchable between O1/O2/O3';
 
   @override
   String get gameDemo => 'Game Demo';
@@ -362,4 +362,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get switchLanguage => 'Switch Language';
+
+  @override
+  String get formulaBackend => 'Formula backend';
+
+  @override
+  String get formulaBackendHint =>
+      'The same Lua formulas bound at three safety levels, or the Dart reference';
+
+  @override
+  String get animateBattle => 'Animate the battle';
+
+  @override
+  String get instantBattleHint =>
+      'Off: simulate instantly and show the result and time';
+
+  @override
+  String simulatedIn(String backend, String ms) {
+    return '$backend: simulated in $ms ms';
+  }
+
+  @override
+  String formulaFailed(String message) {
+    return 'Formula failed: $message';
+  }
+
+  @override
+  String get safetyLevels => 'Safety levels';
+
+  @override
+  String get safetyLevelsSubtitle =>
+      'What O1, O2 and O3 do with a bug, and what they cost';
+
+  @override
+  String get scriptLabel => 'Lua script';
+
+  @override
+  String get correctScript => 'Correct formulas.lua';
+
+  @override
+  String get faultyScript => 'Faulty formulas_faulty.lua';
+
+  @override
+  String get faultyScriptHint =>
+      'physicalDamage returns a string amount, magicDamage raises an error, heal returns a float';
+
+  @override
+  String get callResults => 'One call per method';
+
+  @override
+  String get benchmark => 'Benchmark';
+
+  @override
+  String get benchmarkHint =>
+      'Runs in a background isolate with its own LuaRuntime; formula calls in µs, full battles in ms (they include the O1 card API calls)';
+
+  @override
+  String get runBenchmark => 'Run benchmark';
+
+  @override
+  String get benchmarkRunning => 'Running…';
+
+  @override
+  String get perBattle => 'battle';
 }

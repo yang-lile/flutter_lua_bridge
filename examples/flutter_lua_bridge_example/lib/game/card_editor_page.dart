@@ -160,7 +160,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
       'SR': Colors.purple,
       'SSR': Colors.orange,
       'UR': Colors.red,
-    }[_editableCard.rarity] ?? Colors.grey;
+    }[_editableCard.rarity.label] ?? Colors.grey;
 
     return Card(
       elevation: 8,
@@ -194,7 +194,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    _editableCard.rarity,
+                    _editableCard.rarity.label,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

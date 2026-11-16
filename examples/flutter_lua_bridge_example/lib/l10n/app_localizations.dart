@@ -155,7 +155,7 @@ abstract class AppLocalizations {
   /// No description provided for @gameDemoSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Load Lua card configs and run battle simulation'**
+  /// **'Typed Lua cards and formulas, switchable between O1/O2/O3'**
   String get gameDemoSubtitle;
 
   /// No description provided for @gameDemo.
@@ -733,6 +733,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Switch Language'**
   String get switchLanguage;
+
+  /// No description provided for @formulaBackend.
+  ///
+  /// In en, this message translates to:
+  /// **'Formula backend'**
+  String get formulaBackend;
+
+  /// No description provided for @formulaBackendHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The same Lua formulas bound at three safety levels, or the Dart reference'**
+  String get formulaBackendHint;
+
+  /// No description provided for @animateBattle.
+  ///
+  /// In en, this message translates to:
+  /// **'Animate the battle'**
+  String get animateBattle;
+
+  /// No description provided for @instantBattleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off: simulate instantly and show the result and time'**
+  String get instantBattleHint;
+
+  /// No description provided for @simulatedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'{backend}: simulated in {ms} ms'**
+  String simulatedIn(String backend, String ms);
+
+  /// No description provided for @formulaFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Formula failed: {message}'**
+  String formulaFailed(String message);
+
+  /// No description provided for @safetyLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety levels'**
+  String get safetyLevels;
+
+  /// No description provided for @safetyLevelsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What O1, O2 and O3 do with a bug, and what they cost'**
+  String get safetyLevelsSubtitle;
+
+  /// No description provided for @scriptLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Lua script'**
+  String get scriptLabel;
+
+  /// No description provided for @correctScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct formulas.lua'**
+  String get correctScript;
+
+  /// No description provided for @faultyScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Faulty formulas_faulty.lua'**
+  String get faultyScript;
+
+  /// No description provided for @faultyScriptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'physicalDamage returns a string amount, magicDamage raises an error, heal returns a float'**
+  String get faultyScriptHint;
+
+  /// No description provided for @callResults.
+  ///
+  /// In en, this message translates to:
+  /// **'One call per method'**
+  String get callResults;
+
+  /// No description provided for @benchmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Benchmark'**
+  String get benchmark;
+
+  /// No description provided for @benchmarkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs in a background isolate with its own LuaRuntime; formula calls in µs, full battles in ms (they include the O1 card API calls)'**
+  String get benchmarkHint;
+
+  /// No description provided for @runBenchmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Run benchmark'**
+  String get runBenchmark;
+
+  /// No description provided for @benchmarkRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running…'**
+  String get benchmarkRunning;
+
+  /// No description provided for @perBattle.
+  ///
+  /// In en, this message translates to:
+  /// **'battle'**
+  String get perBattle;
 }
 
 class _AppLocalizationsDelegate

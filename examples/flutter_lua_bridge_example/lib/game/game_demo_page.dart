@@ -1,11 +1,19 @@
 // 游戏演示页面
+//
+// 卡牌、被动和技能特效来自 Lua（CardApi），伤害等公式由 BattleFormulas
+// 计算；页面上的开关在 Dart 参考实现与 Lua 的 O1/O2/O3 三档绑定之间切换。
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../l10n/app_localizations.dart';
-import 'card_loader.dart';
-import 'card_editor_page.dart';
 import 'battle_arena_page.dart';
+import 'battle_simulator.dart';
+import 'battle_text.dart';
+import 'card_editor_page.dart';
+import 'formulas.dart';
+import 'game_scripts.dart';
 import 'models.dart';
+import 'safety_levels_page.dart';
 
 class GameDemoPage extends StatefulWidget {
   const GameDemoPage({super.key});
@@ -15,19 +23,21 @@ class GameDemoPage extends StatefulWidget {
 }
 
 class _GameDemoPageState extends State<GameDemoPage> {
-  final CardLoader _loader = CardLoader();
-  BattleResult? _lastResult;
+  GameScripts? _scripts;
+  FormulaBackend _backend = FormulaBackend.o1;
+  bool _animate = true;
   bool _isLoading = true;
+
+  // 最近一次瞬时模拟
+  BattleResult? _lastResult;
+  List<MonsterCard> _lastFighters = const [];
+  int _lastTeamASize = 0;
+  String _lastSummary = '';
   late String _status;
   bool _didInit = false;
 
   // 预加载的卡牌模板
   final Map<String, MonsterCard> _cardTemplates = {};
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void didChangeDependencies() {
@@ -42,7 +52,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
 
   @override
   void dispose() {
-    _loader.dispose();
+    _scripts?.close();
     super.dispose();
   }
 
@@ -50,21 +60,20 @@ class _GameDemoPageState extends State<GameDemoPage> {
     final l10n = AppLocalizations.of(context)!;
     try {
       setState(() => _status = l10n.loadingLua);
-      _loader.init();
+      _scripts?.close();
+      final scripts = _scripts = await GameScripts.load(rootBundle);
+      if (!mounted) return;
 
       setState(() => _status = l10n.loadingCards);
-
-      // 加载所有卡牌
-      final warrior = await _loader.loadCard('assets/game/cards/warrior.lua');
-      final mage = await _loader.loadCard('assets/game/cards/mage.lua');
-      final healer = await _loader.loadCard('assets/game/cards/healer.lua');
-      final assassin = await _loader.loadCard('assets/game/cards/assassin.lua');
+      // 卡牌目录由 Lua 的 CardApi 提供，键为 id 的前缀（warrior_001 → warrior）
+      final catalog = scripts.catalog();
 
       setState(() {
-        _cardTemplates['warrior'] = warrior;
-        _cardTemplates['mage'] = mage;
-        _cardTemplates['healer'] = healer;
-        _cardTemplates['assassin'] = assassin;
+        _cardTemplates
+          ..clear()
+          ..addAll({
+            for (final card in catalog) card.id.split('_').first: card,
+          });
         _isLoading = false;
         _status = l10n.ready;
       });
@@ -139,25 +148,58 @@ class _GameDemoPageState extends State<GameDemoPage> {
         teamB = [_cardTemplates['mage']!.copy()];
     }
 
-    // 导航到战斗竞技场页面
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BattleArenaPage(
-          teamA: teamA,
-          teamB: teamB,
+    final scripts = _scripts!;
+    final seed = DateTime.now().microsecondsSinceEpoch;
+    if (_animate) {
+      // 导航到战斗竞技场页面
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BattleArenaPage(
+            scripts: scripts,
+            backend: _backend,
+            teamA: teamA,
+            teamB: teamB,
+            seed: seed,
+          ),
         ),
-      ),
+      );
+      return;
+    }
+    // 瞬时模拟：直接跑完整场，显示结果和耗时
+    final l10n = AppLocalizations.of(context)!;
+    final simulator = BattleSimulator(
+      scripts: scripts,
+      formulas: scripts.formulas(_backend),
+      teamA: teamA,
+      teamB: teamB,
+      seed: seed,
     );
+    final watch = Stopwatch()..start();
+    try {
+      final result = simulator.run();
+      watch.stop();
+      setState(() {
+        _lastResult = result;
+        _lastFighters = simulator.fighters;
+        _lastTeamASize = teamA.length;
+        _lastSummary = l10n.simulatedIn(
+          _backend.label,
+          (watch.elapsedMicroseconds / 1000).toStringAsFixed(2),
+        );
+      });
+    } on Exception catch (error) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.formulaFailed('$error'))));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.gameDemoTitle),
-      ),
+      appBar: AppBar(title: Text(l10n.gameDemoTitle)),
       body: _isLoading
           ? Center(
               child: Column(
@@ -170,69 +212,73 @@ class _GameDemoPageState extends State<GameDemoPage> {
               ),
             )
           : _status.startsWith(AppLocalizations.of(context)!.errorPrefix)
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                      const SizedBox(height: 16),
-                      Text(
-                        l10n.loadFailed,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Text(
-                          _status,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _isLoading = true;
-                            _status = l10n.initializing;
-                          });
-                          _initGame();
-                        },
-                        icon: const Icon(Icons.refresh),
-                        label: Text(l10n.retry),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.loadFailed,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                )
-              : SafeArea(
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: MediaQuery.of(context).size.height - 100,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 可用卡牌展示
-                          _buildCardSection(),
-                          const SizedBox(height: 24),
-
-                          // 战斗场景选择
-                          _buildBattleSection(),
-                          const SizedBox(height: 24),
-
-                          // 战斗结果
-                          if (_lastResult != null) _buildResultSection(),
-
-                          // 底部留白确保可滚动
-                          const SizedBox(height: 100),
-                        ],
-                      ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      _status,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isLoading = true;
+                        _status = l10n.initializing;
+                      });
+                      _initGame();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: Text(l10n.retry),
+                  ),
+                ],
+              ),
+            )
+          : SafeArea(
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height - 100,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 可用卡牌展示
+                      _buildCardSection(),
+                      const SizedBox(height: 24),
+
+                      // 公式实现开关
+                      _buildBackendSection(),
+                      const SizedBox(height: 24),
+
+                      // 战斗场景选择
+                      _buildBattleSection(),
+                      const SizedBox(height: 24),
+
+                      // 战斗结果
+                      if (_lastResult != null) _buildResultSection(),
+
+                      // 底部留白确保可滚动
+                      const SizedBox(height: 100),
+                    ],
+                  ),
                 ),
+              ),
+            ),
     );
   }
 
@@ -264,13 +310,15 @@ class _GameDemoPageState extends State<GameDemoPage> {
   }
 
   Widget _buildCardChip(MonsterCard card) {
-    final rarityColor = {
-      'N': Colors.grey,
-      'R': Colors.blue,
-      'SR': Colors.purple,
-      'SSR': Colors.orange,
-      'UR': Colors.red,
-    }[card.rarity] ?? Colors.grey;
+    final rarityColor =
+        {
+          'N': Colors.grey,
+          'R': Colors.blue,
+          'SR': Colors.purple,
+          'SSR': Colors.orange,
+          'UR': Colors.red,
+        }[card.rarity.label] ??
+        Colors.grey;
 
     return GestureDetector(
       onTap: () => _showCardDetailDialog(card),
@@ -294,7 +342,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  card.rarity,
+                  card.rarity.label,
                   style: const TextStyle(
                     fontSize: 10,
                     color: Colors.white,
@@ -317,7 +365,11 @@ class _GameDemoPageState extends State<GameDemoPage> {
               const SizedBox(height: 8),
               // 关键属性
               _buildMiniStat(Icons.favorite, Colors.red, card.maxHp.toString()),
-              _buildMiniStat(Icons.flash_on, Colors.orange, card.attack.toString()),
+              _buildMiniStat(
+                Icons.flash_on,
+                Colors.orange,
+                card.attack.toString(),
+              ),
               _buildMiniStat(Icons.speed, Colors.green, card.speed.toString()),
               const SizedBox(height: 8),
               // 编辑按钮
@@ -326,7 +378,10 @@ class _GameDemoPageState extends State<GameDemoPage> {
                 child: ElevatedButton.icon(
                   onPressed: () => _editCard(card),
                   icon: const Icon(Icons.edit, size: 14),
-                  label: Text(AppLocalizations.of(context)!.edit, style: const TextStyle(fontSize: 12)),
+                  label: Text(
+                    AppLocalizations.of(context)!.edit,
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: Size.zero,
@@ -374,46 +429,96 @@ class _GameDemoPageState extends State<GameDemoPage> {
             children: [
               // 稀有度
               Chip(
-                label: Text(card.rarity),
+                label: Text(card.rarity.label),
                 backgroundColor: {
                   'N': Colors.grey,
                   'R': Colors.blue,
                   'SR': Colors.purple,
                   'SSR': Colors.orange,
                   'UR': Colors.red,
-                }[card.rarity]?.withValues(alpha: 0.2),
+                }[card.rarity.label]?.withValues(alpha: 0.2),
               ),
               const SizedBox(height: 8),
               // 描述
               Text(card.description),
               const Divider(),
               // 属性
-              _buildDetailStat(l10n.hp, card.maxHp.toString(), Icons.favorite, Colors.red),
-              _buildDetailStat(l10n.attack, card.attack.toString(), Icons.flash_on, Colors.orange),
-              _buildDetailStat(l10n.magicAttack, card.magicAttack.toString(), Icons.auto_fix_high, Colors.purple),
-              _buildDetailStat(l10n.physicalDefense, card.physicalDefense.toString(), Icons.shield, Colors.blue),
-              _buildDetailStat(l10n.magicDefense, card.magicDefense.toString(), Icons.shield_moon, Colors.indigo),
-              _buildDetailStat(l10n.speed, card.speed.toString(), Icons.speed, Colors.green),
-              _buildDetailStat(l10n.critRate, '${(card.critRate * 100).toInt()}%', Icons.add_alert, Colors.yellow.shade700),
-              _buildDetailStat(l10n.critDamage, '${card.critDamage}x', Icons.trending_up, Colors.redAccent),
+              _buildDetailStat(
+                l10n.hp,
+                card.maxHp.toString(),
+                Icons.favorite,
+                Colors.red,
+              ),
+              _buildDetailStat(
+                l10n.attack,
+                card.attack.toString(),
+                Icons.flash_on,
+                Colors.orange,
+              ),
+              _buildDetailStat(
+                l10n.magicAttack,
+                card.magicAttack.toString(),
+                Icons.auto_fix_high,
+                Colors.purple,
+              ),
+              _buildDetailStat(
+                l10n.physicalDefense,
+                card.physicalDefense.toString(),
+                Icons.shield,
+                Colors.blue,
+              ),
+              _buildDetailStat(
+                l10n.magicDefense,
+                card.magicDefense.toString(),
+                Icons.shield_moon,
+                Colors.indigo,
+              ),
+              _buildDetailStat(
+                l10n.speed,
+                card.speed.toString(),
+                Icons.speed,
+                Colors.green,
+              ),
+              _buildDetailStat(
+                l10n.critRate,
+                '${(card.critRate * 100).toInt()}%',
+                Icons.add_alert,
+                Colors.yellow.shade700,
+              ),
+              _buildDetailStat(
+                l10n.critDamage,
+                '${card.critDamage}x',
+                Icons.trending_up,
+                Colors.redAccent,
+              ),
               const Divider(),
               // 技能
               Text(
                 l10n.skills,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 8),
               ListTile(
-                leading: const Icon(Icons.sports_martial_arts, color: Colors.orange),
+                leading: const Icon(
+                  Icons.sports_martial_arts,
+                  color: Colors.orange,
+                ),
                 title: Text(card.normalAttack.name),
                 subtitle: Text(card.normalAttack.description),
-                trailing: Text('${(card.normalAttack.multiplier * 100).toInt()}%'),
+                trailing: Text(
+                  '${(card.normalAttack.multiplier * 100).toInt()}%',
+                ),
                 dense: true,
               ),
               ListTile(
                 leading: const Icon(Icons.auto_fix_high, color: Colors.purple),
                 title: Text(card.skill.name),
-                subtitle: Text('${card.skill.description}\n${l10n.cooldownTurns(card.skill.cooldown)}'),
+                subtitle: Text(
+                  '${card.skill.description}\n${l10n.cooldownTurns(card.skill.cooldown)}',
+                ),
                 trailing: Text('${(card.skill.multiplier * 100).toInt()}%'),
                 dense: true,
                 isThreeLine: true,
@@ -439,7 +544,12 @@ class _GameDemoPageState extends State<GameDemoPage> {
     );
   }
 
-  Widget _buildDetailStat(String label, String value, IconData icon, Color color) {
+  Widget _buildDetailStat(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -482,6 +592,64 @@ class _GameDemoPageState extends State<GameDemoPage> {
     );
   }
 
+  Widget _buildBackendSection() {
+    final l10n = AppLocalizations.of(context)!;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.formulaBackend,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.formulaBackendHint,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<FormulaBackend>(
+              segments: [
+                for (final backend in FormulaBackend.values)
+                  ButtonSegment(
+                    value: backend,
+                    label: Text(backend.label),
+                    tooltip: backend.description,
+                  ),
+              ],
+              selected: {_backend},
+              onSelectionChanged: (selection) =>
+                  setState(() => _backend = selection.single),
+            ),
+            const SizedBox(height: 8),
+            Text(_backend.description),
+            const Divider(height: 24),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.animateBattle),
+              subtitle: Text(l10n.instantBattleHint),
+              value: _animate,
+              onChanged: (value) => setState(() => _animate = value),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.speed),
+              title: Text(l10n.safetyLevels),
+              subtitle: Text(l10n.safetyLevelsSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SafetyLevelsPage()),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBattleSection() {
     final l10n = AppLocalizations.of(context)!;
     return Card(
@@ -499,8 +667,16 @@ class _GameDemoPageState extends State<GameDemoPage> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _buildBattleButton(l10n.balancedBattle, 'balanced', Colors.blue),
-                _buildBattleButton(l10n.healerTest, 'healer_test', Colors.green),
+                _buildBattleButton(
+                  l10n.balancedBattle,
+                  'balanced',
+                  Colors.blue,
+                ),
+                _buildBattleButton(
+                  l10n.healerTest,
+                  'healer_test',
+                  Colors.green,
+                ),
                 _buildBattleButton(l10n.speedTest, 'speed_test', Colors.orange),
                 _buildBattleButton(l10n.tankTest, 'tank_test', Colors.purple),
               ],
@@ -531,7 +707,10 @@ class _GameDemoPageState extends State<GameDemoPage> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -543,6 +722,11 @@ class _GameDemoPageState extends State<GameDemoPage> {
   Widget _buildResultSection() {
     final l10n = AppLocalizations.of(context)!;
     final result = _lastResult!;
+    final (color, label) = switch (result.outcome) {
+      BattleOutcome.teamA => (Colors.blue, l10n.teamAWins),
+      BattleOutcome.teamB => (Colors.red, l10n.teamBWins),
+      BattleOutcome.draw => (Colors.grey, l10n.draw),
+    };
 
     return Card(
       child: Padding(
@@ -559,21 +743,16 @@ class _GameDemoPageState extends State<GameDemoPage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: result.winner == 'TEAM_A'
-                        ? Colors.blue
-                        : result.winner == 'TEAM_B'
-                            ? Colors.red
-                            : Colors.grey,
+                    color: color,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    result.winner == 'TEAM_A'
-                        ? l10n.teamAWins
-                        : result.winner == 'TEAM_B'
-                            ? l10n.teamBWins
-                            : l10n.draw,
+                    label,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -583,18 +762,27 @@ class _GameDemoPageState extends State<GameDemoPage> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(l10n.totalTurns(result.totalTurns)),
+            Text(l10n.totalTurns(result.turns)),
+            Text(_lastSummary),
             const SizedBox(height: 16),
 
             // 最终状态
             Row(
               children: [
                 Expanded(
-                  child: _buildTeamStatus(l10n.teamA, result.finalTeamA, Colors.blue),
+                  child: _buildTeamStatus(
+                    l10n.teamA,
+                    _lastFighters.sublist(0, _lastTeamASize),
+                    Colors.blue,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: _buildTeamStatus(l10n.teamB, result.finalTeamB, Colors.red),
+                  child: _buildTeamStatus(
+                    l10n.teamB,
+                    _lastFighters.sublist(_lastTeamASize),
+                    Colors.red,
+                  ),
                 ),
               ],
             ),
@@ -612,23 +800,23 @@ class _GameDemoPageState extends State<GameDemoPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: ListView.builder(
-                    itemCount: result.logs.length,
+                    itemCount: result.events.length,
                     itemBuilder: (context, index) {
-                      final log = result.logs[index];
+                      final event = result.events[index];
+                      final defeated = event.kind == BattleEventKind.defeated;
                       return ListTile(
                         dense: true,
                         title: Text(
-                          log.toString(),
+                          'T${event.turn} '
+                          '${describeEvent(l10n, event, _lastFighters)}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: log.specialEffect == 'K.O.'
+                            color: defeated
                                 ? Colors.red
-                                : log.isCrit == true
-                                    ? Colors.orange
-                                    : null,
-                            fontWeight: log.specialEffect == 'K.O.'
-                                ? FontWeight.bold
+                                : event.critical
+                                ? Colors.orange
                                 : null,
+                            fontWeight: defeated ? FontWeight.bold : null,
                           ),
                         ),
                       );
@@ -649,10 +837,7 @@ class _GameDemoPageState extends State<GameDemoPage> {
       children: [
         Text(
           title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: color),
         ),
         const SizedBox(height: 8),
         ...team.map((m) {

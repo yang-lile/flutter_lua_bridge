@@ -36,7 +36,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gameDemoTest => '抽卡战斗游戏测试';
 
   @override
-  String get gameDemoSubtitle => '加载 Lua 卡牌配置并运行战斗模拟';
+  String get gameDemoSubtitle => 'Lua 卡牌与公式经类型化接口互操作，可切换 O1/O2/O3';
 
   @override
   String get gameDemo => '游戏Demo';
@@ -359,4 +359,64 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get switchLanguage => '切换语言';
+
+  @override
+  String get formulaBackend => '公式实现';
+
+  @override
+  String get formulaBackendHint => '同一份 Lua 公式的三档绑定，或 Dart 参考实现';
+
+  @override
+  String get animateBattle => '播放战斗动画';
+
+  @override
+  String get instantBattleHint => '关闭后瞬时模拟，显示结果与耗时';
+
+  @override
+  String simulatedIn(String backend, String ms) {
+    return '$backend：模拟耗时 $ms ms';
+  }
+
+  @override
+  String formulaFailed(String message) {
+    return '公式出错：$message';
+  }
+
+  @override
+  String get safetyLevels => '安全级别对比';
+
+  @override
+  String get safetyLevelsSubtitle => 'O1、O2、O3 如何处理脚本错误，以及各自的开销';
+
+  @override
+  String get scriptLabel => 'Lua 脚本';
+
+  @override
+  String get correctScript => '正常的 formulas.lua';
+
+  @override
+  String get faultyScript => '有缺陷的 formulas_faulty.lua';
+
+  @override
+  String get faultyScriptHint =>
+      'physicalDamage 返回字符串，magicDamage 抛错，heal 返回浮点数';
+
+  @override
+  String get callResults => '每个方法调用一次';
+
+  @override
+  String get benchmark => '性能基准';
+
+  @override
+  String get benchmarkHint =>
+      '在后台 isolate 中用独立的 LuaRuntime 运行；公式调用单位 µs，整场战斗单位 ms（含 O1 卡牌接口调用）';
+
+  @override
+  String get runBenchmark => '运行基准';
+
+  @override
+  String get benchmarkRunning => '运行中…';
+
+  @override
+  String get perBattle => '整场战斗';
 }
