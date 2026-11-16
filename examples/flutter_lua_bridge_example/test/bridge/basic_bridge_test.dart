@@ -14,8 +14,8 @@ void main() {
       expect(result, isA<LuaSuccess<RandomResult>>());
       final value = (result as LuaSuccess<RandomResult>).value;
 
-      // Lua version should be a positive number (e.g. 504 for Lua 5.4)
-      expect(value.luaVersion, greaterThan(0));
+      // Lua reports the release it runs on (e.g. 504 for Lua 5.4)
+      expect(value.luaVersion, LuaRuntime.luaVersion);
 
       // Random values should be within 1-1024
       expect(value.a, greaterThanOrEqualTo(1));
