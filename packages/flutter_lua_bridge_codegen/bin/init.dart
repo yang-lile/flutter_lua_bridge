@@ -27,14 +27,30 @@ targets:
 ''';
 
 const _tlconfig = '''
--- For editor tooling only (for example the Teal language server).
--- `dart run build_runner build` compiles the sources with the Teal compiler
--- bundled in flutter_lua_bridge_codegen and does not read this file.
+-- Teal project settings for tools, read from the package root:
+-- - the Teal language server (VS Code and other editors) reads tlconfig.lua
+--   only from the folder that is opened, so it sits here, not in lua/;
+-- - `dart run flutter_lua_bridge_codegen:run` uses include_dir and
+--   source_dir to resolve require() for the entries in lua/test.
+-- `dart run build_runner build` does not read it.
 return {
-  source_dir = "src",
-  include_dir = { "src", "types" },
+  source_dir = "lua/src",
+  include_dir = { "lua/src", "lua/types", "lua/test" },
   gen_compat = "off",
 }
+''';
+
+const _main = '''
+-- A scratch entry for trying the Lua side without the app:
+--   dart run flutter_lua_bridge_codegen:run lua/test/main.tl -- some args
+-- Add test entries next to it as *_test.tl or *_test.lua and run them all
+-- with `dart run flutter_lua_bridge_codegen:run`. An entry passes when it
+-- returns without raising an error.
+--
+-- require() finds this directory, lua/src and lua/types. A generated
+-- <contract>_bridge module is stubbed here: bindXxx(t) returns t unchanged,
+-- and getXxx() returns a table you fill with stand-ins for the Dart side.
+print("Hello from " .. _VERSION, ...)
 ''';
 
 void _write(String path, String content) {
@@ -70,9 +86,16 @@ void main() {
   _directory('lua/src');
   _directory('lua/types');
   _directory('assets/lua');
-  _write('lua/tlconfig.lua', _tlconfig);
+  _write('tlconfig.lua', _tlconfig);
+  _write('lua/test/main.tl', _main);
 
   final manual = <String>[];
+  if (File('lua/tlconfig.lua').existsSync()) {
+    manual.add(
+      'Delete lua/tlconfig.lua: editors read tlconfig.lua only from the '
+      'opened folder, which is now covered by ./tlconfig.lua.',
+    );
+  }
   if (File('build.yaml').existsSync()) {
     stdout.writeln('  kept     build.yaml');
     if (!File('build.yaml').readAsStringSync().contains('lua/**')) {
@@ -106,11 +129,16 @@ void main() {
 Layout:
   lib/bridge/*.dart    contracts you write (@LuaApi / @DartApi)
   lua/src/*.tl|*.lua   Teal or Lua implementations you write
+  lua/test/*.tl|*.lua  entries to run the Lua side without the app
   lua/types/*.d.tl     generated Teal declarations
   assets/lua/*.lua     generated Lua to ship
+  tlconfig.lua         editor settings for Teal
 
 Generate everything with:
-  dart run build_runner build''');
+  dart run build_runner build
+
+Run the entries in lua/test with:
+  dart run flutter_lua_bridge_codegen:run [--watch] [file or directory]''');
   if (manual.isNotEmpty) {
     stdout.writeln('\nLeft for you:');
     for (final step in manual) {

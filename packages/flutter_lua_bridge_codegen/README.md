@@ -15,6 +15,7 @@ dev_dependencies:
 ```sh
 dart run flutter_lua_bridge_codegen:init   # once: directories, build.yaml, tlconfig.lua
 dart run build_runner build                # or: watch
+dart run flutter_lua_bridge_codegen:run    # run lua/test without the app
 ```
 
 Before Dart 3.12 (Flutter 3.38 ships Dart 3.10), add `--force-jit`:
@@ -31,12 +32,20 @@ script. The flag works on every SDK.
 | `lua/types/<name>_bridge.d.tl` | builder | Teal declarations of `require("<name>_bridge")` |
 | `lua/src/*.tl`, `lua/src/*.lua` | you | The implementation |
 | `assets/lua/*.lua` | builder | Compiled Teal and copied Lua; list `assets/lua/` under `flutter: assets:` |
-| `lua/tlconfig.lua` | `init` | For editor tooling only; the build does not read it |
+| `lua/test/main.tl`, `*_test.tl` | you (`init` writes `main.tl`) | Entries for [`run`](#running-the-lua-side) |
+| `tlconfig.lua` | `init` | For the Teal language server and `run`; the build does not read it |
 | `build.yaml` | `init` | Adds `lua/**` to the build sources |
 
 `build_runner` only reads the directories listed under `sources` of the
 default target, and `lua/` is not one of its defaults. That is what the
 generated `build.yaml` is for.
+
+`tlconfig.lua` sits in the package root, with paths relative to it: the Teal
+language server (used by the VS Code extension) reads `tlconfig.lua` only
+from the folder the editor opened and resolves `include_dir` against it. In a
+`lua/` subdirectory it is never found, and every `require("<name>_bridge")`
+is reported as missing. In a repository with several packages, open the
+package folder, or add a root `tlconfig.lua` that points at one of them.
 
 ## Generated Dart
 
@@ -113,6 +122,40 @@ targets:
 ```
 
 All three builders take the same options, so give them the same values.
+
+## Running the Lua side
+
+`run` executes hand-written entry files on `LuaRuntime`, without the app and
+without a system Lua. Use it for quick tests of Lua and Teal logic:
+
+```sh
+dart run flutter_lua_bridge_codegen:run                        # all entries under lua/test
+dart run flutter_lua_bridge_codegen:run lua/test/cards_test.tl # one file
+dart run flutter_lua_bridge_codegen:run lua/sandbox            # another directory
+dart run flutter_lua_bridge_codegen:run main.tl -- a b         # `...` is "a", "b"
+dart run flutter_lua_bridge_codegen:run --watch                # rerun on .tl/.lua changes
+```
+
+- A directory target runs every `main.tl|lua` and `*_test.tl|lua` below it.
+  Each entry gets a fresh Lua state and passes when it returns without an
+  error; the exit code is 1 if any entry fails.
+- `require()` searches the entry's own directory, then `include_dir` and
+  `source_dir` of the nearest `tlconfig.lua` above it. Teal is type checked
+  like in the build, and tracebacks point at the Teal lines.
+- The generated `<contract>_bridge` glue lives in the `.g.dart` files, so a
+  missing `*_bridge` module is stubbed: `bindXxx(t)` returns `t` unchanged
+  (the safety-level checks do not run), and `getXxx()` returns a table the
+  entry fills with stand-ins for the Dart functions. Calling one that is not
+  assigned raises `<module>: Api.method is not stubbed`.
+
+The same runner is available to Dart tests:
+
+```dart
+import 'package:flutter_lua_bridge_codegen/lua_runner.dart';
+
+final result = await LuaRunner().run('lua/test/cards_test.tl');
+expect(result.passed, isTrue, reason: result.error);
+```
 
 ## Teal
 
