@@ -14,6 +14,11 @@ dart run build_runner build
 | `lua/types/*_bridge.d.tl` | Generated Teal declarations |
 | `lua/src/` | Editable Teal and Lua, for example [`lua/src/basic.tl`](lua/src/basic.tl) |
 | `assets/lua/` | Compiled Teal and copied Lua, packaged as Flutter assets |
+| `lua/test/` | Lua-side tests and a scratch `main.tl`, run without the app |
+| `tlconfig.lua` | Teal settings for the editor and the runner |
+
+The Lua side runs on its own with `dart run flutter_lua_bridge_codegen:run`
+(add `--watch` to rerun on changes); see [`lua/README.md`](lua/README.md).
 
 `BasicBridgeDemo` loads `assets/lua/basic.lua` through `BasicApiClient.load`.
 The Teal compiler is bundled in the generator; no Lua toolchain is installed
