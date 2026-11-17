@@ -40,15 +40,20 @@ Lua 侧的名字。
 ```text
 <package>/
 ├── build.yaml                      # 把 lua/** 加入 build_runner 的输入
+├── tlconfig.lua                    # 编辑器（Teal 语言服务）和 run 命令使用
 ├── lib/bridge/
 │   ├── battle.dart                 # 手写：契约，含 part 'battle.g.dart';
 │   └── battle.g.dart               # 生成
 ├── lua/
-│   ├── tlconfig.lua                # 仅供编辑器（Teal 语言服务）使用
 │   ├── src/                        # 手写：*.tl、*.lua
+│   ├── test/                       # 手写：main.tl、*_test.tl，run 命令的入口
 │   └── types/battle_bridge.d.tl    # 生成：Teal 声明
 └── assets/lua/                     # 生成：最终的 Lua，作为 Flutter 资产打包
 ```
+
+`tlconfig.lua` 放在包根目录：Teal 语言服务只读取编辑器所打开目录下的
+`tlconfig.lua`，并以该目录为基准解析 `include_dir`，放在 `lua/` 里就找不到
+`require("battle_bridge")` 的声明。
 
 原则：手写和生成的文件不混在同一个目录里（Dart 的 `.g.dart` 例外，它遵循
 Dart 社区惯例）；`lua/` 整个目录是开发期内容，只有 `assets/lua/` 进包。

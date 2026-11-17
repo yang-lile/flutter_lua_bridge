@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 # Builds the native asset through hook/build.dart against each bundled Lua
-# release and runs on it the runtime tests and the generator's end-to-end
-# tests, which include compiling Teal with the bundled tl.lua.
+# release and runs on it the runtime tests, the generator's end-to-end tests
+# (which include compiling Teal with the bundled tl.lua), the example's Lua
+# entries and, when Flutter is available, the example's basic bridge test.
 #
 #   tool/test_lua_versions.sh                 # every release under third_party/
 #   tool/test_lua_versions.sh 5.3.6 5.5.0     # selected releases
@@ -20,6 +21,8 @@ repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repo_root"
 
 dart_cmd=${DART_CMD:-dart}
+flutter_cmd=${FLUTTER_CMD:-flutter}
+example=examples/flutter_lua_bridge_example
 package=packages/flutter_lua_bridge
 codegen=packages/flutter_lua_bridge_codegen
 pubspec=pubspec.yaml
@@ -64,6 +67,11 @@ run_with() {
     test/lua_runtime_test.dart)
   (cd "$codegen" && $dart_cmd --suppress-analytics test \
     test/runtime_test.dart test/levels_test.dart test/teal_test.dart)
+  (cd "$example" && $dart_cmd --suppress-analytics run \
+    flutter_lua_bridge_codegen:run)
+  if command -v "${flutter_cmd%% *}" >/dev/null 2>&1; then
+    (cd "$example" && $flutter_cmd test test/bridge/basic_bridge_test.dart)
+  fi
 }
 
 first=true
@@ -79,4 +87,4 @@ for release in $releases; do
   run_with "$release" "lua_version: \"${release%.*}\""
 done
 
-printf '%s\n' "Runtime and generator tests passed on: $(printf '%s ' $releases)"
+printf '%s\n' "Runtime, generator and example tests passed on: $(printf '%s ' $releases)"

@@ -27,18 +27,21 @@ Builder：生成 Dart part、生成 Teal 声明、把 Teal 编译成 Lua。
 ```text
 examples/flutter_lua_bridge_example/
 ├── build.yaml                   # 把 lua/** 加入构建输入
+├── tlconfig.lua                 # 编辑器和 Lua 单测运行器使用；构建不读
 ├── lib/bridge/
 │   ├── battle.dart              # 手写契约
 │   └── battle.g.dart            # 生成：客户端、注册函数、编解码
 ├── lua/
-│   ├── tlconfig.lua             # 仅供编辑器使用
 │   ├── src/cards.tl             # 手写 Teal / Lua
+│   ├── test/*_test.tl           # 手写：脱离 App 运行的 Lua 侧入口
 │   └── types/battle_bridge.d.tl # 生成：Teal 声明
 └── assets/lua/battle.lua        # 生成：编译产物，作为 Flutter asset
 ```
 
 `dart run build_runner build` 一条命令完成全部生成。运行时只接收编译后的 Lua
 文本；Teal 和生成器都属于开发期工具链，不需要 LuaRocks、Cyan 或系统 Lua。
+`dart run flutter_lua_bridge_codegen:run` 不启动 App，直接在 `LuaRuntime` 上
+运行 `lua/test` 里的入口，用来单独测试 Lua 侧。
 
 生成器支持三档安全级别：
 

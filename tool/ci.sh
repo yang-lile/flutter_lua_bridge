@@ -8,7 +8,8 @@
 #             on the default Lua release, example unit test (= ci_light.sh)
 #   native    C tests of the flb shim with ASan/UBSan on every bundled Lua
 #             (needs clang and python3, not Dart)
-#   versions  runtime and generator tests on the other bundled Lua releases
+#   versions  runtime, generator and example Lua tests on the other bundled
+#             Lua releases
 #   example   Flutter tests of the example app
 #
 # Teal is compiled by the bundled tl.lua, so no Lua toolchain is required.
@@ -41,7 +42,8 @@ stage_native() {
 
 stage_versions() {
   require "$dart_cmd" versions
-  DART_CMD="$dart_cmd" ./tool/test_lua_versions.sh --skip-default
+  DART_CMD="$dart_cmd" FLUTTER_CMD="$flutter_cmd" \
+    ./tool/test_lua_versions.sh --skip-default
 }
 
 stage_example() {
