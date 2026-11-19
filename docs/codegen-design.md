@@ -60,6 +60,13 @@ Dart 社区惯例）；`lua/` 整个目录是开发期内容，只有 `assets/lu
 四个目录都可以通过 `build.yaml` 的 `contracts`、`types`、`sources`、
 `output` 选项修改。
 
+`init` 可以直接在现有 Flutter 应用里运行。Lua 业务变多以后，建议把契约和
+`lua/` 移到一个独立的 Flutter package：Lua 源码、生成物和 Lua 侧测试自成
+一体，也不和应用的 `lib/` 混在一起。
+
+生成器包自己的测试夹具 `test/fixtures/lua/` 也带一份 `tlconfig.lua`，单独
+打开这个目录时编辑器同样能解析声明；从包根目录打开时用包根的那份。
+
 ## 生成内容
 
 三个 Builder，一条命令 `dart run build_runner build`：
@@ -101,7 +108,12 @@ Lua 侧通过 `require("x_bridge")` 拿到 `bindXxx(impl)`（提交实现）和
 ## 不做的事
 
 - **版本 / 指纹校验**：Dart 代码与下发的 Lua 是否匹配属于业务问题，不由工具
-  库处理，已从运行时和生成器中移除。需要时应作为独立的包实现。
+  库处理，已从运行时和生成器中移除。需要时应作为独立的包实现。业务侧可以
+  这样分工：契约发生破坏性变化时改 Dart 接口并随 App 发版；只修 Lua 逻辑时
+  下发一份完整的 Lua 快照，而不是在旧脚本上叠补丁；选择哪份脚本、回滚到
+  哪份，也由业务决定。
+- **Lua 的交付方式**：生成器只产出 `assets/lua/`。作为 Flutter 资产打包、
+  远程下载还是放进其他制品，由应用决定；`LuaRuntime` 只加载最终的 Lua 源码。
 - **独立的生成器命令行**：生成只走 `build_runner`。`init` 命令仅用于初始化
   目录和 `build.yaml`。
 
