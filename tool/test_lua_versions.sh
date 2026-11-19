@@ -66,7 +66,8 @@ run_with() {
   (cd "$package" && FLB_EXPECT_LUA_VERSION=$1 $dart_cmd --suppress-analytics test \
     test/lua_runtime_test.dart)
   (cd "$codegen" && $dart_cmd --suppress-analytics test \
-    test/runtime_test.dart test/levels_test.dart test/teal_test.dart)
+    test/runtime_test.dart test/levels_test.dart)
+  (cd "$codegen" && $dart_cmd --suppress-analytics test -P teal-worker)
   (cd "$example" && $dart_cmd --suppress-analytics run \
     flutter_lua_bridge_codegen:run)
   if command -v "${flutter_cmd%% *}" >/dev/null 2>&1; then

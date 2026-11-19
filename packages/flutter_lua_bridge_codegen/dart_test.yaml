@@ -1,0 +1,17 @@
+# Tests tagged teal-worker start `dart run flutter_lua_bridge_codegen:teal_worker`.
+# That `dart run` rewrites .dart_tool/lib/libflutter_lua_bridge.so in place,
+# and on Linux this corrupts the copy that other test files have already
+# loaded into the same test process: it crashes on exit (SIGSEGV or SIGBUS)
+# after every test passed. So `dart test` leaves them out, and
+#
+#   dart test -P teal-worker
+#
+# runs them in a process of their own.
+tags:
+  teal-worker:
+
+exclude_tags: teal-worker
+
+presets:
+  teal-worker:
+    include_tags: teal-worker

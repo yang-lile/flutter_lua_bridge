@@ -1,3 +1,5 @@
+// Run with `dart test -P teal-worker`; see dart_test.yaml.
+@Tags(['teal-worker'])
 @Timeout(Duration(minutes: 3))
 library;
 

@@ -65,7 +65,9 @@ sanitizer checks remain in the release gate.
   independent runtimes (`test/runtime_test.dart`).
 - The Teal worker compiles modules, resolves `require` among sources and
   declarations, and reports type errors, syntax errors and missing modules
-  (`test/teal_test.dart`).
+  (`test/teal_test.dart`, run on its own with `dart test -P teal-worker`:
+  the worker's `dart run` rewrites the copied native library in place, which
+  crashes a Linux test process that has already loaded it).
 - The Lua runner behind `flutter_lua_bridge_codegen:run` resolves `require`
   through `tlconfig.lua`, type checks Teal entries and modules, stubs missing
   `*_bridge` modules, and reports failed assertions, type errors and

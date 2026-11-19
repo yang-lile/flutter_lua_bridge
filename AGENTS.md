@@ -93,6 +93,7 @@ For focused work, run the smallest relevant checks as well:
 
 ```sh
 (cd packages/flutter_lua_bridge_codegen && dart test)
+(cd packages/flutter_lua_bridge_codegen && dart test -P teal-worker)   # Teal worker, own process
 (cd packages/flutter_lua_bridge && dart test)
 ./tool/generate_example.sh --check                        # run the builders, fail on drift
 python3 packages/flutter_lua_bridge/tool/test_native.py   # C tests, every bundled Lua

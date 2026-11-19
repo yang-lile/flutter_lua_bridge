@@ -23,6 +23,9 @@ $dart_cmd --suppress-analytics analyze --fatal-infos
 # Runs the builders, including the Teal compiler, and fails on drift.
 DART_CMD="$dart_cmd" ./tool/generate_example.sh --check
 (cd packages/flutter_lua_bridge_codegen && $dart_cmd --suppress-analytics test)
+# The Teal worker tests need a process of their own; see dart_test.yaml.
+(cd packages/flutter_lua_bridge_codegen && $dart_cmd --suppress-analytics test \
+  -P teal-worker)
 # The example's Lua side on its own (lua/test), without Flutter.
 (cd examples/flutter_lua_bridge_example && $dart_cmd --suppress-analytics run \
   flutter_lua_bridge_codegen:run)
