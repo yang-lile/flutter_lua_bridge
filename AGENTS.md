@@ -56,6 +56,10 @@ a separate generator CLI.
   add a second binding layer or import `lib/src/flb.g.dart` outside
   `lib/src/runtime.dart`.
 
+- `skills/flutter-lua-bridge/SKILL.md` teaches AI assistants to use the
+  library. Update it together with any change to the contract rules,
+  generated API names, commands or file layout.
+
 ## Generated safety levels
 
 - `O1` is the default: generated Lua validates supported values, checks arity,

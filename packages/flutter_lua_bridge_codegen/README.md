@@ -77,14 +77,36 @@ harmless after it.
    final damage = battle.calculateDamage(attacker, defender); // LuaCallResult<int>
    ```
 
-| Path | Written by | Content |
-| --- | --- | --- |
-| `lib/bridge/<name>.dart` | you | The contract |
-| `lib/bridge/<name>.g.dart` | builder | `XxxClient`, `registerXxx` and codecs |
-| `lua/types/<name>_bridge.d.tl` | builder | Teal declarations of `require("<name>_bridge")` |
-| `lua/src/*.tl`, `*.lua` | you | The implementation |
-| `assets/lua/*.lua` | builder | Compiled Lua; list `assets/lua/` under `flutter: assets:` |
-| `lua/test/main.tl`, `*_test.tl` | you | Entries for `run` |
+## What you write and what is generated
+
+```text
+my_app/
+├── pubspec.yaml                  you      add `assets/lua/` under flutter: assets:
+├── build.yaml                    init     then yours; adds lua/** to the build
+├── tlconfig.lua                  init     then yours; for the editor and `run`
+├── lib/
+│   ├── bridge/
+│   │   ├── battle.dart           you      the contract
+│   │   └── battle.g.dart         builder  BattleApiClient, registerHostApi, codecs
+│   └── ...                       you      app code, and the Dart class implementing HostApi
+├── lua/
+│   ├── src/battle.tl             you      the implementation (.tl or .lua)
+│   ├── test/main.tl, *_test.tl   you      Lua-side tests (init writes main.tl)
+│   └── types/battle_bridge.d.tl  builder  what require("battle_bridge") returns
+└── assets/lua/battle.lua         builder  compiled Lua, the only Lua shipped
+```
+
+- **You write** the contract, the Lua/Teal implementation of every `@LuaApi`
+  interface, a Dart class implementing every `@DartApi` interface, and the
+  Lua-side tests.
+- **The builder writes** `*.g.dart`, `lua/types/` and `assets/lua/`. Never
+  edit them: a contract change regenerates the first two, a change under
+  `lua/src` regenerates `assets/lua`. Keep `build_runner watch` running while
+  you work, and commit the generated files like any `*.g.dart`, so the app
+  builds without running the generator first.
+- **Not a file**: the `<name>_bridge` Lua module (`bindBattleApi`,
+  `getHostApi`) is embedded in `battle.g.dart` and loaded into the runtime
+  by the client; only its declarations exist under `lua/types/`.
 
 Supported types are `bool`, `int`, `double`, `String`, enums, your own data
 classes, `List<T>`, `Map<String, T>` and their nullable forms.

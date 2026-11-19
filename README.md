@@ -57,8 +57,31 @@ final battle = BattleApiClient.load(
 if (battle.damage(12, 5) case LuaSuccess(:final value)) print(value); // 7
 ```
 
-The [code generator README](packages/flutter_lua_bridge_codegen) explains
-the generated files, Dart APIs called from Lua and the safety levels.
+| You write | The builder generates (never edit) |
+| --- | --- |
+| `lib/bridge/battle.dart`: the contract | `lib/bridge/battle.g.dart`: client, host registration, codecs |
+| `lua/src/battle.tl` (or `.lua`): the implementation | `lua/types/battle_bridge.d.tl`: Teal declarations |
+| Dart classes implementing `@DartApi` interfaces | `assets/lua/battle.lua`: the compiled Lua that ships |
+| `lua/test/*_test.tl`: Lua-side tests | |
+
+`init` writes `build.yaml` and `tlconfig.lua` once; after that they are
+yours. The [code generator README](packages/flutter_lua_bridge_codegen)
+explains the layout, Dart APIs called from Lua and the safety levels.
+
+## Using it with an AI assistant
+
+[`skills/flutter-lua-bridge/SKILL.md`](skills/flutter-lua-bridge/SKILL.md)
+teaches an AI coding assistant to integrate and use this library: what to
+write, what to regenerate, and the contract rules. For Claude Code, copy the
+directory into your project:
+
+```sh
+mkdir -p .claude/skills
+curl -L https://github.com/yang-lile/flutter_lua_bridge/archive/refs/heads/main.tar.gz \
+  | tar -xz -C .claude --strip-components=1 flutter_lua_bridge-main/skills/flutter-lua-bridge
+```
+
+Other assistants can read the same file as instructions.
 
 ## Examples
 
