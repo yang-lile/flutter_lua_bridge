@@ -1,0 +1,314 @@
+// Runs Lua and Teal entries without the app (flutter_lua_bridge_codegen:run)
+// through tool/lua_run.sh: Terminal > Run Task..., or Run Test Task for the
+// default one. Teal type errors and Lua errors appear in the Problems panel.
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Lua: run current file",
+      "detail": "Runs the open .tl/.lua file as an entry",
+      "type": "shell",
+      "command": "${workspaceFolder}/tool/lua_run.sh",
+      "args": [
+        "${file}"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "clear": true
+      },
+      "problemMatcher": [
+        {
+          "owner": "flb-lua",
+          "source": "teal",
+          "severity": "error",
+          "fileLocation": [
+            "search",
+            {
+              "include": [
+                "${workspaceFolder}"
+              ]
+            }
+          ],
+          "pattern": {
+            "regexp": "^([^\\s-][^:]*\\.(?:tl|lua)):(\\d+):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "message": 4
+          }
+        },
+        {
+          "owner": "flb-lua",
+          "source": "lua",
+          "severity": "error",
+          "fileLocation": [
+            "search",
+            {
+              "include": [
+                "${workspaceFolder}"
+              ]
+            }
+          ],
+          "pattern": {
+            "regexp": "^([^\\s-][^:]*\\.(?:tl|lua)):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "message": 3
+          }
+        }
+      ]
+    },
+    {
+      "label": "Lua: run current folder",
+      "detail": "Runs main.tl|lua and *_test.tl|lua in the open file's folder",
+      "type": "shell",
+      "command": "${workspaceFolder}/tool/lua_run.sh",
+      "args": [
+        "${fileDirname}"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "clear": true
+      },
+      "problemMatcher": [
+        {
+          "owner": "flb-lua",
+          "source": "teal",
+          "severity": "error",
+          "fileLocation": [
+            "search",
+            {
+              "include": [
+                "${workspaceFolder}"
+              ]
+            }
+          ],
+          "pattern": {
+            "regexp": "^([^\\s-][^:]*\\.(?:tl|lua)):(\\d+):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "message": 4
+          }
+        },
+        {
+          "owner": "flb-lua",
+          "source": "lua",
+          "severity": "error",
+          "fileLocation": [
+            "search",
+            {
+              "include": [
+                "${workspaceFolder}"
+              ]
+            }
+          ],
+          "pattern": {
+            "regexp": "^([^\\s-][^:]*\\.(?:tl|lua)):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "message": 3
+          }
+        }
+      ]
+    },
+    {
+      "label": "Lua: run example tests",
+      "detail": "examples/flutter_lua_bridge_example/lua/test",
+      "type": "shell",
+      "command": "${workspaceFolder}/tool/lua_run.sh",
+      "args": [
+        "${workspaceFolder}/examples/flutter_lua_bridge_example/lua/test"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "clear": true
+      },
+      "problemMatcher": [
+        {
+          "owner": "flb-lua",
+          "source": "teal",
+          "severity": "error",
+          "fileLocation": [
+            "search",
+            {
+              "include": [
+                "${workspaceFolder}"
+              ]
+            }
+          ],
+          "pattern": {
+            "regexp": "^([^\\s-][^:]*\\.(?:tl|lua)):(\\d+):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "message": 4
+          }
+        },
+        {
+          "owner": "flb-lua",
+          "source": "lua",
+          "severity": "error",
+          "fileLocation": [
+            "search",
+            {
+              "include": [
+                "${workspaceFolder}"
+              ]
+            }
+          ],
+          "pattern": {
+            "regexp": "^([^\\s-][^:]*\\.(?:tl|lua)):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "message": 3
+          }
+        }
+      ]
+    },
+    {
+      "label": "Lua: watch example tests",
+      "detail": "Reruns on every .tl/.lua change; stop with Terminate Task",
+      "type": "shell",
+      "command": "${workspaceFolder}/tool/lua_run.sh",
+      "args": [
+        "--watch",
+        "${workspaceFolder}/examples/flutter_lua_bridge_example/lua/test"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always"
+      },
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "owner": "flb-lua",
+          "source": "teal",
+          "severity": "error",
+          "fileLocation": [
+            "search",
+            {
+              "include": [
+                "${workspaceFolder}"
+              ]
+            }
+          ],
+          "pattern": {
+            "regexp": "^([^\\s-][^:]*\\.(?:tl|lua)):(\\d+):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "message": 4
+          },
+          "background": {
+            "activeBegin": false,
+            "beginsPattern": "^(Lua 5\\.|=== )",
+            "endsPattern": "^(All \\d+ passed\\.|\\d+ of \\d+ failed\\.)"
+          }
+        },
+        {
+          "owner": "flb-lua",
+          "source": "lua",
+          "severity": "error",
+          "fileLocation": [
+            "search",
+            {
+              "include": [
+                "${workspaceFolder}"
+              ]
+            }
+          ],
+          "pattern": {
+            "regexp": "^([^\\s-][^:]*\\.(?:tl|lua)):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "message": 3
+          },
+          "background": {
+            "activeBegin": false,
+            "beginsPattern": "^(Lua 5\\.|=== )",
+            "endsPattern": "^(All \\d+ passed\\.|\\d+ of \\d+ failed\\.)"
+          }
+        }
+      ]
+    },
+    {
+      "label": "example: generate",
+      "detail": "build_runner: Dart parts, Teal declarations and assets/lua",
+      "type": "shell",
+      "command": "DART_CMD=\"$(command -v fvm >/dev/null 2>&1 && echo 'fvm dart' || echo dart)\" ./tool/generate_example.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "canvas: sync Lua assets",
+      "detail": "assets/lua/manifest.txt -> pubspec.yaml assets",
+      "type": "shell",
+      "command": "bash tools/check_manifest.sh && bash tools/gen_assets.sh",
+      "options": {
+        "cwd": "${workspaceFolder}/examples/lua_canvas_host"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "canvas: build and open (tools/dev.sh)",
+      "detail": "xcodebuild + open, without the debugger; for when flutter run cannot attach",
+      "type": "shell",
+      "command": "FLUTTER=\"$([ -x \"$HOME/fvm/default/bin/flutter\" ] && echo \"$HOME/fvm/default/bin/flutter\" || command -v flutter)\" bash tools/dev.sh",
+      "options": {
+        "cwd": "${workspaceFolder}/examples/lua_canvas_host"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "example: end-to-end test (macOS)",
+      "detail": "integration_test: drives the real app, fails on any exception",
+      "type": "shell",
+      "command": "eval \"$(command -v fvm >/dev/null 2>&1 && echo 'fvm flutter' || echo flutter)\" test integration_test -d macos",
+      "options": {
+        "cwd": "${workspaceFolder}/examples/flutter_lua_bridge_example"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "canvas: end-to-end test (macOS)",
+      "detail": "flutter drive: drives the real app, fails on any exception",
+      "type": "shell",
+      "command": "eval \"$(command -v fvm >/dev/null 2>&1 && echo 'fvm flutter' || echo flutter)\" drive -t lib/driver_main.dart --driver test_driver/studio_test.dart -d macos",
+      "options": {
+        "cwd": "${workspaceFolder}/examples/lua_canvas_host"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

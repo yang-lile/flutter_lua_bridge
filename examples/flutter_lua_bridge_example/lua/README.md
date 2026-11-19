@@ -27,6 +27,13 @@ dart run flutter_lua_bridge_codegen:run lua/test/main.tl -- mage_001  # with arg
 dart run flutter_lua_bridge_codegen:run --watch                 # again on every change
 ```
 
+In VS Code, with the repository root opened, the tasks in
+`.vscode/tasks.json` (Terminal > Run Task) run the open file, its folder, all
+example entries (the default test task) or watch them; Teal type errors and
+Lua errors appear in the Problems panel. F5 with "Lua: run current file" runs
+the open file in the Dart debugger. The tasks call
+[`tool/lua_run.sh`](../../../tool/lua_run.sh), which also works from a shell.
+
 Each entry (`main.tl|lua`, `*_test.tl|lua`) runs in a fresh Lua state and
 passes when it returns without an error; use `assert`. Teal is type checked as
 in the build. Outside the app the generated `<contract>_bridge` glue is not

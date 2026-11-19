@@ -105,6 +105,25 @@ path: the client implements the contract interface, returns `T` and throws
 `build.yaml`; `@LuaApi(module: 'battle', optimization: LuaOptimization.o3)`
 overrides it for one interface.
 
+## Running in VS Code
+
+Open the repository root. `.vscode/launch.json` (Run and Debug, F5) has:
+
+| Configuration | What it starts |
+| --- | --- |
+| Example app | `examples/flutter_lua_bridge_example` on the device picked in the status bar, after regenerating its Lua with `tool/generate_example.sh` |
+| Example app (profile, for the benchmark) | The same in profile mode, for meaningful numbers on the safety level page |
+| Lua Canvas Studio (macOS) | `examples/lua_canvas_host`, after syncing its asset list from `assets/lua/manifest.txt` |
+| Lua Canvas Studio (macOS, flutter_driver) | The same with `lib/driver_main.dart` |
+| Lua: run current file | The open `.tl`/`.lua` entry without an app |
+
+`.vscode/settings.json` points the Dart extension at fvm's global Flutter
+(`~/fvm/default`); change it if your SDK lives elsewhere. If the debugger
+cannot attach to Lua Canvas Studio, the task "canvas: build and open
+(tools/dev.sh)" builds it with Xcode and opens it. The other tasks
+(Terminal > Run Task) run the Lua entries; see
+[`examples/flutter_lua_bridge_example/lua/README.md`](examples/flutter_lua_bridge_example/lua/README.md).
+
 ## Development checks
 
 ```sh

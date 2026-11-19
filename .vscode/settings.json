@@ -1,0 +1,5 @@
+{
+  // Flutter from fvm's global version (fvm global <version>); the repository
+  // has no .fvmrc. Change it if your Flutter SDK lives elsewhere.
+  "dart.flutterSdkPath": "~/fvm/default"
+}

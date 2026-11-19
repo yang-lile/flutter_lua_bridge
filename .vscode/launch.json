@@ -1,0 +1,59 @@
+// Run and Debug (F5). The two apps under examples/:
+// - Example app: the bridge demos and the card game. Pick the device in the
+//   status bar. Its Lua is regenerated first (tool/generate_example.sh), so
+//   edits to lua/src/*.tl are picked up. Use the profile configuration for
+//   meaningful benchmark numbers on the safety level page.
+// - Lua Canvas Studio: macOS only. Its pubspec asset list is synced from
+//   assets/lua/manifest.txt first. If the debug connection fails, use the
+//   task "canvas: build and open (tools/dev.sh)" instead.
+// "Lua: run current file" runs the open .tl/.lua entry without an app.
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Example app",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples/flutter_lua_bridge_example",
+      "program": "lib/main.dart",
+      "preLaunchTask": "example: generate"
+    },
+    {
+      "name": "Example app (profile, for the benchmark)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples/flutter_lua_bridge_example",
+      "program": "lib/main.dart",
+      "flutterMode": "profile",
+      "preLaunchTask": "example: generate"
+    },
+    {
+      "name": "Lua Canvas Studio (macOS)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples/lua_canvas_host",
+      "program": "lib/main.dart",
+      "deviceId": "macos",
+      "preLaunchTask": "canvas: sync Lua assets"
+    },
+    {
+      "name": "Lua Canvas Studio (macOS, flutter_driver)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples/lua_canvas_host",
+      "program": "lib/driver_main.dart",
+      "deviceId": "macos",
+      "preLaunchTask": "canvas: sync Lua assets"
+    },
+    {
+      "name": "Lua: run current file",
+      "type": "dart",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/flutter_lua_bridge_codegen/bin/run.dart",
+      "cwd": "${workspaceFolder}/examples/flutter_lua_bridge_example",
+      "args": [
+        "${file}"
+      ]
+    }
+  ]
+}
