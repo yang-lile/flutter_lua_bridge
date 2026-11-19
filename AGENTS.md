@@ -104,7 +104,7 @@ python3 packages/flutter_lua_bridge/tool/test_native.py   # C tests, every bundl
 ./tool/test_lua_versions.sh                               # runtime and generator tests, every bundled Lua
 ```
 
-Any change to `native/` or `hook/` must pass both multi-version commands, and
+Any change to `native/`, `hook/` or `lib/src/hook/` must pass both multi-version commands, and
 so must a change to the Teal builder or to `tl.lua`.
 
 If native asset hooks fail locally because of stale `.dart_tool` state, repeat

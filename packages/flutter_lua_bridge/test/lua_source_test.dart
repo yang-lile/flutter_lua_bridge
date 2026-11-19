@@ -5,7 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 
-import '../hook/lua_source.dart';
+import 'package:flutter_lua_bridge/src/hook/lua_source.dart';
 
 void main() {
   test('uses the bundled Lua source tree by default', () async {

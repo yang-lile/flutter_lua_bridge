@@ -2,7 +2,7 @@ import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:native_toolchain_c/native_toolchain_c.dart';
 
-import 'lua_source.dart';
+import 'package:flutter_lua_bridge/src/hook/lua_source.dart';
 
 Future<void> main(List<String> args) async {
   await build(args, (input, output) async {
