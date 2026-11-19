@@ -38,5 +38,10 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+    # The FlutterMacOS pod declares macOS 10.15, below what current Xcode
+    # accepts (12.0+); build every pod for the app's own minimum.
+    target.build_configurations.each do |config|
+      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '13.0'
+    end
   end
 end

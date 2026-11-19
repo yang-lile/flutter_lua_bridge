@@ -28,6 +28,16 @@ header.
 `test/scenarios` covers four typed bridge strategies: handwritten Lua, Teal
 compiled to Lua, dynamic Lua and Lua calling registered Dart functions.
 
+`integration_test/app_test.dart` drives the real app: the basic bridge and
+the language switch, every battle scene with every formula backend, the
+animated arena (pause, reset, leaving mid-battle), the card editor (invalid
+and valid input) and the safety level page with its benchmark. Any uncaught
+exception or Flutter error fails it:
+
+```sh
+flutter test integration_test -d macos
+```
+
 ## Card battle game
 
 The game is the example of a larger contract, `lib/bridge/battle.dart`:
