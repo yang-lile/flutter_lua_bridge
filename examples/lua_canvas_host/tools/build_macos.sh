@@ -33,7 +33,9 @@ else
 fi
 
 echo "==> 生成 Flutter macOS 配置 [$MODE]"
-"$FLUTTER" build macos --"$MODE" --config-only --no-pub
+# rfw 按名字动态构造 IconData（argument_decoders.dart），release 下的图标
+# tree shaking 会因此直接失败，所以关掉。
+"$FLUTTER" build macos --"$MODE" --config-only --no-pub --no-tree-shake-icons
 
 echo "==> 构建 Xcode project [$CONFIGURATION]"
 XCODE_FLUTTER_ROOT="${FLUTTER_ROOT:-}"

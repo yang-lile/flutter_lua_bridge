@@ -242,9 +242,19 @@ LocalWidgetLibrary createStudioWidgets() {
 
       return Text(
         value == null ? '' : '$value',
-        style: source.v<TextStyle>(['style']),
-        textDirection: source.v<TextDirection>(['textDirection']),
-        textAlign: source.v<TextAlign>(['textAlign']),
+        // v<T> 只认 int/double/bool/String（debug 下对其他类型直接断言失败），
+        // 复合值要用 rfw 自己的解码器，和内置 Text 的写法一致。
+        style: ArgumentDecoders.textStyle(source, ['style']),
+        textDirection: ArgumentDecoders.enumValue<TextDirection>(
+          TextDirection.values,
+          source,
+          ['textDirection'],
+        ),
+        textAlign: ArgumentDecoders.enumValue<TextAlign>(
+          TextAlign.values,
+          source,
+          ['textAlign'],
+        ),
         maxLines: source.v<int>(['maxLines']),
         softWrap: source.v<bool>(['softWrap']),
       );

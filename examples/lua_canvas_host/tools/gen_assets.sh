@@ -65,7 +65,8 @@ try:
 except StopIteration:
     i = j = None
 
-new = block + '\n'
+# block 已以换行结尾，直接替换边界之间的行，重复运行结果不变
+new = block
 if i is not None and j is not None:
     out = lines[:i] + [new] + lines[j + 1:]
     action = '已替换'

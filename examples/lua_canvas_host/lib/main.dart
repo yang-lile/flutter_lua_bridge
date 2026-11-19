@@ -384,15 +384,24 @@ return json.encode(app:build())
     '本地状态（不回 Lua）': '''
 -- 这个示例演示两种交互的差别。
 --
---   展开 / +1  -> set_state，**rfw 客户端自己改**，不回 Lua。
+--   展开 / 标记 / 收起 -> set_state，**rfw 客户端自己改**，不回 Lua。
 --                  所以点完下面的日志面板**不会**多出任何一行。
 --   提交        -> 业务事件，回 Lua 跑 handler，然后重出整棵树。
 --                  日志面板会多一行「事件 submit(...)」。
 --
 -- 组件是本地状态的载体：状态挂在声明上，每个实例各有一份。
+--
+-- 本地状态有两条限制，写错了不报错，只是点了没反应：
+--   1. 显示的内容必须是状态引用 b:sref(...)。if s.open then ... 这样的
+--      判断只在 build 时跑一次（当时是 false），之后展开也不会出现。
+--   2. set_state 写入的是 build 时算好的常量，rfw 不会回 Lua 求值，
+--      所以只能"设为某个值"，做不了 s.hits + 1 这样的累加。
+
+local NOTE = "这段内容由 rfw 的本地状态控制显示，" ..
+             "点击没有产生任何事件，也没有回到 Lua。"
 
 ui.component("Item", {
-  state = { open = false, hits = 0 },
+  state = { note = "", hits = 0 },
 
   view = function(b, s)
     b:card({ color = "#14171F" }, function(b)
@@ -407,19 +416,15 @@ ui.component("Item", {
 
         -- 本地状态：点一下界面立刻变，不经过 Lua
         b:row({ gap = 8 }, function(b)
-          b:button("展开", { on_tap = b:set_state("open", not s.open) })
-          b:button("+1", { on_tap = b:set_state("hits", s.hits + 1) })
+          b:button("展开", { on_tap = b:set_state("note", NOTE) })
+          b:button("标记", { on_tap = b:set_state("hits", 1) })
           b:button("收起", {
-            on_tap = b:set_state("open", false),
-            variant = s.open and "elevated" or "text",
+            on_tap = b:set_state("note", ""),
+            variant = "text",
           })
         end)
 
-        if s.open then
-          b:text("这段内容由 rfw 的本地状态控制显示，" ..
-                 "点击没有产生任何事件，也没有回到 Lua。",
-            { style = "caption" })
-        end
+        b:value(b:sref("note"), { style = "caption" })
       end)
     end)
   end,
@@ -747,7 +752,9 @@ return json.encode(app:build())
           const Spacer(),
           _statusChip(),
           const SizedBox(width: 10),
-          if (_result != null) _zoomControl(),
+          // 窗口窄时缩放控件让出宽度（滑条变短），而不是让工具栏溢出。
+          // flex 远大于前面 Spacer 的 1，剩余空间先给它，Spacer 只拿零头。
+          if (_result != null) Flexible(flex: 100, child: _zoomControl()),
           const SizedBox(width: 6),
           // 画布边界开关
           Tooltip(
@@ -861,9 +868,10 @@ return json.encode(app:build())
           icon: const Icon(Icons.remove, size: 16),
           tooltip: '缩小',
         ),
-        SizedBox(
-          width: 130,
-          child: SliderTheme(
+        Flexible(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 130),
+            child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 3,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
@@ -879,6 +887,7 @@ return json.encode(app:build())
                 setState(() => _zoom = _zoomSteps[i]);
               },
             ),
+          ),
           ),
         ),
         IconButton(
@@ -1378,15 +1387,25 @@ return json.encode(app:build())
         // 放大后画布超出视口：可拖动查看各部分。
         // alignment: topLeft 让左上角始终对齐（画布的直觉原点），
         // 而不是 InteractiveViewer 默认的居中——否则画布会"飘"。
-        return InteractiveViewer(
-          minScale: 1.0,
-          maxScale: 1.0,
-          panEnabled: true,
-          scaleEnabled: false,
-          alignment: Alignment.topLeft,
-          boundaryMargin: const EdgeInsets.all(120),
-          constrained: false,
-          child: canvas,
+        //
+        // 预览区在纵向滚动容器里，高度约束是无限的；InteractiveViewer
+        // 必须有确定的高度，否则布局断言失败。高度无界时用画布自身的
+        // 高度（纵向交给外层滚动），有界时取两者较小值。
+        final viewportH = availH.isFinite && availH < canvasH
+            ? availH
+            : canvasH.toDouble();
+        return SizedBox(
+          height: viewportH,
+          child: InteractiveViewer(
+            minScale: 1.0,
+            maxScale: 1.0,
+            panEnabled: true,
+            scaleEnabled: false,
+            alignment: Alignment.topLeft,
+            boundaryMargin: const EdgeInsets.all(120),
+            constrained: false,
+            child: canvas,
+          ),
         );
       },
     );
