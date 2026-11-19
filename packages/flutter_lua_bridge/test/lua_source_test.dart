@@ -208,5 +208,5 @@ List<int> _zipSourceTree() {
   for (final name in luaLibrarySources) {
     archive.addFile(ArchiveFile('$root/src/$name', 0, <int>[]));
   }
-  return ZipEncoder().encode(archive)!;
+  return ZipEncoder().encode(archive);
 }

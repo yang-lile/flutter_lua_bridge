@@ -1,3 +1,9 @@
+## 0.1.1
+
+- Allow the current major versions of the build hook dependencies:
+  `hooks` and `code_assets` 1.x or 2.x, `native_toolchain_c` up to 0.19.
+- Require `archive` 4.
+
 ## 0.1.0
 
 - Split the annotations into `flutter_lua_bridge_codegen_annotation` and the
