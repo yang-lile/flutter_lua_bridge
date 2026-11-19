@@ -1,0 +1,7 @@
+# Replaces .gitignore for `dart pub publish`, so its entries are repeated.
+.dart_tool/
+pubspec.lock
+
+# The Lua reference manuals of the bundled releases: the build hook compiles
+# only src/. The license notice stays in src/lua.h.
+third_party/lua-*/doc/
