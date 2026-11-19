@@ -62,7 +62,19 @@ cannot attach to Lua Canvas Studio, the task "canvas: build and open
 
 ## Publishing
 
-The three packages are published in dependency order:
-`flutter_lua_bridge_codegen_annotation`, then `flutter_lua_bridge`, then
-`flutter_lua_bridge_codegen`. Run `dart pub publish --dry-run` in each
-package first.
+[Melos](https://melos.invertase.dev) (a dev dependency of the workspace,
+configured under `melos:` in the root `pubspec.yaml`) publishes the three
+packages in dependency order: `flutter_lua_bridge_codegen_annotation`,
+`flutter_lua_bridge`, then `flutter_lua_bridge_codegen`. The examples are
+`publish_to: none` and skipped.
+
+```sh
+dart run melos run publish:check            # dry run of every package
+dart run melos publish --no-dry-run -t      # publish what pub.dev lacks, tag each release
+```
+
+`-t` creates one git tag per package (`<package>-v<version>`); push them
+with `git push origin --tags`. Before publishing, raise `version:` in the
+packages, their `^` constraints on each other, and the CHANGELOGs. The
+other scripts (`dart run melos run ci:light`, `ci`, `generate`) wrap the
+`tool/` scripts.

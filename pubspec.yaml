@@ -11,3 +11,28 @@ workspace:
   - packages/flutter_lua_bridge_codegen
   - examples/flutter_lua_bridge_example
   - examples/lua_canvas_host
+dev_dependencies:
+  # 8.x needs cli_util 0.5, which ffigen 20 (flutter_lua_bridge) does not allow.
+  melos: ^7.8.1
+
+# Melos reads the packages from `workspace:` above. Only the three packages
+# under packages/ are published; the examples have `publish_to: none`.
+#
+#   dart run melos publish                      # dry run of every package
+#   dart run melos publish --no-dry-run -t      # publish in dependency order, tag
+melos:
+  repository: https://github.com/yang-lile/flutter_lua_bridge
+
+  scripts:
+    ci:light:
+      description: The pull request gate (analyzer, builders, generator and example tests).
+      run: ./tool/ci_light.sh
+    ci:
+      description: The release gate (light, native, every Lua release, Flutter tests).
+      run: ./tool/ci.sh
+    generate:
+      description: Regenerate the example and the generator fixtures.
+      run: ./tool/generate_example.sh
+    publish:check:
+      description: Validate the publishable packages without publishing.
+      run: dart run melos publish --dry-run --yes
