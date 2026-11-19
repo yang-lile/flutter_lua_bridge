@@ -24,6 +24,8 @@ dev_dependencies:
   # 不是正式入口的依赖，所以放 dev_dependencies。
   flutter_driver:
     sdk: flutter
+  # test_driver/ 下驱动端脚本用（flutter drive）。
+  test: ^1.25.8
   # 只为 --dart-define=LUA_STUDIO_DRIVER=true 时的交互测试 / MCP 驱动服务，
   # 见 lib/main.dart 的 kDriverEnabled。
 

@@ -117,12 +117,27 @@ flutter run -t lib/driver_main.dart
      (first process whose unix id is <pid>) to true'
    ```
 
-2. **换入口点后要 hot restart 才生效**。`flutter run -t lib/driver_main.dart`
-   启动的仍是旧 kernel（日志照常打印 `lib/driver_main.dart`，但 driver 扩展没注册）。
-   一次 `hot_restart` 就对了。
+2. **换入口点曾经不生效**（启动的仍是 `lib/main.dart` 的 kernel，driver 扩展没注册）。
+   根因是 `Runner.xcodeproj` 缺了 `Debug.xcconfig` / `Release.xcconfig` 的文件引用，
+   Xcode 读不到 Flutter 生成的配置，`FLUTTER_TARGET` 永远是默认值。已补上，
+   `-t` 现在直接生效，不再需要 hot restart。
 
 3. **不要在应用启动期间发 driver 命令**。第一条超时的命令会把扩展卡住，
    之后所有命令都超时——看起来像"工具坏了"，其实是上一条还在等。
+
+**自动化的端到端测试**：`test_driver/studio_test.dart` 把两个模式的全部示例、
+按钮、开关、滑条、缩放、模式切换和编辑器输入（语法错误、死循环、连续编辑）
+都点一遍。`driver_main.dart` 会记录所有 FlutterError（含布局溢出）和未捕获的
+异步错误，每一步之后都检查，出现任何一个就失败：
+
+```bash
+flutter drive -t lib/driver_main.dart --driver test_driver/studio_test.dart -d macos
+```
+
+编辑器获得焦点后光标一直闪，帧永远不"空闲"，所以这部分用
+`runUnsynchronized` 驱动、按结果等待。release 构建要加
+`--no-tree-shake-icons`：rfw 按名字动态构造 `IconData`，图标 tree shaking
+会直接失败（`tools/build_macos.sh` 已经带上）。
 
 > **改 Lua 必须重新构建。** Lua 代码通过 Flutter assets 打包进应用，
 > 不是运行时从磁盘读，所以 `dev.sh --no-build` 拿不到新的 Lua。
