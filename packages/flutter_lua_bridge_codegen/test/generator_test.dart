@@ -203,6 +203,23 @@ abstract class GameApi {
     );
   });
 
+  final implied = parse(
+    'Score get_(Grade grade);',
+    data: '''
+enum Grade { low, high; static const best = high; }
+class Score {
+  const Score(this.value);
+  final int value;
+  int get doubled => value * 2;
+}
+''',
+  );
+  test('getters and static members are not taken for fields', () async {
+    final schema = (await implied.schema())!;
+    expect(schema.data.single.fields.map((f) => f.name), ['value']);
+    expect(schema.enums.single.values.keys, ['low', 'high']);
+  });
+
   final named = parse('int add(int value, {required int bonus});');
   test('supports required named parameters', () async {
     final schema = (await named.schema())!;
@@ -325,6 +342,8 @@ abstract interface class Base { int get size; int add(int value); }
     'Object member field':
         'class Data { final int toString; Data(this.toString); }',
     'enhanced enum': 'enum Data { a; int get code => 1; }',
+    'enum with a setter': 'enum Data { a; set code(int value) {} }',
+    'enum with a field': 'enum Data { a; final int code = 1; }',
   }.map((name, data) => MapEntry(name, parse('Data get_();', data: data)));
   test('rejects unsupported data classes', () {
     for (final entry in dataCases.entries) {

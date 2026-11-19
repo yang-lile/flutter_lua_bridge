@@ -318,13 +318,21 @@ class _Reader {
     return BridgeType(typeName, nullable: nullable);
   }
 
+  /// Whether [element] is written in the source rather than implied by it, as
+  /// the getter of a field or the field behind a getter. `isSynthetic` is
+  /// deprecated by analyzer 10 and removed by 14, and its replacements do not
+  /// exist before 10, so this reads the name offset that synthetic fragments
+  /// lack.
+  static bool _declared(Element element) =>
+      element.firstFragment.nameOffset != null;
+
   BridgeEnum _enum(EnumElement element) {
     if (element.methods.isNotEmpty ||
-        element.getters.any((getter) => !getter.isSynthetic) ||
-        element.setters.any((setter) => !setter.isSynthetic) ||
+        element.getters.any(_declared) ||
+        element.setters.any(_declared) ||
         element.fields.any(
           (field) =>
-              !field.isEnumConstant && !field.isSynthetic && !field.isStatic,
+              !field.isEnumConstant && _declared(field) && !field.isStatic,
         ) ||
         element.interfaces.isNotEmpty ||
         element.mixins.isNotEmpty) {
@@ -358,7 +366,7 @@ class _Reader {
     }
     final instanceFields = {
       for (final field in element.fields)
-        if (!field.isStatic && !field.isSynthetic) field.name!: field,
+        if (!field.isStatic && _declared(field)) field.name!: field,
     };
     final fields = <BridgeField>[];
     for (final parameter in constructor.formalParameters) {

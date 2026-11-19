@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Support `analyzer` 8.4 to 14 and `build` 4 or 5. The reader no longer uses
+  the `isSynthetic` getters that analyzer 10 deprecates and 14 removes.
+
 ## 0.1.0
 
 - Initial release.
