@@ -1,6 +1,6 @@
 name: flutter_lua_bridge_codegen_annotation
 description: Annotations shared by flutter_lua_bridge applications and its code generator.
-version: 0.0.2
+version: 0.1.0
 homepage: https://github.com/yang-lile/flutter_lua_bridge
 repository: https://github.com/yang-lile/flutter_lua_bridge
 publish_to: https://pub.dev

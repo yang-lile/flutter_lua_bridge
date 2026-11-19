@@ -6,10 +6,10 @@ the code on both sides of the bridge and compile the Teal implementation.
 
 ```yaml
 dependencies:
-  flutter_lua_bridge: ^0.0.2
+  flutter_lua_bridge: ^0.1.0
 dev_dependencies:
   build_runner: ^2.10.0
-  flutter_lua_bridge_codegen: ^0.0.2
+  flutter_lua_bridge_codegen: ^0.1.0
 ```
 
 ```sh

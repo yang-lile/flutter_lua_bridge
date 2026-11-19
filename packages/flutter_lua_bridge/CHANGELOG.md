@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.0
 
 - Split the annotations into `flutter_lua_bridge_codegen_annotation` and the
   Dart/Lua/Teal generator into `flutter_lua_bridge_codegen`.
@@ -27,6 +27,6 @@
 - Add generated Lua safety levels O1/O2/O3, result envelopes for O1/O2, Lua
   runtime type validators and `pcall` error capture.
 
-## 0.0.2
+## 0.0.1
 
-- Existing raw Lua bindings and Flutter examples.
+- Initial release: raw Lua bindings and Flutter examples.
