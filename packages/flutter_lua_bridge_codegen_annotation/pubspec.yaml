@@ -3,7 +3,6 @@ description: Annotations shared by flutter_lua_bridge applications and its code 
 version: 0.1.0
 homepage: https://github.com/yang-lile/flutter_lua_bridge
 repository: https://github.com/yang-lile/flutter_lua_bridge
-publish_to: https://pub.dev
 
 resolution: workspace
 
