@@ -121,9 +121,11 @@ Future<void> main() async {
       // 声明可以不止一个（有组件时每个组件一个 + root 一个），
       // 所以这里只要求"至少有一个、而且 root 在里面"。
       final names = back.widgets.map((w) => w.name).toList();
-      check('$name 可编成 rfw blob',
-          bytes.isNotEmpty && names.contains('root'),
-          '${bytes.length} 字节，声明: ${names.join(",")}');
+      check(
+        '$name 可编成 rfw blob',
+        bytes.isNotEmpty && names.contains('root'),
+        '${bytes.length} 字节，声明: ${names.join(",")}',
+      );
     } catch (e) {
       check('$name 可编成 rfw blob', false, '$e');
     }
@@ -165,16 +167,25 @@ Future<void> main() async {
       continue;
     }
 
-    check('$name 的 $firstEvent 有产出',
-        after.actualNodeCount > 0, '${after.actualNodeCount} 个节点');
-    check('$name 分发往返在 200ms 内', sw.elapsedMilliseconds < 200,
-        '${sw.elapsedMilliseconds}ms');
+    check(
+      '$name 的 $firstEvent 有产出',
+      after.actualNodeCount > 0,
+      '${after.actualNodeCount} 个节点',
+    );
+    check(
+      '$name 分发往返在 200ms 内',
+      sw.elapsedMilliseconds < 200,
+      '${sw.elapsedMilliseconds}ms',
+    );
 
     // 关键断言：分发必须能改状态或改树，否则就是"点了没反应"。
     // 注意不能要求**一定**改变——有些 handler 可能只是 print。
     // 所以这里检查的是"执行之后有可观测的变化"或"至少没报错"。
-    check('$name 分发后契约仍然自洽', after.validate().isEmpty,
-        after.validate().join(' | '));
+    check(
+      '$name 分发后契约仍然自洽',
+      after.validate().isEmpty,
+      after.validate().join(' | '),
+    );
   }
 
   stderr.writeln('\n=== 4. 状态累积（跨多次事件）===');
@@ -195,8 +206,11 @@ Future<void> main() async {
       tree = UiTree.parse(r.uiTreeJson!);
     }
     // 若不注入状态，每次都会从 0 重新加 2，三次后仍然是 2。
-    check('三次事件后 count = 6', tree.state['count'] == 6,
-        '实际 ${tree.state['count']}');
+    check(
+      '三次事件后 count = 6',
+      tree.state['count'] == 6,
+      '实际 ${tree.state['count']}',
+    );
   }
 
   worker.dispose();

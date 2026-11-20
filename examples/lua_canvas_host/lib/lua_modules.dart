@@ -176,7 +176,9 @@ List<String> precompileLuaModules(String root, List<String> modules) {
     // host/cli、ui/init）会静默失败——而且失败得很像"编译没生效"。
     for (final name in modules) {
       final rel = name.replaceAll('.', '/');
-      final dir = rel.contains('/') ? '$bcRoot/${rel.substring(0, rel.lastIndexOf('/'))}' : bcRoot;
+      final dir = rel.contains('/')
+          ? '$bcRoot/${rel.substring(0, rel.lastIndexOf('/'))}'
+          : bcRoot;
       Directory(dir).createSync(recursive: true);
     }
   } catch (_) {

@@ -92,7 +92,7 @@ bool findFirstDifference(Object? a, Object? b, String path, List<String> out) {
         return true;
       }
     }
-    return false;   // 键集合与逐项都比较过了却还没找到差异 —— 理论上到不了这
+    return false; // 键集合与逐项都比较过了却还没找到差异 —— 理论上到不了这
   }
 
   if (a is List && b is List) {

@@ -48,7 +48,7 @@ void main() {
       driver.waitFor(find.text(text), timeout: _timeout);
 
   Future<void> loadSnippet(String name) async {
-    await tap(find.byTooltip('载入示例'), 'open the examples menu');
+    await tap(_tooltip('载入示例'), 'open the examples menu');
     await tap(
       find.descendant(
         of: find.byType('PopupMenuItem<String>'),
@@ -146,11 +146,11 @@ void main() {
     });
 
     test('zoom and frame', () async {
-      await tap(find.byTooltip('放大'), 'zoom in');
-      await tap(find.byTooltip('放大'), 'zoom in');
-      await tap(find.byTooltip('缩小'), 'zoom out');
-      await tap(find.byTooltip('隐藏画布边界'), 'hide frame');
-      await tap(find.byTooltip('显示画布边界'), 'show frame');
+      await tap(_tooltip('放大'), 'zoom in');
+      await tap(_tooltip('放大'), 'zoom in');
+      await tap(_tooltip('缩小'), 'zoom out');
+      await tap(_tooltip('隐藏画布边界'), 'hide frame');
+      await tap(_tooltip('显示画布边界'), 'show frame');
     });
 
     test('a failing example, then back and forth between modes', () async {
@@ -199,4 +199,21 @@ Future<void> _typing(FlutterDriver driver, SerializableFinder luaError) async {
   await driver.tap(find.text('运行'), timeout: _timeout);
   await driver.waitForAbsent(find.text('执行中'), timeout: _timeout);
   await driver.waitForAbsent(luaError, timeout: _timeout);
+}
+
+/// A package:material_ui Tooltip with [message]: flutter_driver's own
+/// `find.byTooltip` only matches the Tooltip of package:flutter/material. The
+/// app side is registered in lib/driver_main.dart.
+SerializableFinder _tooltip(String message) => _Tooltip(message);
+
+class _Tooltip extends SerializableFinder {
+  const _Tooltip(this.message);
+
+  final String message;
+
+  @override
+  String get finderType => 'MaterialUiTooltip';
+
+  @override
+  Map<String, String> serialize() => super.serialize()..['message'] = message;
 }

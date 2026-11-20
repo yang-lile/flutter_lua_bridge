@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_lua_bridge_example/bridge/scenarios.dart';
+
 import 'scenario_test_helpers.dart';
 
 void main() {

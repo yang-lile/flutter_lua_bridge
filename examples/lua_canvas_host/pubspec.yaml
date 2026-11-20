@@ -6,8 +6,8 @@ version: 1.0.0
 resolution: workspace
 
 environment:
-  sdk: ^3.10.0
-  flutter: ">=3.10.0"
+  sdk: ^3.14.0
+  flutter: ">=3.50.0"
 
 dependencies:
   flutter:
@@ -15,7 +15,8 @@ dependencies:
   # Lua 运行时：源码内置 + Dart hooks 自动构建原生库
   flutter_lua_bridge:
     path: ../../packages/flutter_lua_bridge
-  rfw: ^1.1.4
+  material_ui: ^1.11.1
+  rfw: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -25,7 +26,7 @@ dev_dependencies:
   flutter_driver:
     sdk: flutter
   # test_driver/ 下驱动端脚本用（flutter drive）。
-  test: ^1.25.8
+  test: ^1.32.0
   # 只为 --dart-define=LUA_STUDIO_DRIVER=true 时的交互测试 / MCP 驱动服务，
   # 见 lib/main.dart 的 kDriverEnabled。
 

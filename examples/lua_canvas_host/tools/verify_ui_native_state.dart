@@ -119,19 +119,21 @@ void main() {
   final tree = UiTree.parse(r.uiTreeJson!);
 
   stderr.writeln('契约层面：');
-  check('组件声明进了信封', tree.declarations.length == 1,
-      tree.declarations.map((d) => d.name).join(','));
-  check('组件带初始状态',
-      tree.declarations.first.state?['open'] == false);
-  check('契约里有本地状态写入',
-      tree.declarations.first.root.stateWrites.length == 2);
+  check(
+    '组件声明进了信封',
+    tree.declarations.length == 1,
+    tree.declarations.map((d) => d.name).join(','),
+  );
+  check('组件带初始状态', tree.declarations.first.state?['open'] == false);
+  check('契约里有本地状态写入', tree.declarations.first.root.stateWrites.length == 2);
   // 这条是原生状态能不能生效的**前提**：树里必须有状态引用，
   // rfw 状态变化时只会重新解析引用，没法凭空加节点。
-  check('契约里有状态引用（否则 rfw 改不动）',
-      tree.stateReads.isNotEmpty,
-      tree.stateReads.join(','));
-  check('契约里有业务事件',
-      tree.declarations.first.root.events.length == 1);
+  check(
+    '契约里有状态引用（否则 rfw 改不动）',
+    tree.stateReads.isNotEmpty,
+    tree.stateReads.join(','),
+  );
+  check('契约里有业务事件', tree.declarations.first.root.events.length == 1);
   check('组件被引用了两次', () {
     var refs = 0;
     for (final n in tree.root.walk()) {
@@ -142,25 +144,39 @@ void main() {
 
   stderr.writeln('\nrfw 层面（这才是关键）：');
   final lib = buildUiLibrary(tree);
-  check('编出两个声明（组件 + root）', lib.widgets.length == 2,
-      lib.widgets.map((w) => w.name).join(','));
-  check('组件声明带 initialState', lib.widgets.first.initialState != null,
-      '${lib.widgets.first.initialState}');
+  check(
+    '编出两个声明（组件 + root）',
+    lib.widgets.length == 2,
+    lib.widgets.map((w) => w.name).join(','),
+  );
+  check(
+    '组件声明带 initialState',
+    lib.widgets.first.initialState != null,
+    '${lib.widgets.first.initialState}',
+  );
   check('root 声明没有状态', lib.widgets.last.initialState == null);
 
   final tally = _Tally();
   for (final w in lib.widgets) {
     tally.walk(w.root);
   }
-  check('状态引用编成了 StateReference', tally.stateRefs >= 1,
-      '${tally.stateRefs} 个');
-  check('两个本地状态 -> SetStateHandler', tally.setStates == 2,
-      '${tally.setStates} 个');
+  check('状态引用编成了 StateReference', tally.stateRefs >= 1, '${tally.stateRefs} 个');
+  check(
+    '两个本地状态 -> SetStateHandler',
+    tally.setStates == 2,
+    '${tally.setStates} 个',
+  );
   // 组件里一个「删除」+ root 里一个「全删」，都是业务事件。
-  check('两个业务事件 -> EventHandler', tally.events == 2,
-      '${tally.events} 个: ${tally.eventNames.join(",")}');
-  check('两者互不串味', tally.setStates == 2 && tally.events == 2,
-      '分流错了的话，交互每一下都要重跑整棵树');
+  check(
+    '两个业务事件 -> EventHandler',
+    tally.events == 2,
+    '${tally.events} 个: ${tally.eventNames.join(",")}',
+  );
+  check(
+    '两者互不串味',
+    tally.setStates == 2 && tally.events == 2,
+    '分流错了的话，交互每一下都要重跑整棵树',
+  );
 
   // 组件名是本树自己声明的，不该被报成「rfw 不认识的 widget」。
   // 这条是真机上点出来的：组件越多，噪音越大，最后真的拼写错误
@@ -168,9 +184,13 @@ void main() {
   final unknown = collectWidgetNames(tree)
       .where((w) => !kBuiltinWidgets.contains(w))
       .toList();
-  check('组件名不会被当成未知 widget', unknown.isEmpty,
-      unknown.isEmpty ? '组件 ${tree.declarations.map((d) => d.name).join(",")} 已排除'
-                      : '仍被报成未知: ${unknown.join(",")}');
+  check(
+    '组件名不会被当成未知 widget',
+    unknown.isEmpty,
+    unknown.isEmpty
+        ? '组件 ${tree.declarations.map((d) => d.name).join(",")} 已排除'
+        : '仍被报成未知: ${unknown.join(",")}',
+  );
 
   final bytes = encodeLibraryBlob(lib);
   check('能编成二进制库', bytes.isNotEmpty, '${bytes.length} 字节');

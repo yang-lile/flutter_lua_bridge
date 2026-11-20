@@ -35,15 +35,20 @@ Future<void> main() async {
   stderr.writeln('=== 1. 模块清单 ===');
   final modules = listLuaModuleNames(root);
   check('能列出模块', modules.isNotEmpty, modules.join(', '));
-  check('包含 canvas / ui / perf',
-      modules.contains('canvas') &&
-      modules.contains('ui') &&
-      modules.contains('perf'));
+  check(
+    '包含 canvas / ui / perf',
+    modules.contains('canvas') &&
+        modules.contains('ui') &&
+        modules.contains('perf'),
+  );
 
   stderr.writeln('\n=== 2. 预编译 ===');
   final compiled = precompileLuaModules(root, modules);
-  check('全部模块都编译成功', compiled.length == modules.length,
-      '${compiled.length}/${modules.length}');
+  check(
+    '全部模块都编译成功',
+    compiled.length == modules.length,
+    '${compiled.length}/${modules.length}',
+  );
 
   final bcDir = Directory('$root/$kBytecodeDir');
   final luac = bcDir
@@ -52,12 +57,19 @@ Future<void> main() async {
       .where((f) => f.path.endsWith('.luac'))
       .toList();
   check('字节码文件已写出', luac.length == modules.length, '${luac.length} 个');
-  check('字节码非空', luac.every((f) => f.lengthSync() > 0),
-      '最小 ${luac.map((f) => f.lengthSync()).reduce((a, b) => a < b ? a : b)} 字节');
+  check(
+    '字节码非空',
+    luac.every((f) => f.lengthSync() > 0),
+    '最小 ${luac.map((f) => f.lengthSync()).reduce((a, b) => a < b ? a : b)} 字节',
+  );
 
   // magic byte 是 0x1B (ESC)，Lua 加载二进制 chunk 时会校验
   final magic = luac.first.readAsBytesSync()[0];
-  check('magic byte 是 0x1B（Lua 二进制 chunk）', magic == 0x1B, '0x${magic.toRadixString(16)}');
+  check(
+    'magic byte 是 0x1B（Lua 二进制 chunk）',
+    magic == 0x1B,
+    '0x${magic.toRadixString(16)}',
+  );
 
   stderr.writeln('\n=== 3. 只留字节码也能跑（这才是真的在用）===');
 
@@ -99,13 +111,17 @@ return json.encode(app:build())
 ''');
     check('组件模式能跑通', built.error == null, built.error);
     // Column + Text + ElevatedButton + 按钮里的 Text = 4 个节点
-    check('组件产出节点', (built.uiTreeJson?.contains('"node_count":4') ?? false),
-        built.uiTreeJson?.substring(0, 60));
+    check(
+      '组件产出节点',
+      (built.uiTreeJson?.contains('"node_count":4') ?? false),
+      built.uiTreeJson?.substring(0, 60),
+    );
 
     // 事件路径也要能用（guard 的 debug.sethook 也在字节码里）
     // stateJson 是**状态本身**的 JSON，不是整个信封
     final state = '{"n":7}';
-    final ev = await w.runUi('''
+    final ev = await w.runUi(
+      '''
 local app = ui.app({
   state = { n = 1 },
   handlers = { bump = function(s) s.n = s.n + 1 end },
@@ -117,7 +133,10 @@ local app = ui.app({
   end,
 })
 return json.encode(app:build())
-''', stateJson: state, eventName: 'bump');
+''',
+      stateJson: state,
+      eventName: 'bump',
+    );
     check('事件分发能跑通', ev.error == null, ev.error);
     check('状态累积生效', ev.uiTreeJson?.contains('"n":8') ?? false, ev.uiTreeJson);
 

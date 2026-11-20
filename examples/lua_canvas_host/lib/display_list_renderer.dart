@@ -140,12 +140,7 @@ class DisplayListRenderer {
   }
 
   void _renderRect(ui.Canvas canvas, DrawOp op) {
-    final rect = ui.Rect.fromLTWH(
-      op.x ?? 0,
-      op.y ?? 0,
-      op.w ?? 0,
-      op.h ?? 0,
-    );
+    final rect = ui.Rect.fromLTWH(op.x ?? 0, op.y ?? 0, op.w ?? 0, op.h ?? 0);
     if (rect.width <= 0 || rect.height <= 0) return;
 
     final rrect = ui.RRect.fromRectAndRadius(

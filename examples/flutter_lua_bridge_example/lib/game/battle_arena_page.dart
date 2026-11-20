@@ -2,7 +2,7 @@
 //
 // 每一步由 BattleSimulator 计算（公式来自所选的 BattleFormulas，被动和
 // 技能特效来自 Lua 的 CardApi），页面只负责把事件播放成动画。
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../l10n/app_localizations.dart';
 import 'battle_simulator.dart';

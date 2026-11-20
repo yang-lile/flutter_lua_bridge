@@ -79,7 +79,8 @@ class LuaSandbox {
   ///
   /// [budgetMs] 大于 0 时用 canvas_guard 包一层，给用户代码加协作式时间限制。
   /// 这比宿主侧超时更可靠——见[run] 里 budgetMs 的说明。
-  ExecResult run(String userCode, {
+  ExecResult run(
+    String userCode, {
     required String libraryPath,
     int budgetMs = 0,
   }) {
@@ -153,7 +154,8 @@ class LuaSandbox {
       var function = lua['__studio_fn'];
       if (function is! LuaFunction) {
         return ExecResult(
-          error: '代码必须返回函数。\n'
+          error:
+              '代码必须返回函数。\n'
               '写法：return function() ... end\n'
               '当前返回的是 ${_typeName(function)}',
           elapsedMicros: sw.elapsedMicroseconds,
@@ -240,7 +242,8 @@ class LuaSandbox {
   /// 宿主每次执行都重建 Lua state，不注入的话每次事件都会把状态重置回初始值。
   ///
   /// [eventArgsJson] 是事件参数的 JSON（可为 null）。
-  ExecResult runUi(String userCode, {
+  ExecResult runUi(
+    String userCode, {
     required String libraryPath,
     String? stateJson,
     String? eventName,
@@ -413,11 +416,13 @@ class LuaSandbox {
       final re = RegExp(r'"((?:[^"\\]|\\.)*)"');
       for (final m in re.allMatches(json)) {
         final raw = m.group(1)!;
-        out.add(raw
-            .replaceAll(r'\"', '"')
-            .replaceAll(r'\n', '\n')
-            .replaceAll(r'\t', '\t')
-            .replaceAll(r'\\', r'\'));
+        out.add(
+          raw
+              .replaceAll(r'\"', '"')
+              .replaceAll(r'\n', '\n')
+              .replaceAll(r'\t', '\t')
+              .replaceAll(r'\\', r'\'),
+        );
       }
       return out;
     } catch (_) {
@@ -441,16 +446,16 @@ class LuaSandbox {
 /// 新增一个需要 `io` 的能力时会**自动**把 io 纳进来，宿主这边不用改。
 ///
 /// 掩码常量与 Lua 5.4 的 `lualib.h` 一致（对应 perf.lua 的 LIB_MASKS）。
-const int kLuaLibGlb = 1;        // 基础库，永远需要
-const int kLuaLibLoadlib = 2;    // package / require
-const int kLuaLibColib = 4;      // coroutine
-const int kLuaLibDblib = 8;      // debug
-const int kLuaLibIolib = 16;     // io
-const int kLuaLibMathlib = 32;   // math
-const int kLuaLibOslib = 64;     // os
-const int kLuaLibStrlib = 128;   // string
-const int kLuaLibTablib = 256;   // table
-const int kLuaLibUtf8lib = 512;  // utf8
+const int kLuaLibGlb = 1; // 基础库，永远需要
+const int kLuaLibLoadlib = 2; // package / require
+const int kLuaLibColib = 4; // coroutine
+const int kLuaLibDblib = 8; // debug
+const int kLuaLibIolib = 16; // io
+const int kLuaLibMathlib = 32; // math
+const int kLuaLibOslib = 64; // os
+const int kLuaLibStrlib = 128; // string
+const int kLuaLibTablib = 256; // table
+const int kLuaLibUtf8lib = 512; // utf8
 
 /// 引导集：跑 `require("perf")` 把声明读出来所需要的最少集合。
 ///

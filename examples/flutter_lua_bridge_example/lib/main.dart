@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
 import 'bridge/basic_bridge_demo.dart';
 import 'game/game_demo_page.dart';
 import 'l10n/app_localizations.dart';
+import 'l10n/delegates.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,7 +30,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       locale: _locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: HomePage(
         localeOptions: _localeOptions,

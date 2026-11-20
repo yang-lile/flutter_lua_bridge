@@ -15,8 +15,7 @@ CalculationInput input({
   operation: operation,
 );
 
-Future<String> source(String name) =>
-    rootBundle.loadString('assets/lua/$name');
+Future<String> source(String name) => rootBundle.loadString('assets/lua/$name');
 
 LuaRuntime newRuntime() {
   TestWidgetsFlutterBinding.ensureInitialized();

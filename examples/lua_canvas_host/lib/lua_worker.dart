@@ -63,10 +63,7 @@ class WorkerResult {
 
 /// 在独立 isolate 中执行 Lua 的常驻 worker。
 class LuaWorker {
-  LuaWorker({
-    this.timeout = const Duration(seconds: 4),
-    this.budgetMs = 1500,
-  });
+  LuaWorker({this.timeout = const Duration(seconds: 4), this.budgetMs = 1500});
 
   /// 宿主侧兜底超时。
   ///
@@ -200,7 +197,8 @@ class LuaWorker {
       // 中间隔了一个事件循环，VM 才有机会回收旧 isolate 的资源。
       await _discardWorker();
       return WorkerResult(
-        error: '执行超时（${timeout.inMilliseconds}ms），已终止。\n'
+        error:
+            '执行超时（${timeout.inMilliseconds}ms），已终止。\n'
             '检查是否有死循环或超大循环。',
       );
     }
@@ -212,9 +210,9 @@ class LuaWorker {
     _disposed = true;
     _ready = false;
     for (final entry in _pending.entries.toList()) {
-      _pending.remove(entry.key)?.complete(
-        const WorkerResult(error: 'worker 已释放'),
-      );
+      _pending
+          .remove(entry.key)
+          ?.complete(const WorkerResult(error: 'worker 已释放'));
     }
     _iso?.kill(priority: Isolate.immediate);
     _results?.close();
@@ -275,9 +273,7 @@ class LuaWorker {
     // 崩溃时立刻置为未就绪，让下一次 run() 重建
     errorPort.listen((dynamic _) {
       _ready = false;
-      _failAllPending(
-        const WorkerResult(error: 'Lua worker 崩溃，已准备重启'),
-      );
+      _failAllPending(const WorkerResult(error: 'Lua worker 崩溃，已准备重启'));
     });
 
     // 正常或异常退出都算结束
@@ -298,13 +294,15 @@ class LuaWorker {
     final completer = _pending.remove(id);
     if (completer == null || completer.isCompleted) return;
 
-    completer.complete(WorkerResult(
-      displayListJson: m['json'] as String?,
-      uiTreeJson: m['uiJson'] as String?,
-      logs: (m['logs'] as List?)?.cast<String>() ?? const [],
-      error: m['err'] as String?,
-      elapsedMicros: (m['us'] as int?) ?? 0,
-    ));
+    completer.complete(
+      WorkerResult(
+        displayListJson: m['json'] as String?,
+        uiTreeJson: m['uiJson'] as String?,
+        logs: (m['logs'] as List?)?.cast<String>() ?? const [],
+        error: m['err'] as String?,
+        elapsedMicros: (m['us'] as int?) ?? 0,
+      ),
+    );
   }
 
   /// 丢弃 worker。[respawn] 为真时立刻重建。

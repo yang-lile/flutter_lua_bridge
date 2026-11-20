@@ -66,10 +66,7 @@ class UiEvent {
     if (name is! String || name.isEmpty) {
       throw FormatException('$path: \$event 缺失或不是非空字符串');
     }
-    return UiEvent(
-      name: name,
-      arg: _asMap(j[r'$arg'], '$path.\$arg'),
-    );
+    return UiEvent(name: name, arg: _asMap(j[r'$arg'], '$path.\$arg'));
   }
 
   @override
@@ -102,7 +99,8 @@ class UiSetState {
     }
     if (!j.containsKey(r'$value') || j[r'$value'] == null) {
       throw FormatException(
-          '$pathLabel: \$setstate 赋值必须有 \$value（rfw 的状态存不了 nil）');
+        '$pathLabel: \$setstate 赋值必须有 \$value（rfw 的状态存不了 nil）',
+      );
     }
     return UiSetState(path: p, value: j[r'$value'] as Object);
   }
@@ -157,11 +155,7 @@ class UiDeclaration {
   /// 声明的根节点。
   final UiNode root;
 
-  const UiDeclaration({
-    required this.name,
-    required this.root,
-    this.state,
-  });
+  const UiDeclaration({required this.name, required this.root, this.state});
 
   factory UiDeclaration.fromJson(Map<String, dynamic> j, String label) {
     final name = j['name'];
@@ -277,22 +271,13 @@ Object? _convertArg(Object? value, String path) {
       return UiNode.fromJson(value, path);
     }
     if (value.containsKey(r'$event')) {
-      return UiEvent.fromJson(
-        value.cast<String, dynamic>(),
-        path,
-      );
+      return UiEvent.fromJson(value.cast<String, dynamic>(), path);
     }
     if (value.containsKey(r'$setstate')) {
-      return UiSetState.fromJson(
-        value.cast<String, dynamic>(),
-        path,
-      );
+      return UiSetState.fromJson(value.cast<String, dynamic>(), path);
     }
     if (value.containsKey(r'$state')) {
-      return UiStateRef.fromJson(
-        value.cast<String, dynamic>(),
-        path,
-      );
+      return UiStateRef.fromJson(value.cast<String, dynamic>(), path);
     }
     final out = <String, dynamic>{};
     value.forEach((k, v) {
@@ -365,9 +350,7 @@ class UiTree {
   factory UiTree.fromJson(Map<String, dynamic> j) {
     final version = (j['version'] as num?)?.toInt() ?? 0;
     if (version != kUiContractVersion) {
-      throw FormatException(
-        'UI 契约版本 $version 不受支持（当前支持 $kUiContractVersion）',
-      );
+      throw FormatException('UI 契约版本 $version 不受支持（当前支持 $kUiContractVersion）');
     }
 
     final widget = j['widget'];
@@ -398,8 +381,9 @@ class UiTree {
         if (d is! Map) {
           throw FormatException('declarations[$i] 不是 table');
         }
-        declarations.add(UiDeclaration.fromJson(
-            d.cast<String, dynamic>(), 'declarations[$i]'));
+        declarations.add(
+          UiDeclaration.fromJson(d.cast<String, dynamic>(), 'declarations[$i]'),
+        );
       }
     } else if (rawDecls != null) {
       throw const FormatException('declarations 必须是数组');
@@ -541,15 +525,11 @@ bool _valueEquals(Object? a, Object? b) {
   if (identical(a, b)) return true;
 
   if (a is UiNode) {
-    return b is UiNode &&
-        a.widget == b.widget &&
-        _argsEqual(a.args, b.args);
+    return b is UiNode && a.widget == b.widget && _argsEqual(a.args, b.args);
   }
 
   if (a is UiEvent) {
-    return b is UiEvent &&
-        a.name == b.name &&
-        _argsEqual(a.arg, b.arg);
+    return b is UiEvent && a.name == b.name && _argsEqual(a.arg, b.arg);
   }
 
   if (a is UiSetState) {

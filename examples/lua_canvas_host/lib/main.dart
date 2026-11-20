@@ -11,7 +11,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'display_list.dart';
 import 'display_list_renderer.dart';
@@ -63,7 +63,7 @@ class _StudioPageState extends State<StudioPage> {
   final DisplayListRenderer _renderer = DisplayListRenderer();
   final ScrollController _logScroll = ScrollController();
 
-  StudioMode _mode = StudioMode.ui;  // TEMP
+  StudioMode _mode = StudioMode.ui; // TEMP
 
   /// Lua 在独立 isolate 里跑，UI 不受阻塞影响。
   final LuaWorker _worker = LuaWorker();
@@ -106,7 +106,16 @@ class _StudioPageState extends State<StudioPage> {
 
   /// 缩放档位。滑条用这些离散值，方便对到整数倍率。
   static const _zoomSteps = <double>[
-    0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0,
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    4.0,
+    6.0,
+    8.0,
   ];
 
   /// worker 未就绪时收到执行请求，先记下来就绪后补跑。
@@ -474,9 +483,9 @@ return json.encode(app:build())
   Map<String, String> get _snippetsForMode =>
       _mode == StudioMode.canvas ? _snippets : _uiSnippets;
 
-  String _firstSnippet() =>
-      _mode == StudioMode.ui ? _uiSnippets['本地状态（不回 Lua）']!
-                              : _snippetsForMode.values.first;
+  String _firstSnippet() => _mode == StudioMode.ui
+      ? _uiSnippets['本地状态（不回 Lua）']!
+      : _snippetsForMode.values.first;
 
   @override
   void initState() {
@@ -594,7 +603,9 @@ return json.encode(app:build())
       final json = res.displayListJson;
       if (json != null) {
         try {
-          parsed = DisplayList.fromJson(jsonDecode(json) as Map<String, dynamic>);
+          parsed = DisplayList.fromJson(
+            jsonDecode(json) as Map<String, dynamic>,
+          );
         } catch (e) {
           parseError = '显示列表解析失败：$e';
         }
@@ -721,11 +732,16 @@ return json.encode(app:build())
       color: const Color(0xFF14171F),
       child: Row(
         children: [
-          const Icon(Icons.brush_outlined,
-              size: 18, color: Color(0xFF4A9EFF)),
+          const Icon(Icons.brush_outlined, size: 18, color: Color(0xFF4A9EFF)),
           const SizedBox(width: 10),
-          Text('Lua Canvas Studio',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: muted)),
+          Text(
+            'Lua Canvas Studio',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: muted,
+            ),
+          ),
           const SizedBox(width: 22),
           _modeSwitch(),
           const SizedBox(width: 14),
@@ -828,9 +844,11 @@ return json.encode(app:build())
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon,
-                  size: 14,
-                  color: on ? Colors.white : const Color(0xFF6B7488)),
+              Icon(
+                icon,
+                size: 14,
+                color: on ? Colors.white : const Color(0xFF6B7488),
+              ),
               const SizedBox(width: 5),
               Text(
                 label,
@@ -872,22 +890,22 @@ return json.encode(app:build())
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 130),
             child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 3,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+              ),
+              child: Slider(
+                value: pos,
+                min: 0,
+                max: (_zoomSteps.length - 1).toDouble(),
+                divisions: _zoomSteps.length - 1,
+                onChanged: (v) {
+                  final i = v.round().clamp(0, _zoomSteps.length - 1);
+                  setState(() => _zoom = _zoomSteps[i]);
+                },
+              ),
             ),
-            child: Slider(
-              value: pos,
-              min: 0,
-              max: (_zoomSteps.length - 1).toDouble(),
-              divisions: _zoomSteps.length - 1,
-              onChanged: (v) {
-                final i = v.round().clamp(0, _zoomSteps.length - 1);
-                setState(() => _zoom = _zoomSteps[i]);
-              },
-            ),
-          ),
           ),
         ),
         IconButton(
@@ -973,8 +991,7 @@ return json.encode(app:build())
             child: CircularProgressIndicator(strokeWidth: 1.6),
           ),
           SizedBox(width: 7),
-          Text('执行中',
-              style: TextStyle(fontSize: 11, color: Color(0xFF6B7488))),
+          Text('执行中', style: TextStyle(fontSize: 11, color: Color(0xFF6B7488))),
         ],
       );
     }
@@ -1036,11 +1053,15 @@ return json.encode(app:build())
       ),
       child: Row(
         children: [
-          Text(title,
-              style: const TextStyle(fontSize: 12, color: Color(0xFFE6E9EF))),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 12, color: Color(0xFFE6E9EF)),
+          ),
           const Spacer(),
-          Text(note,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF6B7488))),
+          Text(
+            note,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF6B7488)),
+          ),
         ],
       ),
     );
@@ -1060,8 +1081,10 @@ return json.encode(app:build())
             height: 28,
             padding: const EdgeInsets.symmetric(horizontal: 14),
             alignment: Alignment.centerLeft,
-            child: Text('输出 (${_logs.length})',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF6B7488))),
+            child: Text(
+              '输出 (${_logs.length})',
+              style: const TextStyle(fontSize: 11, color: Color(0xFF6B7488)),
+            ),
           ),
           Expanded(
             child: ListView.builder(
@@ -1111,7 +1134,7 @@ return json.encode(app:build())
                     _errorCard(),
                   if (_bootError == null && !_booting && _error == null)
                     if (isUi && _uiTree == null) _uiEmptyState(),
-                    if (!isUi && _result == null) _emptyState(),
+                  if (!isUi && _result == null) _emptyState(),
                   if (isUi && _uiTree != null) _uiView(),
                   if (isUi && _uiTree != null) const SizedBox(height: 14),
                   if (isUi && _uiTree != null) _uiStatsBar(),
@@ -1169,15 +1192,21 @@ return json.encode(app:build())
         children: [
           Icon(Icons.widgets_outlined, size: 30, color: Color(0xFF98A1B3)),
           SizedBox(height: 12),
-          Text('没有产出 widget 树',
-              style: TextStyle(fontSize: 13, color: Color(0xFF98A1B3))),
+          Text(
+            '没有产出 widget 树',
+            style: TextStyle(fontSize: 13, color: Color(0xFF98A1B3)),
+          ),
           SizedBox(height: 6),
           Text(
             '代码需要声明一个应用并返回契约，例如\n'
             'local app = ui.app({ state = {}, handlers = {}, view = function(b, s) ... end })\n'
             'return json.encode(app:build())',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Color(0xFF6B7488), height: 1.6),
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFF6B7488),
+              height: 1.6,
+            ),
           ),
         ],
       ),
@@ -1215,9 +1244,14 @@ return json.encode(app:build())
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: const Color(0xFF1E2430)),
           ),
-          child: Text(parts,
-              style: const TextStyle(
-                  fontSize: 11, color: Color(0xFF6B7488), height: 1.6)),
+          child: Text(
+            parts,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF6B7488),
+              height: 1.6,
+            ),
+          ),
         ),
         if (_uiWarnings.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -1235,11 +1269,14 @@ return json.encode(app:build())
                 for (final w in _uiWarnings)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(w,
-                        style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFFF5C26B),
-                            height: 1.6)),
+                    child: Text(
+                      w,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFFF5C26B),
+                        height: 1.6,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -1266,12 +1303,15 @@ return json.encode(app:build())
         children: [
           Row(
             children: [
-              const Icon(Icons.error_outline, size: 15, color: Color(0xFFE5484D)),
+              const Icon(
+                Icons.error_outline,
+                size: 15,
+                color: Color(0xFFE5484D),
+              ),
               const SizedBox(width: 7),
               Text(
                 isBoot ? '启动失败' : 'Lua 报错',
-                style: const TextStyle(
-                    fontSize: 12, color: Color(0xFFE5484D)),
+                style: const TextStyle(fontSize: 12, color: Color(0xFFE5484D)),
               ),
             ],
           ),
@@ -1326,8 +1366,10 @@ return json.encode(app:build())
         children: [
           Icon(Icons.code_off_outlined, size: 30, color: muted),
           const SizedBox(height: 12),
-          const Text('没有产出显示列表',
-              style: TextStyle(fontSize: 13, color: Color(0xFF98A1B3))),
+          const Text(
+            '没有产出显示列表',
+            style: TextStyle(fontSize: 13, color: Color(0xFF98A1B3)),
+          ),
           const SizedBox(height: 6),
           const Text(
             '代码需要返回显示列表的 JSON，例如\n'
@@ -1492,8 +1534,7 @@ class _DisplayListPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    renderer.render(canvas, size, list,
-        scale: scale, drawFrame: showFrame);
+    renderer.render(canvas, size, list, scale: scale, drawFrame: showFrame);
   }
 
   @override

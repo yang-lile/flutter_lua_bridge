@@ -2,7 +2,7 @@
 //
 // 卡牌、被动和技能特效来自 Lua（CardApi），伤害等公式由 BattleFormulas
 // 计算；页面上的开关在 Dart 参考实现与 Lua 的 O1/O2/O3 三档绑定之间切换。
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../l10n/app_localizations.dart';
@@ -189,9 +189,8 @@ class _GameDemoPageState extends State<GameDemoPage> {
         );
       });
     } on Exception catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.formulaFailed('$error'))));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.formulaFailed('$error'))));
     }
   }
 

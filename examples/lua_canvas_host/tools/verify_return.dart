@@ -141,8 +141,7 @@ print("只打印不返回")
     'return function() return leaked_global end',
     libraryPath: path,
   );
-  check('无泄漏', r9.error != null || r9.displayListJson == null,
-      r9.error);
+  check('无泄漏', r9.error != null || r9.displayListJson == null, r9.error);
 
   // ---- 10. 连续执行 ----
   stdout.writeln('\n=== 10. 连续 20 轮 ===');

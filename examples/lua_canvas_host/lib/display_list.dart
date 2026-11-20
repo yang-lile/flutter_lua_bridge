@@ -110,10 +110,10 @@ class DrawOp {
     if (rawPts is List) {
       pts = rawPts
           .cast<Map>()
-          .map((p) => Offset(
-                (p['x'] as num).toDouble(),
-                (p['y'] as num).toDouble(),
-              ))
+          .map(
+            (p) =>
+                Offset((p['x'] as num).toDouble(), (p['y'] as num).toDouble()),
+          )
           .toList(growable: false);
     }
 

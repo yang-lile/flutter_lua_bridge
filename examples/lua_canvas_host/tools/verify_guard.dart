@@ -1,12 +1,18 @@
 // 验证 canvas_guard 与 sandbox 的 budgetMs 集成
 import 'dart:io';
+
 import 'package:lua_canvas_host/lua_modules.dart';
 import 'package:lua_canvas_host/sandbox.dart';
 
 int pass = 0, fail = 0;
 void check(String n, bool ok, [String? d]) {
-  if (ok) { pass++; stderr.writeln('  PASS  $n${d != null ? "  ($d)" : ""}'); }
-  else { fail++; stderr.writeln('  FAIL  $n${d != null ? "  -> $d" : ""}'); }
+  if (ok) {
+    pass++;
+    stderr.writeln('  PASS  $n${d != null ? "  ($d)" : ""}');
+  } else {
+    fail++;
+    stderr.writeln('  FAIL  $n${d != null ? "  -> $d" : ""}');
+  }
 }
 
 void main() {
@@ -25,7 +31,11 @@ void main() {
     budgetMs: 300,
   );
   check('返回超时错误', r1.error?.contains('超时') ?? false, r1.error);
-  check('在预算附近返回', sw.elapsedMilliseconds < 1500, '${sw.elapsedMilliseconds}ms');
+  check(
+    '在预算附近返回',
+    sw.elapsedMilliseconds < 1500,
+    '${sw.elapsedMilliseconds}ms',
+  );
 
   stderr.writeln('\n=== 3. 同一 sandbox 后续执行正常（hook 已清理）===');
   final r2 = LuaSandbox().run(

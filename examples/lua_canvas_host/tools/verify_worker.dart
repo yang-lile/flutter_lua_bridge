@@ -88,8 +88,7 @@ c:circle(100, 100, "不是数字", { fill = "#4a9eff" })
 return json.encode(c:build())
 ''');
   check('捕获到错误', r.error != null);
-  check('错误信息含类型提示',
-      r.error?.contains('must be a number') ?? false, r.error);
+  check('错误信息含类型提示', r.error?.contains('must be a number') ?? false, r.error);
   check('出错时无结果', r.displayListJson == null);
 
   stderr.writeln('\n=== 6. 死循环 -> 超时，UI 不受影响 ===');
@@ -120,15 +119,23 @@ return json.encode(c:build())
   // (b) 不是 bug，是"进程被抢占了"的正确反应。所以断言要覆盖两条路，
   // 而不是假设 (a) 一定赢——那样在负载高的开发机上就会随机红。
   final guardWon = (r.error ?? '').contains('预算');
-  stderr.writeln('  → 走的是 ${guardWon ? "Lua guard" : "宿主超时"}'
-      '（${waited}ms）  错误原文: ${r.error ?? "(无)"}');
+  stderr.writeln(
+    '  → 走的是 ${guardWon ? "Lua guard" : "宿主超时"}'
+    '（${waited}ms）  错误原文: ${r.error ?? "(无)"}',
+  );
 
   check('返回超时错误', r.error?.contains('超时') ?? false, r.error);
   check('超时发生在预期窗口内', waited < 3500, '${waited}ms');
-  check('主 isolate 定时器准时触发', watchdogFired,
-      watchdogFired ? '实际延迟 ${watchdogDelayMs}ms' : '300ms 定时器从未触发');
-  check('定时器未被拖到超时之后', watchdogFired && watchdogDelayMs < 1000,
-      '$watchdogDelayMs');
+  check(
+    '主 isolate 定时器准时触发',
+    watchdogFired,
+    watchdogFired ? '实际延迟 ${watchdogDelayMs}ms' : '300ms 定时器从未触发',
+  );
+  check(
+    '定时器未被拖到超时之后',
+    watchdogFired && watchdogDelayMs < 1000,
+    '$watchdogDelayMs',
+  );
 
   stderr.writeln('\n=== 7. 超时之后 worker 仍然健康 ===');
   // 关键不是"就绪"这个布尔值——guard 赢的时候一直是 true，
@@ -140,8 +147,7 @@ return json.encode(c:build())
 
   r = await worker.run(good);
   check('下一次执行正常', r.error == null, r.error);
-  check('结果正确',
-      (jsonDecode(r.displayListJson!) as Map)['op_count'] == 2);
+  check('结果正确', (jsonDecode(r.displayListJson!) as Map)['op_count'] == 2);
 
   stderr.writeln('\n=== 8. 慢执行不阻塞后续编辑 ===');
   // guard 保证单次执行不超过 budgetMs。这里用较慢的正常代码
@@ -158,14 +164,18 @@ return json.encode(c:build())
   sw.reset();
   final quick = await worker.run(good);
   check('后发请求正常完成', quick.error == null, quick.error);
-  check('后发请求未等前一个跑完', sw.elapsedMilliseconds < 1000,
-      '${sw.elapsedMilliseconds}ms');
-  check('后发请求结果正确',
-      (jsonDecode(quick.displayListJson!) as Map)['op_count'] == 2);
+  check(
+    '后发请求未等前一个跑完',
+    sw.elapsedMilliseconds < 1000,
+    '${sw.elapsedMilliseconds}ms',
+  );
+  check(
+    '后发请求结果正确',
+    (jsonDecode(quick.displayListJson!) as Map)['op_count'] == 2,
+  );
 
   final slowRes = await slow;
-  check('前一个被标记为取代', slowRes.error?.contains('取代') ?? false,
-      slowRes.error);
+  check('前一个被标记为取代', slowRes.error?.contains('取代') ?? false, slowRes.error);
   check('取代后 worker 仍健康', worker.ready);
 
   stderr.writeln('\n=== 9. dispose 后不再接受请求 ===');

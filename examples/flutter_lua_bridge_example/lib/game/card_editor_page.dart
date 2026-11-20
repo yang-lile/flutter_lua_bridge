@@ -1,5 +1,5 @@
 // 卡牌编辑器页面
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../l10n/app_localizations.dart';
 import 'models.dart';
@@ -8,11 +8,7 @@ class CardEditorPage extends StatefulWidget {
   final MonsterCard card;
   final Function(MonsterCard) onSave;
 
-  const CardEditorPage({
-    super.key,
-    required this.card,
-    required this.onSave,
-  });
+  const CardEditorPage({super.key, required this.card, required this.onSave});
 
   @override
   State<CardEditorPage> createState() => _CardEditorPageState();
@@ -38,17 +34,31 @@ class _CardEditorPageState extends State<CardEditorPage> {
   void initState() {
     super.initState();
     _editableCard = widget.card.copy();
-    
+
     _nameController = TextEditingController(text: _editableCard.name);
     _descController = TextEditingController(text: _editableCard.description);
     _hpController = TextEditingController(text: _editableCard.maxHp.toString());
-    _attackController = TextEditingController(text: _editableCard.attack.toString());
-    _magicAttackController = TextEditingController(text: _editableCard.magicAttack.toString());
-    _physicalDefController = TextEditingController(text: _editableCard.physicalDefense.toString());
-    _magicDefController = TextEditingController(text: _editableCard.magicDefense.toString());
-    _speedController = TextEditingController(text: _editableCard.speed.toString());
-    _critRateController = TextEditingController(text: (_editableCard.critRate * 100).toStringAsFixed(0));
-    _critDamageController = TextEditingController(text: _editableCard.critDamage.toStringAsFixed(1));
+    _attackController = TextEditingController(
+      text: _editableCard.attack.toString(),
+    );
+    _magicAttackController = TextEditingController(
+      text: _editableCard.magicAttack.toString(),
+    );
+    _physicalDefController = TextEditingController(
+      text: _editableCard.physicalDefense.toString(),
+    );
+    _magicDefController = TextEditingController(
+      text: _editableCard.magicDefense.toString(),
+    );
+    _speedController = TextEditingController(
+      text: _editableCard.speed.toString(),
+    );
+    _critRateController = TextEditingController(
+      text: (_editableCard.critRate * 100).toStringAsFixed(0),
+    );
+    _critDamageController = TextEditingController(
+      text: _editableCard.critDamage.toStringAsFixed(1),
+    );
   }
 
   @override
@@ -82,10 +92,10 @@ class _CardEditorPageState extends State<CardEditorPage> {
         _editableCard.critRate = double.parse(_critRateController.text) / 100;
         _editableCard.critDamage = double.parse(_critDamageController.text);
       });
-      
+
       widget.onSave(_editableCard);
       Navigator.pop(context);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.cardSavedMessage(_editableCard.name))),
       );
@@ -116,33 +126,67 @@ class _CardEditorPageState extends State<CardEditorPage> {
               // 卡牌预览
               _buildCardPreview(),
               const SizedBox(height: 24),
-              
+
               // 基础信息
               _buildSectionTitle(l10n.basicInfo),
               _buildTextField(l10n.nameLabel, _nameController, required: true),
-              _buildTextField(l10n.descriptionLabel, _descController, maxLines: 2),
+              _buildTextField(
+                l10n.descriptionLabel,
+                _descController,
+                maxLines: 2,
+              ),
               const SizedBox(height: 16),
-              
+
               // 属性编辑
               _buildSectionTitle(l10n.basicAttributes),
               _buildStatRow(l10n.hpFull, _hpController, l10n.unitPoint),
-              _buildStatRow(l10n.physicalAttack, _attackController, l10n.unitPoint),
-              _buildStatRow(l10n.magicAttackLabel, _magicAttackController, l10n.unitPoint),
-              _buildStatRow(l10n.physicalDefenseLabel, _physicalDefController, l10n.unitPoint),
-              _buildStatRow(l10n.magicDefenseLabel, _magicDefController, l10n.unitPoint),
-              _buildStatRow(l10n.speedLabelFull, _speedController, l10n.unitPoint),
+              _buildStatRow(
+                l10n.physicalAttack,
+                _attackController,
+                l10n.unitPoint,
+              ),
+              _buildStatRow(
+                l10n.magicAttackLabel,
+                _magicAttackController,
+                l10n.unitPoint,
+              ),
+              _buildStatRow(
+                l10n.physicalDefenseLabel,
+                _physicalDefController,
+                l10n.unitPoint,
+              ),
+              _buildStatRow(
+                l10n.magicDefenseLabel,
+                _magicDefController,
+                l10n.unitPoint,
+              ),
+              _buildStatRow(
+                l10n.speedLabelFull,
+                _speedController,
+                l10n.unitPoint,
+              ),
               const SizedBox(height: 16),
-              
+
               // 暴击属性
               _buildSectionTitle(l10n.critAttributes),
-              _buildStatRow(l10n.critRateLabel, _critRateController, l10n.unitPercent, isDouble: true),
-              _buildStatRow(l10n.critDamageLabel, _critDamageController, l10n.unitMultiplier, isDouble: true),
+              _buildStatRow(
+                l10n.critRateLabel,
+                _critRateController,
+                l10n.unitPercent,
+                isDouble: true,
+              ),
+              _buildStatRow(
+                l10n.critDamageLabel,
+                _critDamageController,
+                l10n.unitMultiplier,
+                isDouble: true,
+              ),
               const SizedBox(height: 24),
-              
+
               // 技能展示
               _buildSkillSection(),
               const SizedBox(height: 32),
-              
+
               // 战斗力评估
               _buildPowerEvaluation(),
             ],
@@ -154,13 +198,15 @@ class _CardEditorPageState extends State<CardEditorPage> {
 
   Widget _buildCardPreview() {
     final l10n = AppLocalizations.of(context)!;
-    final rarityColor = {
-      'N': Colors.grey,
-      'R': Colors.blue,
-      'SR': Colors.purple,
-      'SSR': Colors.orange,
-      'UR': Colors.red,
-    }[_editableCard.rarity.label] ?? Colors.grey;
+    final rarityColor =
+        {
+          'N': Colors.grey,
+          'R': Colors.blue,
+          'SR': Colors.purple,
+          'SSR': Colors.orange,
+          'UR': Colors.red,
+        }[_editableCard.rarity.label] ??
+        Colors.grey;
 
     return Card(
       elevation: 8,
@@ -176,10 +222,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              rarityColor.withValues(alpha: 0.1),
-              Colors.white,
-            ],
+            colors: [rarityColor.withValues(alpha: 0.1), Colors.white],
           ),
         ),
         child: Column(
@@ -188,7 +231,10 @@ class _CardEditorPageState extends State<CardEditorPage> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: rarityColor,
                     borderRadius: BorderRadius.circular(20),
@@ -213,31 +259,50 @@ class _CardEditorPageState extends State<CardEditorPage> {
             const SizedBox(height: 12),
             Text(
               _nameController.text,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               _descController.text,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
             ),
             const Divider(height: 24),
-            _buildPreviewStatRow(Icons.favorite, Colors.red, l10n.hp, _hpController.text),
-            _buildPreviewStatRow(Icons.flash_on, Colors.orange, l10n.attack, _attackController.text),
-            _buildPreviewStatRow(Icons.shield, Colors.blue, l10n.physicalDefense, _physicalDefController.text),
-            _buildPreviewStatRow(Icons.speed, Colors.green, l10n.speed, _speedController.text),
+            _buildPreviewStatRow(
+              Icons.favorite,
+              Colors.red,
+              l10n.hp,
+              _hpController.text,
+            ),
+            _buildPreviewStatRow(
+              Icons.flash_on,
+              Colors.orange,
+              l10n.attack,
+              _attackController.text,
+            ),
+            _buildPreviewStatRow(
+              Icons.shield,
+              Colors.blue,
+              l10n.physicalDefense,
+              _physicalDefController.text,
+            ),
+            _buildPreviewStatRow(
+              Icons.speed,
+              Colors.green,
+              l10n.speed,
+              _speedController.text,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPreviewStatRow(IconData icon, Color color, String label, String value) {
+  Widget _buildPreviewStatRow(
+    IconData icon,
+    Color color,
+    String label,
+    String value,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -263,10 +328,7 @@ class _CardEditorPageState extends State<CardEditorPage> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -322,7 +384,10 @@ class _CardEditorPageState extends State<CardEditorPage> {
               decoration: InputDecoration(
                 suffixText: unit,
                 border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -354,11 +419,16 @@ class _CardEditorPageState extends State<CardEditorPage> {
         _buildSectionTitle(l10n.skills),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.sports_martial_arts, color: Colors.orange),
+            leading: const Icon(
+              Icons.sports_martial_arts,
+              color: Colors.orange,
+            ),
             title: Text(_editableCard.normalAttack.name),
             subtitle: Text(_editableCard.normalAttack.description),
             trailing: Chip(
-              label: Text('${(_editableCard.normalAttack.multiplier * 100).toInt()}%'),
+              label: Text(
+                '${(_editableCard.normalAttack.multiplier * 100).toInt()}%',
+              ),
               backgroundColor: Colors.orange.withValues(alpha: 0.2),
             ),
           ),
@@ -394,13 +464,13 @@ class _CardEditorPageState extends State<CardEditorPage> {
     final critRate = (double.tryParse(_critRateController.text) ?? 0) / 100;
     final critDamage = double.tryParse(_critDamageController.text) ?? 1.5;
 
-    final powerScore = (
-      hp * 0.5 +
-      (attack + magicAttack) * 1.5 +
-      (physicalDef + magicDef) * 1.0 +
-      speed * 0.8 +
-      critRate * critDamage * 500
-    ).toInt();
+    final powerScore =
+        (hp * 0.5 +
+                (attack + magicAttack) * 1.5 +
+                (physicalDef + magicDef) * 1.0 +
+                speed * 0.8 +
+                critRate * critDamage * 500)
+            .toInt();
 
     String powerLevel;
     Color powerColor;
@@ -497,7 +567,9 @@ class _CardEditorPageState extends State<CardEditorPage> {
       _physicalDefController.text = widget.card.physicalDefense.toString();
       _magicDefController.text = widget.card.magicDefense.toString();
       _speedController.text = widget.card.speed.toString();
-      _critRateController.text = (widget.card.critRate * 100).toStringAsFixed(0);
+      _critRateController.text = (widget.card.critRate * 100).toStringAsFixed(
+        0,
+      );
       _critDamageController.text = widget.card.critDamage.toStringAsFixed(1);
     });
   }

@@ -105,25 +105,61 @@ return json.encode(c:build())
     '宽度': canvasJson(root, canvasWith(w: 301)),
     '高度': canvasJson(root, canvasWith(h: 201)),
     '背景': canvasJson(root, canvasWith(bg: '#101011')),
-    '圆心 x': canvasJson(root, canvasWith(ops: 'c:circle(11,10,5,{fill="#fff"})')),
+    '圆心 x': canvasJson(
+      root,
+      canvasWith(ops: 'c:circle(11,10,5,{fill="#fff"})'),
+    ),
     '半径': canvasJson(root, canvasWith(ops: 'c:circle(10,10,6,{fill="#fff"})')),
     '填充色': canvasJson(root, canvasWith(ops: 'c:circle(10,10,5,{fill="#eee"})')),
-    '描边色': canvasJson(root, canvasWith(ops: 'c:circle(10,10,5,{fill="#fff",stroke="#f00"})')),
-    '线宽': canvasJson(root,
-        canvasWith(ops: 'c:circle(10,10,5,{fill="#fff",stroke="#f00",stroke_width=2})')),
-    '圆角': canvasJson(root, canvasWith(ops: 'c:rect(1,1,5,5,{fill="#fff",radius=3})')),
-    '矩形宽': canvasJson(root, canvasWith(ops: 'c:rect(1,1,6,5,{fill="#fff",radius=3})')),
+    '描边色': canvasJson(
+      root,
+      canvasWith(ops: 'c:circle(10,10,5,{fill="#fff",stroke="#f00"})'),
+    ),
+    '线宽': canvasJson(
+      root,
+      canvasWith(
+        ops: 'c:circle(10,10,5,{fill="#fff",stroke="#f00",stroke_width=2})',
+      ),
+    ),
+    '圆角': canvasJson(
+      root,
+      canvasWith(ops: 'c:rect(1,1,5,5,{fill="#fff",radius=3})'),
+    ),
+    '矩形宽': canvasJson(
+      root,
+      canvasWith(ops: 'c:rect(1,1,6,5,{fill="#fff",radius=3})'),
+    ),
     '文本内容': canvasJson(root, canvasWith(ops: 'c:text(1,1,"a",{fill="#fff"})')),
-    '文本对齐': canvasJson(root,
-        canvasWith(ops: 'c:text(1,1,"a",{fill="#fff",align="center"})')),
-    '字号': canvasJson(root, canvasWith(ops: 'c:text(1,1,"a",{fill="#fff",size=20})')),
-    '线的端点': canvasJson(root, canvasWith(ops: 'c:line(0,0,11,10,{stroke="#fff"})')),
-    '多边形顶点': canvasJson(root,
-        canvasWith(ops: 'c:polygon({{x=0,y=0},{x=9,y=0},{x=0,y=9}},{fill="#fff"})')),
-    '图元数量': canvasJson(root, canvasWith(
-        ops: 'c:circle(10,10,5,{fill="#fff"}) c:circle(20,20,5,{fill="#fff"})')),
-    '图元顺序': canvasJson(root, canvasWith(
-        ops: 'c:circle(20,20,5,{fill="#fff"}) c:circle(10,10,5,{fill="#fff"})')),
+    '文本对齐': canvasJson(
+      root,
+      canvasWith(ops: 'c:text(1,1,"a",{fill="#fff",align="center"})'),
+    ),
+    '字号': canvasJson(
+      root,
+      canvasWith(ops: 'c:text(1,1,"a",{fill="#fff",size=20})'),
+    ),
+    '线的端点': canvasJson(
+      root,
+      canvasWith(ops: 'c:line(0,0,11,10,{stroke="#fff"})'),
+    ),
+    '多边形顶点': canvasJson(
+      root,
+      canvasWith(
+        ops: 'c:polygon({{x=0,y=0},{x=9,y=0},{x=0,y=9}},{fill="#fff"})',
+      ),
+    ),
+    '图元数量': canvasJson(
+      root,
+      canvasWith(
+        ops: 'c:circle(10,10,5,{fill="#fff"}) c:circle(20,20,5,{fill="#fff"})',
+      ),
+    ),
+    '图元顺序': canvasJson(
+      root,
+      canvasWith(
+        ops: 'c:circle(20,20,5,{fill="#fff"}) c:circle(10,10,5,{fill="#fff"})',
+      ),
+    ),
   };
 
   cMutations.forEach((what, other) {
@@ -133,8 +169,10 @@ return json.encode(c:build())
 
   // 同样的内容跑两遍 -> 必须完全相同（指纹与结构都一样）
   check('同样内容跑两遍 -> 相同', deepEquals(cBase, canvasJson(root, canvasWith())));
-  check('同样内容跑两遍 -> 指纹也相同',
-      cBaseRaw['fingerprint'] == canvasJsonRaw(root, canvasWith())['fingerprint']);
+  check(
+    '同样内容跑两遍 -> 指纹也相同',
+    cBaseRaw['fingerprint'] == canvasJsonRaw(root, canvasWith())['fingerprint'],
+  );
 
   // ================================================================
   stderr.writeln('\n=== 2. 快路径与权威判断的分工 ===');
@@ -146,21 +184,22 @@ return json.encode(c:build())
     'fingerprint': 'ffffffffffffffff',
   };
   final sameContentNewFingerprint = contentOf(withFingerprint);
-  check('内容相同 + 指纹不同 -> 仍然判定为相同',
-      deepEquals(cBase, sameContentNewFingerprint),
-      '纯指纹方案在这里会白白重建');
-  check('内容相同 + 指纹不同 -> 快路径不放行，交给结构比较裁决',
-      !canvasFastPath(cBaseRaw, withFingerprint));
-  check('内容不同 -> 快路径也会放行（所以权威判断不能省）',
-      !deepEquals(cBase, cMutations['宽度']!));
+  check(
+    '内容相同 + 指纹不同 -> 仍然判定为相同',
+    deepEquals(cBase, sameContentNewFingerprint),
+    '纯指纹方案在这里会白白重建',
+  );
+  check(
+    '内容相同 + 指纹不同 -> 快路径不放行，交给结构比较裁决',
+    !canvasFastPath(cBaseRaw, withFingerprint),
+  );
+  check('内容不同 -> 快路径也会放行（所以权威判断不能省）', !deepEquals(cBase, cMutations['宽度']!));
 
   final noFingerprint = cBaseRaw.containsKey('fingerprint')
       ? (Map<String, dynamic>.from(cBaseRaw)..remove('fingerprint'))
       : cBaseRaw;
-  check('缺指纹时靠结构比较仍能认出相同',
-      deepEquals(cBase, contentOf(noFingerprint)));
-  check('缺指纹时快路径不放行（交给结构比较）',
-      !canvasFastPath(cBaseRaw, noFingerprint));
+  check('缺指纹时靠结构比较仍能认出相同', deepEquals(cBase, contentOf(noFingerprint)));
+  check('缺指纹时快路径不放行（交给结构比较）', !canvasFastPath(cBaseRaw, noFingerprint));
 
   // ================================================================
   stderr.writeln('\n=== 3. 组件树：逐字段改动都必须被发现 ===');
@@ -215,20 +254,27 @@ return json.encode(app:build())
   };
 
   uMutations.forEach((what, other) {
-    check('改动「$what」-> 判定为不同', !uiTreeEquals(uBaseTree, UiTree.parse(jsonEncode(other))));
+    check(
+      '改动「$what」-> 判定为不同',
+      !uiTreeEquals(uBaseTree, UiTree.parse(jsonEncode(other))),
+    );
     if (what == '标题') {
       // 标题在信封顶层：树本身没变，但整体内容变了。
       // uiTreeEquals 把 title 算进判断，所以照样能发现。
-      check('改动「标题」-> 树没变但整体判定为不同',
-          deepEquals(uBase['tree'], other['tree']) &&
-              !uiTreeEquals(uBaseTree, UiTree.parse(jsonEncode(other))));
+      check(
+        '改动「标题」-> 树没变但整体判定为不同',
+        deepEquals(uBase['tree'], other['tree']) &&
+            !uiTreeEquals(uBaseTree, UiTree.parse(jsonEncode(other))),
+      );
     } else {
-      check('改动「$what」-> 树也判定为不同',
-          !deepEquals(uBase['tree'], other['tree']));
+      check('改动「$what」-> 树也判定为不同', !deepEquals(uBase['tree'], other['tree']));
     }
   });
 
-  check('同样内容跑两遍 -> 相同', uiTreeEquals(uBaseTree, UiTree.parse(jsonEncode(uiJsonOf(root, uiWith())))));
+  check(
+    '同样内容跑两遍 -> 相同',
+    uiTreeEquals(uBaseTree, UiTree.parse(jsonEncode(uiJsonOf(root, uiWith())))),
+  );
 
   // state 不参与比较：只改 state 不该触发重建
   final onlyState = uiJsonOf(root, '''
@@ -246,14 +292,20 @@ local app = ui.app({
 })
 return json.encode(app:build())
 ''');
-  check('只改 state（树不变）-> 不重建', uiTreeEquals(uBaseTree, UiTree.parse(jsonEncode(onlyState))),
-      'state 变了但界面没变是正常的');
+  check(
+    '只改 state（树不变）-> 不重建',
+    uiTreeEquals(uBaseTree, UiTree.parse(jsonEncode(onlyState))),
+    'state 变了但界面没变是正常的',
+  );
 
   // ================================================================
   stderr.writeln('\n=== 4. 数值类型必须区分 ===');
   // ================================================================
-  check('int 1 与 double 1.0 判为不同', !deepEquals({'v': 1}, {'v': 1.0}),
-      'rfw 的 v<int> 与 v<double> 是两套解码');
+  check(
+    'int 1 与 double 1.0 判为不同',
+    !deepEquals({'v': 1}, {'v': 1.0}),
+    'rfw 的 v<int> 与 v<double> 是两套解码',
+  );
   check('int 1 与 int 1 判为相同', deepEquals({'v': 1}, {'v': 1}));
   check('double 1.0 与 double 1.0 判为相同', deepEquals({'v': 1.0}, {'v': 1.0}));
 
@@ -262,10 +314,16 @@ return json.encode(app:build())
   // ================================================================
   {
     final out = <String>[];
-    final changed = canvasJson(root, canvasWith(ops: 'c:circle(11,10,5,{fill="#fff"})'));
+    final changed = canvasJson(
+      root,
+      canvasWith(ops: 'c:circle(11,10,5,{fill="#fff"})'),
+    );
     findFirstDifference(cBase, changed, 'dl', out);
-    check('能指出具体位置', out.isNotEmpty && out.first.contains('ops'),
-        out.isEmpty ? '没有差异' : out.first);
+    check(
+      '能指出具体位置',
+      out.isNotEmpty && out.first.contains('ops'),
+      out.isEmpty ? '没有差异' : out.first,
+    );
   }
 
   stderr.writeln('\n$_pass passed, $_fail failed');

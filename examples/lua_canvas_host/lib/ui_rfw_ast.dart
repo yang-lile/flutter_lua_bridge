@@ -47,14 +47,11 @@ RemoteWidgetLibrary buildUiLibrary(UiTree tree) {
     ),
   ];
 
-  return RemoteWidgetLibrary(
-    <Import>[
-      const Import(LibraryName(<String>['core', 'widgets'])),
-      const Import(LibraryName(<String>['core', 'material'])),
-      const Import(kStudioLibrary),
-    ],
-    declarations,
-  );
+  return RemoteWidgetLibrary(<Import>[
+    const Import(LibraryName(<String>['core', 'widgets'])),
+    const Import(LibraryName(<String>['core', 'material'])),
+    const Import(kStudioLibrary),
+  ], declarations);
 }
 
 /// 节点 -> ConstructorCall。
@@ -76,7 +73,8 @@ WidgetDeclaration _toDeclaration(UiDeclaration decl) {
     decl.state == null
         ? null
         : DynamicMap.from(
-            decl.state!.map((k, v) => MapEntry(k, _convertValue(v)))),
+            decl.state!.map((k, v) => MapEntry(k, _convertValue(v))),
+          ),
     _toConstructor(decl.root),
   );
 }
@@ -176,13 +174,25 @@ const Set<String> kBuiltinWidgets = <String>{
   'ButtonBar', 'Card', 'Center', 'CircularProgressIndicator', 'ClipRRect',
   'ColoredBox', 'Column', 'Container', 'DefaultTextStyle', 'Directionality',
   'Divider', 'Drawer', 'DrawerHeader', 'DropdownButton', 'ElevatedButton',
-  'Expanded', 'FittedBox', 'Flexible', 'FloatingActionButton', 'FractionallySizedBox',
+  'Expanded',
+  'FittedBox',
+  'Flexible',
+  'FloatingActionButton',
+  'FractionallySizedBox',
   'GestureDetector', 'GridView', 'Icon', 'IconTheme', 'Image',
-  'InkResponse', 'InkWell', 'IntrinsicHeight', 'IntrinsicWidth', 'LinearProgressIndicator',
+  'InkResponse',
+  'InkWell',
+  'IntrinsicHeight',
+  'IntrinsicWidth',
+  'LinearProgressIndicator',
   'ListBody', 'ListTile', 'ListView', 'Material', 'Opacity',
   'OutlinedButton', 'OverflowBar', 'Padding', 'Placeholder', 'Positioned',
   'Rotation', 'Row', 'SafeArea', 'Scaffold', 'Scale',
-  'SingleChildScrollView', 'SizedBox', 'SizedBoxExpand', 'SizedBoxShrink', 'Slider',
+  'SingleChildScrollView',
+  'SizedBox',
+  'SizedBoxExpand',
+  'SizedBoxShrink',
+  'Slider',
   'Spacer', 'Stack', 'Text', 'TextButton', 'VerticalDivider',
   'Wrap', 'studio.Kpi', 'studio.Slider', 'studio.Toggle',
 };

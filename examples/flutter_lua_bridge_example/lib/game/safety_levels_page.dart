@@ -1,5 +1,5 @@
 // 安全级别对比：同一份 Lua 公式按 O1/O2/O3 绑定后，调用结果和性能有何不同
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../l10n/app_localizations.dart';

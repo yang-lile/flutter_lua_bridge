@@ -29,7 +29,7 @@
 
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 // rfw 自己也有一个 `Switch`（blob 里的 switch 表达式节点），
 // 与 Material 的开关同名。不 hide 的话下面写 Switch 会二义。
@@ -349,13 +349,19 @@ LocalWidgetLibrary createStudioWidgets() {
               children: <Widget>[
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF6B7488)),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7488),
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFFE6E9EF)),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFE6E9EF),
+                  ),
                 ),
               ],
             ),

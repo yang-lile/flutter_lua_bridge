@@ -43,8 +43,10 @@ const _watched = <String>[
 ];
 
 void line(String k, double ms, [String? note]) {
-  stdout.writeln('  $k\t${ms.toStringAsFixed(3)} ms'
-      '${note != null ? '   $note' : ''}');
+  stdout.writeln(
+    '  $k\t${ms.toStringAsFixed(3)} ms'
+    '${note != null ? '   $note' : ''}',
+  );
 }
 
 void record(String key, double ms) => _metrics[key] = ms;
@@ -80,7 +82,8 @@ double best(int reps, void Function() f) {
 const String trivial = 'return "x"';
 
 /// 画布脚本：n 个图元。
-String canvasApp(int n) => '''
+String canvasApp(int n) =>
+    '''
 local c = canvas.new({ width = 800, height = 600, background = "#0f1116" })
 for i = 1, $n do
   c:circle(i % 800, (i * 7) % 600, 8 + (i % 20), { fill = "#4a9eff" })
@@ -89,7 +92,8 @@ return json.encode(c:build())
 ''';
 
 /// 组件脚本：n 个节点。
-String uiApp(int n) => '''
+String uiApp(int n) =>
+    '''
 local app = ui.app({
   state = { count = 0, items = {} },
   handlers = { bump = function(s) s.count = s.count + 1 end },
@@ -132,11 +136,12 @@ Future<void> main(List<String> args) async {
     record('cold.worker_spawn', spawn);
     line('worker isolate spawn + 握手', spawn, '常驻，不计入每次执行');
     record('cold.first_run', firstMs);
-    line('首次执行（含 FFI 符号绑定）', firstMs,
-        'first.error=${first.error ?? "无"}');
+    line('首次执行（含 FFI 符号绑定）', firstMs, 'first.error=${first.error ?? "无"}');
     line('第 2–21 次执行', afterMs);
-    stdout.writeln('  → 首尾差 ${(firstMs - afterMs).toStringAsFixed(1)} ms '
-        '是符号绑定的一次性成本');
+    stdout.writeln(
+      '  → 首尾差 ${(firstMs - afterMs).toStringAsFixed(1)} ms '
+      '是符号绑定的一次性成本',
+    );
     w0.dispose();
   }
 
@@ -166,14 +171,15 @@ Future<void> main(List<String> args) async {
     trivialMs = b;
   }
   record('fixed.bootstrap', trivialMs);
-  line('引导（newState + openLibs + require）', trivialMs,
-      '两种模式都一样，这是地板');
+  line('引导（newState + openLibs + require）', trivialMs, '两种模式都一样，这是地板');
 
   // ---------------------------------------------------------------
   section('3. 规模扫描：执行耗时 vs 产出规模');
   // ---------------------------------------------------------------
-  stdout.writeln('  ${"规模".padRight(12)}${"画布(图元)".padRight(18)}'
-      '${'组件(节点)'.padRight(18)}备注');
+  stdout.writeln(
+    '  ${"规模".padRight(12)}${"画布(图元)".padRight(18)}'
+    '${'组件(节点)'.padRight(18)}备注',
+  );
   for (final n in [10, 100, 1000, 10000, 100000]) {
     // 取**最小值**而不是平均值：平均值会把偶发的 GC 和调度抖动全摊进来，
     // 实测同一台机器连续跑，平均值的方差能到 20%，比大多数优化幅度还大。
@@ -185,12 +191,16 @@ Future<void> main(List<String> args) async {
         : '';
     record('scale.canvas.$n', canvasMs);
     record('scale.ui.$n', uiMs);
-    stdout.writeln('  ${n.toString().padRight(12)}'
-        '${canvasMs.toStringAsFixed(2).padRight(18)}'
-        '${uiMs.toStringAsFixed(2).padRight(18)}$warn');
+    stdout.writeln(
+      '  ${n.toString().padRight(12)}'
+      '${canvasMs.toStringAsFixed(2).padRight(18)}'
+      '${uiMs.toStringAsFixed(2).padRight(18)}$warn',
+    );
   }
-  stdout.writeln('  （含引导的固定成本 ${trivialMs.toStringAsFixed(2)} ms，'
-      '已计入上列）');
+  stdout.writeln(
+    '  （含引导的固定成本 ${trivialMs.toStringAsFixed(2)} ms，'
+    '已计入上列）',
+  );
 
   // ---------------------------------------------------------------
   section('4. 事件分发（UI 模式的交互路径）');
@@ -216,8 +226,12 @@ Future<void> main(List<String> args) async {
     Future<double> eventOnce() async {
       final sw = Stopwatch()..start();
       for (var i = 0; i < reps; i++) {
-        await worker.runUi(uiApp(10),
-            stateJson: state, eventName: 'bump', eventArgsJson: '{"i":3}');
+        await worker.runUi(
+          uiApp(10),
+          stateJson: state,
+          eventName: 'bump',
+          eventArgsJson: '{"i":3}',
+        );
       }
       return (sw.elapsedMicroseconds / reps) / 1000;
     }
@@ -232,11 +246,15 @@ Future<void> main(List<String> args) async {
     record('event.roundtrip', eMin);
     line('同脚本纯构建', bMin);
     line('同脚本 + 一次事件', eMin);
-    stdout.writeln('  → 两者同一量级。差值落在噪声里（worker 堆受上一段'
-        '大测试影响，GC 记账会串），所以不报"事件的额外代价"——'
-        '要精确数字得在独立进程里各测一遍。');
-    stdout.writeln('  → 每次点击都要重建 LuaRuntime 并重跑整个 view，'
-        '这是当前架构最贵的一环');
+    stdout.writeln(
+      '  → 两者同一量级。差值落在噪声里（worker 堆受上一段'
+      '大测试影响，GC 记账会串），所以不报"事件的额外代价"——'
+      '要精确数字得在独立进程里各测一遍。',
+    );
+    stdout.writeln(
+      '  → 每次点击都要重建 LuaRuntime 并重跑整个 view，'
+      '这是当前架构最贵的一环',
+    );
   }
 
   // ---------------------------------------------------------------
@@ -266,8 +284,10 @@ Future<void> main(List<String> args) async {
     line('第 201–1000 次平均', late);
     final drift = (late - early) / early * 100;
     record('drift.percent', drift.abs());
-    stdout.writeln('  → 漂移 ${drift.toStringAsFixed(1)}%'
-        '${drift > 15 ? '  \x1b[33m有劣化，注意\x1b[0m' : '  \x1b[32m稳定\x1b[0m'}');
+    stdout.writeln(
+      '  → 漂移 ${drift.toStringAsFixed(1)}%'
+      '${drift > 15 ? '  \x1b[33m有劣化，注意\x1b[0m' : '  \x1b[32m稳定\x1b[0m'}',
+    );
   }
 
   // ---------------------------------------------------------------
@@ -282,14 +302,20 @@ Future<void> main(List<String> args) async {
       await worker.run(canvasApp(10));
     }
     final total = (sw.elapsedMicroseconds / reps) / 1000;
-    stdout.writeln('  ${'从主 isolate 看一次 run 的总延迟'.padRight(34)}'
-        '${total.toStringAsFixed(3)} ms');
+    stdout.writeln(
+      '  ${'从主 isolate 看一次 run 的总延迟'.padRight(34)}'
+      '${total.toStringAsFixed(3)} ms',
+    );
     final r = await worker.run(canvasApp(10));
     final inLua = r.elapsedMicros / 1000;
-    stdout.writeln('    ${'其中 worker 内自报'.padRight(36)}'
-        '${inLua.toStringAsFixed(3)} ms  <- 引导+执行+编码');
-    stdout.writeln('    ${'差额（调度 + 消息投递 + 主 isolate 侧）'.padRight(36)}'
-        '${(total - inLua).toStringAsFixed(3)} ms');
+    stdout.writeln(
+      '    ${'其中 worker 内自报'.padRight(36)}'
+      '${inLua.toStringAsFixed(3)} ms  <- 引导+执行+编码',
+    );
+    stdout.writeln(
+      '    ${'差额（调度 + 消息投递 + 主 isolate 侧）'.padRight(36)}'
+      '${(total - inLua).toStringAsFixed(3)} ms',
+    );
   }
 
   worker.dispose();
@@ -406,15 +432,20 @@ int compareWithBaseline({bool update = false}) {
       snapshot[k] = _metrics[k] ?? 0.0;
     }
     file.writeAsStringSync(
-        const JsonEncoder.withIndent('  ').convert(snapshot));
-    stdout.writeln('\n已写入基线：$_baselinePath'
-        '${baseline.isEmpty ? '（首次建立）' : ''}');
+      const JsonEncoder.withIndent('  ').convert(snapshot),
+    );
+    stdout.writeln(
+      '\n已写入基线：$_baselinePath'
+      '${baseline.isEmpty ? '（首次建立）' : ''}',
+    );
     return 0;
   }
 
   stdout.writeln('\n\x1b[1m=== 与基线比较 ===\x1b[0m');
-  stdout.writeln('  ${'指标'.padRight(22)}${'本次'.padRight(12)}'
-      '${'基线'.padRight(12)}${'变化'.padRight(10)}判定');
+  stdout.writeln(
+    '  ${'指标'.padRight(22)}${'本次'.padRight(12)}'
+    '${'基线'.padRight(12)}${'变化'.padRight(10)}判定',
+  );
   int worse = 0;
   int better = 0;
   for (final key in _watched) {
@@ -427,20 +458,24 @@ int compareWithBaseline({bool update = false}) {
     final verdict = ratio > tol
         ? '\x1b[31m劣化\x1b[0m'
         : ratio < -tol
-            ? '\x1b[32m改善\x1b[0m'
-            : 'ok';
+        ? '\x1b[32m改善\x1b[0m'
+        : 'ok';
     if (ratio > tol) worse++;
     if (ratio < -tol) better++;
 
-    stdout.writeln('  ${key.padRight(22)}'
-        '${now.toStringAsFixed(3).padRight(12)}'
-        '${before.toStringAsFixed(3).padRight(12)}'
-        '${'${(ratio * 100).toStringAsFixed(1)}%'.padRight(10)}'
-        '$verdict');
+    stdout.writeln(
+      '  ${key.padRight(22)}'
+      '${now.toStringAsFixed(3).padRight(12)}'
+      '${before.toStringAsFixed(3).padRight(12)}'
+      '${'${(ratio * 100).toStringAsFixed(1)}%'.padRight(10)}'
+      '$verdict',
+    );
   }
   stdout.writeln('\n  劣化 $worse 项，改善 $better 项。');
-  stdout.writeln('  阈值（按实测波动定的，不是拍的）：固定成本/规模 25%，'
-      '冷启动 40%，事件 30%，漂移 30%。');
+  stdout.writeln(
+    '  阈值（按实测波动定的，不是拍的）：固定成本/规模 25%，'
+    '冷启动 40%，事件 30%，漂移 30%。',
+  );
   stdout.writeln('  劣化不代表一定是问题——先跑两次看是否稳定，再看是否与本次改动相关。');
   stdout.writeln('  确认是环境差异就更新基线：dart run tools/bench_pipeline.dart --update');
   return worse;

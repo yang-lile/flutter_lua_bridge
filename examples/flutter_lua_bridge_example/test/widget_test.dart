@@ -2,7 +2,7 @@
 //
 // This file contains widget tests for the example application.
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_lua_bridge_example/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,7 +12,9 @@ void main() {
   });
 
   group('HomePage Tests', () {
-    testWidgets('App displays correct title and initial state', (WidgetTester tester) async {
+    testWidgets('App displays correct title and initial state', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
 
@@ -31,7 +33,9 @@ void main() {
       expect(find.byIcon(Icons.play_arrow), findsOneWidget);
     });
 
-    testWidgets('Bridge test list tile executes Lua code and updates UI', (WidgetTester tester) async {
+    testWidgets('Bridge test list tile executes Lua code and updates UI', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
 
@@ -49,7 +53,9 @@ void main() {
       expect(find.textContaining('Random value B:'), findsOneWidget);
     });
 
-    testWidgets('Game demo list tile navigates to GameDemoPage', (WidgetTester tester) async {
+    testWidgets('Game demo list tile navigates to GameDemoPage', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
 

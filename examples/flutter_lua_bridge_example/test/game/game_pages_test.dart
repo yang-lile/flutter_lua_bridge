@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_lua_bridge_example/game/battle_arena_page.dart';
@@ -7,10 +7,11 @@ import 'package:flutter_lua_bridge_example/game/game_demo_page.dart';
 import 'package:flutter_lua_bridge_example/game/game_scripts.dart';
 import 'package:flutter_lua_bridge_example/game/safety_levels_page.dart';
 import 'package:flutter_lua_bridge_example/l10n/app_localizations.dart';
+import 'package:flutter_lua_bridge_example/l10n/delegates.dart';
 
 Widget app(Widget home) => MaterialApp(
   locale: const Locale('zh'),
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   home: home,
 );

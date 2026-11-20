@@ -53,12 +53,8 @@ double best(int reps, void Function() f) {
 
 final _sb = StringBuffer();
 
-String _quote(String s) => '"${s
-    .replaceAll(r'\', r'\\')
-    .replaceAll('"', r'\"')
-    .replaceAll('\n', r'\n')
-    .replaceAll('\r', r'\r')
-    .replaceAll('\t', r'\t')}"';
+String _quote(String s) =>
+    '"${s.replaceAll(r'\', r'\\').replaceAll('"', r'\"').replaceAll('\n', r'\n').replaceAll('\r', r'\r').replaceAll('\t', r'\t')}"';
 
 String _number(num v) {
   if (v is int) return '$v';
@@ -148,73 +144,78 @@ String toRfwText(UiNode root) {
 // ---------- 输入：一条真实的树（两条路线共用） ----------
 
 Map<String, dynamic> _rawItem(int i) => {
-      r'$widget': 'Card',
+  r'$widget': 'Card',
+  r'$args': {
+    'child': {
+      r'$widget': 'Column',
       r'$args': {
-        'child': {
-          r'$widget': 'Column',
-          r'$args': {
-            'gap': 8.0,
-            'children': [
-              {
-                r'$widget': 'Row',
-                r'$args': {
-                  'mainAxisAlignment': 'spaceBetween',
-                  'children': [
-                    {
-                      r'$widget': 'Icon',
-                      r'$args': {
-                        'icon': {'icon': 0xe145, 'fontFamily': 'MaterialIcons'},
-                        'size': 16.0,
-                      },
-                    },
-                    {
-                      r'$widget': 'Text',
-                      r'$args': {
-                        'text': '第 $i 项',
-                        'style': {'fontSize': 14.0, 'fontWeight': 'w500'},
-                      },
-                    },
-                  ],
-                },
-              },
-              {
-                r'$widget': 'ElevatedButton',
-                r'$args': {
-                  'onPressed': {r'$event': 'select', r'$arg': {'index': i}},
-                  'child': {
-                    r'$widget': 'Text',
-                    r'$args': {'text': '选择'},
+        'gap': 8.0,
+        'children': [
+          {
+            r'$widget': 'Row',
+            r'$args': {
+              'mainAxisAlignment': 'spaceBetween',
+              'children': [
+                {
+                  r'$widget': 'Icon',
+                  r'$args': {
+                    'icon': {'icon': 0xe145, 'fontFamily': 'MaterialIcons'},
+                    'size': 16.0,
                   },
                 },
-              },
-            ],
+                {
+                  r'$widget': 'Text',
+                  r'$args': {
+                    'text': '第 $i 项',
+                    'style': {'fontSize': 14.0, 'fontWeight': 'w500'},
+                  },
+                },
+              ],
+            },
           },
-        },
+          {
+            r'$widget': 'ElevatedButton',
+            r'$args': {
+              'onPressed': {
+                r'$event': 'select',
+                r'$arg': {'index': i},
+              },
+              'child': {
+                r'$widget': 'Text',
+                r'$args': {'text': '选择'},
+              },
+            },
+          },
+        ],
       },
-    };
+    },
+  },
+};
 
 Map<String, dynamic> buildEnvelope(int n) => {
-      'version': 1,
-      'widget': 'root',
-      'title': 'T',
-      'state': {'n': 0},
-      'events': ['select'],
-      'tree': {
-        r'$widget': 'Column',
-        r'$args': {
-          'mainAxisAlignment': 'center',
-          'children': [for (var i = 1; i <= n; i++) _rawItem(i)],
-        },
-      },
-      'node_count': 0,
-    };
+  'version': 1,
+  'widget': 'root',
+  'title': 'T',
+  'state': {'n': 0},
+  'events': ['select'],
+  'tree': {
+    r'$widget': 'Column',
+    r'$args': {
+      'mainAxisAlignment': 'center',
+      'children': [for (var i = 1; i <= n; i++) _rawItem(i)],
+    },
+  },
+  'node_count': 0,
+};
 
 void main() {
   stderr.writeln('=== 路线对比：rfw 文本 vs JSON 契约 ===');
   stderr.writeln('  只量 Dart 侧（A 也不含 Lua 的 json.encode，B 不含文本生成）\n');
-  stderr.writeln('  ${'规模'.padRight(8)}${'节点'.padRight(10)}'
-      '${'A: json'.padRight(13)}${'B: 文本解析'.padRight(15)}'
-      '${'B/A'.padRight(9)}${'JSON/文本'.padRight(11)}');
+  stderr.writeln(
+    '  ${'规模'.padRight(8)}${'节点'.padRight(10)}'
+    '${'A: json'.padRight(13)}${'B: 文本解析'.padRight(15)}'
+    '${'B/A'.padRight(9)}${'JSON/文本'.padRight(11)}',
+  );
 
   var firstRun = true;
   for (final n in [25, 125, 500]) {
@@ -234,18 +235,25 @@ void main() {
     final tA = best(20, () => buildUiLibrary(UiTree.parse(jsonText)));
     final tB = best(20, () => parseLibraryFile(text));
 
-    stderr.writeln('  ${n.toString().padRight(10)}${envelope['node_count'].toString().padRight(12)}'
-        '${tA.toStringAsFixed(3).padRight(13)}${tB.toStringAsFixed(3).padRight(15)}'
-        '${(tB / tA).toStringAsFixed(2).padRight(9)}'
-        '${(jsonText.length / text.length).toStringAsFixed(2).padRight(11)}');
+    stderr.writeln(
+      '  ${n.toString().padRight(10)}${envelope['node_count'].toString().padRight(12)}'
+      '${tA.toStringAsFixed(3).padRight(13)}${tB.toStringAsFixed(3).padRight(15)}'
+      '${(tB / tA).toStringAsFixed(2).padRight(9)}'
+      '${(jsonText.length / text.length).toStringAsFixed(2).padRight(11)}',
+    );
 
     if (firstRun) {
       firstRun = false;
-      check('两条路线产出的库字节完全相同',
-          bytesA.length == bytesB.length,
-          '${bytesA.length} vs ${bytesB.length} 字节');
-      check('语义等价，但解析更慢（所以换路线的理由不是性能）', tB > tA,
-          'A ${tA.toStringAsFixed(3)}ms vs B ${tB.toStringAsFixed(3)}ms');
+      check(
+        '两条路线产出的库字节完全相同',
+        bytesA.length == bytesB.length,
+        '${bytesA.length} vs ${bytesB.length} 字节',
+      );
+      check(
+        '语义等价，但解析更慢（所以换路线的理由不是性能）',
+        tB > tA,
+        'A ${tA.toStringAsFixed(3)}ms vs B ${tB.toStringAsFixed(3)}ms',
+      );
     }
   }
 

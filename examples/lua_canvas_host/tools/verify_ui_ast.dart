@@ -49,8 +49,12 @@ UiTree buildTree(String root, String code) {
 }
 
 /// 跑一次事件，返回新的契约。
-UiTree dispatch(UiTree before, String code, String event,
-    [Map<String, dynamic>? args]) {
+UiTree dispatch(
+  UiTree before,
+  String code,
+  String event, [
+  Map<String, dynamic>? args,
+]) {
   final r = LuaSandbox().runUi(
     code,
     libraryPath: _root,
@@ -139,25 +143,35 @@ void main() {
   check('入口 widget 名', counter.widget == 'root');
   check('标题带过来了', counter.title == '计数器', counter.title);
   check('节点数 > 0', counter.actualNodeCount > 0, '${counter.actualNodeCount} 个');
-  check('Lua 自报节点数与 Dart 一致', counter.validate().isEmpty,
-      counter.validate().join(' | '));
+  check(
+    'Lua 自报节点数与 Dart 一致',
+    counter.validate().isEmpty,
+    counter.validate().join(' | '),
+  );
   check('事件清单已注册', counter.events.length == 3, counter.events.join(','));
-  check('树里引用的事件都在清单里',
-      counter.referencedEvents.difference(counter.events.toSet()).isEmpty,
-      counter.referencedEvents.join(','));
+  check(
+    '树里引用的事件都在清单里',
+    counter.referencedEvents.difference(counter.events.toSet()).isEmpty,
+    counter.referencedEvents.join(','),
+  );
 
   // ---- 2. rfw AST 转换 ----
   section('\n=== 2. UiTree -> rfw AST ===');
   final lib = buildUiLibrary(counter);
   check('库只有一个 root 声明', lib.widgets.length == 1, '${lib.widgets.length}');
   check('入口是 ConstructorCall', lib.widgets.first.root is ConstructorCall);
-  check('导入三个本地库', lib.imports.length == 3,
-      lib.imports.map((i) => i.name.toString()).join(', '));
+  check(
+    '导入三个本地库',
+    lib.imports.length == 3,
+    lib.imports.map((i) => i.name.toString()).join(', '),
+  );
 
   final names = collectWidgetNames(counter);
-  check('用到的 widget 都在 rfw 清单里',
-      names.every(kBuiltinWidgets.contains),
-      names.where((n) => !kBuiltinWidgets.contains(n)).join(', '));
+  check(
+    '用到的 widget 都在 rfw 清单里',
+    names.every(kBuiltinWidgets.contains),
+    names.where((n) => !kBuiltinWidgets.contains(n)).join(', '),
+  );
   check('覆盖多种 widget', names.length >= 5, names.join(' '));
 
   // ---- 3. blob 编解码往返 ----
@@ -188,54 +202,83 @@ void main() {
   section('\n=== 4. 事件分发（状态必须累积）===');
   final t0 = counter.state['count'] as int;
   final afterInc = dispatch(counter, counterApp, 'inc', {'amount': 5});
-  check('事件改了状态', afterInc.state['count'] == t0 + 5,
-      '$t0 -> ${afterInc.state["count"]}');
+  check(
+    '事件改了状态',
+    afterInc.state['count'] == t0 + 5,
+    '$t0 -> ${afterInc.state["count"]}',
+  );
 
   final afterAgain = dispatch(afterInc, counterApp, 'inc');
-  check('默认参数生效', afterAgain.state['count'] == t0 + 6,
-      '${afterInc.state["count"]} -> ${afterAgain.state["count"]}');
+  check(
+    '默认参数生效',
+    afterAgain.state['count'] == t0 + 6,
+    '${afterInc.state["count"]} -> ${afterAgain.state["count"]}',
+  );
 
   final afterToggle = dispatch(afterAgain, counterApp, 'toggle_verbose');
-  check('无参事件也能改状态', afterToggle.state['verbose'] == true,
-      '${afterToggle.state["verbose"]}');
+  check(
+    '无参事件也能改状态',
+    afterToggle.state['verbose'] == true,
+    '${afterToggle.state["verbose"]}',
+  );
 
   final afterReset = dispatch(afterToggle, counterApp, 'reset');
-  check('reset 把状态清零', afterReset.state['count'] == 0,
-      '${afterReset.state["count"]}');
+  check(
+    'reset 把状态清零',
+    afterReset.state['count'] == 0,
+    '${afterReset.state["count"]}',
+  );
 
   // 关键：状态必须由宿主注入。若不注入，每次事件都会回到初始值——
   // 表现为「点一下归零」，而且看起来完全正常。
-  check('多次事件后状态是累积的',
-      afterReset.state['count'] == 0 && afterAgain.state['count'] == t0 + 6);
+  check(
+    '多次事件后状态是累积的',
+    afterReset.state['count'] == 0 && afterAgain.state['count'] == t0 + 6,
+  );
 
   // ---- 5. 指纹 ----
   section('\n=== 5. 内容指纹 ===');
   check('指纹存在', counter.fingerprint != null, counter.fingerprint);
   // 不能用 int.tryParse 判：指纹高 32 位可能超过 Dart int 的有符号 64 位，
   // 0xfa00890200000000 这种会溢出成 null，而它其实是个合法指纹。
-  check('指纹是 16 位十六进制',
-      counter.fingerprint != null &&
-          counter.fingerprint!.length == 16 &&
-          RegExp(r'^[0-9a-f]{16}$').hasMatch(counter.fingerprint!),
-      counter.fingerprint);
-  check('状态变了指纹就变', counter.fingerprint != afterInc.fingerprint,
-      '${counter.fingerprint} vs ${afterInc.fingerprint}');
-  check('同一状态两次构建指纹相同',
-      buildTree(_root, counterApp).fingerprint == counter.fingerprint);
+  check(
+    '指纹是 16 位十六进制',
+    counter.fingerprint != null &&
+        counter.fingerprint!.length == 16 &&
+        RegExp(r'^[0-9a-f]{16}$').hasMatch(counter.fingerprint!),
+    counter.fingerprint,
+  );
+  check(
+    '状态变了指纹就变',
+    counter.fingerprint != afterInc.fingerprint,
+    '${counter.fingerprint} vs ${afterInc.fingerprint}',
+  );
+  check(
+    '同一状态两次构建指纹相同',
+    buildTree(_root, counterApp).fingerprint == counter.fingerprint,
+  );
 
   // ---- 6. 第二个应用 ----
   section('\n=== 6. 循环与列表 ===');
   final UiTree gallery = buildTree(_root, galleryApp);
   check('解析成功', gallery.actualNodeCount > 0, '${gallery.actualNodeCount} 个节点');
-  check('Lua 与 Dart 节点数一致', gallery.validate().isEmpty,
-      gallery.validate().join(' | '));
+  check(
+    'Lua 与 Dart 节点数一致',
+    gallery.validate().isEmpty,
+    gallery.validate().join(' | '),
+  );
 
   final picked = dispatch(gallery, galleryApp, 'pick', {'index': 2});
-  check('列表项事件带上 index', picked.state['picked'] == 2,
-      '${picked.state["picked"]}');
-  check('自定义组件 studio.Kpi 进了树',
-      collectWidgetNames(picked).contains('studio.Kpi'),
-      collectWidgetNames(picked).join(' '));
+  check(
+    '列表项事件带上 index',
+    picked.state['picked'] == 2,
+    '${picked.state["picked"]}',
+  );
+  check(
+    '自定义组件 studio.Kpi 进了树',
+    collectWidgetNames(picked).contains('studio.Kpi'),
+    collectWidgetNames(picked).join(' '),
+  );
 
   // ---- 7. 数值类型 ----
   // rfw 的 `DataSource.v<T>()` 是 `value is T ? value : null`：
@@ -285,15 +328,23 @@ return json.encode(app:build())
 
   // rfw 用 v<double> 解码的参数——必须是 double
   const doubleArgs = <String>[
-    'width', 'height', 'thickness', 'size', 'gap',
-    'min', 'max', 'value',
+    'width',
+    'height',
+    'thickness',
+    'size',
+    'gap',
+    'min',
+    'max',
+    'value',
   ];
   for (final key in doubleArgs) {
     final seen = types[key];
     if (seen == null) continue;
-    check('$key 是 double（rfw 用 v<double> 读）',
-        seen.every((t) => t.contains('double')),
-        seen.join(','));
+    check(
+      '$key 是 double（rfw 用 v<double> 读）',
+      seen.every((t) => t.contains('double')),
+      seen.join(','),
+    );
   }
 
   // rfw 用 v<int> 解码的参数——必须是 int
@@ -301,22 +352,27 @@ return json.encode(app:build())
   for (final key in intArgs) {
     final seen = types[key];
     if (seen == null) continue;
-    check('$key 是 int（rfw 用 v<int> 读）',
-        seen.every((t) => t.contains('int')),
-        seen.join(','));
+    check(
+      '$key 是 int（rfw 用 v<int> 读）',
+      seen.every((t) => t.contains('int')),
+      seen.join(','),
+    );
   }
 
   // padding 是 4 元数组，rfw 逐项用 v<double> 读
-  final padNode = numeric.root.walk().firstWhere(
-    (n) => n.widget == 'Padding',
-  );
+  final padNode = numeric.root.walk().firstWhere((n) => n.widget == 'Padding');
   final insets = (padNode.args['padding'] as List).cast<num>();
-  check('padding 四项都是 double',
-      insets.length == 4 && insets.every((v) => v is double && v == v.roundToDouble()),
-      insets.map((v) => '$v(${v.runtimeType})').join(' '));
-  check('padding 的值没被改（x=4 y=6）',
-      insets[0] == 4.0 && insets[1] == 6.0,
-      insets.join(','));
+  check(
+    'padding 四项都是 double',
+    insets.length == 4 &&
+        insets.every((v) => v is double && v == v.roundToDouble()),
+    insets.map((v) => '$v(${v.runtimeType})').join(' '),
+  );
+  check(
+    'padding 的值没被改（x=4 y=6）',
+    insets[0] == 4.0 && insets[1] == 6.0,
+    insets.join(','),
+  );
 
   // ---- 8. 错误信息 ----
   // Lua 侧的报错质量直接决定编辑器好不好用：必须能指出错在哪。
@@ -359,31 +415,50 @@ return json.encode(app:build())''',
     final r = LuaSandbox().runUi(code, libraryPath: _root);
     final msg = r.error ?? '(没有报错)';
     // 报错必须带位置，否则用户得自己数行
-    check('$name 有可读报错',
-        r.error != null && msg.contains('ui:'),
-        msg.split('\n').first);
+    check(
+      '$name 有可读报错',
+      r.error != null && msg.contains('ui:'),
+      msg.split('\n').first,
+    );
   });
 
   // 分发不存在的事件
-  final badDispatch = LuaSandbox().runUi(counterApp,
-      libraryPath: _root, stateJson: counter.stateJson, eventName: '不存在');
-  check('分发未注册的事件会报错',
-      badDispatch.error != null && badDispatch.error!.contains('未注册的事件'),
-      badDispatch.error?.split('\n').first);
+  final badDispatch = LuaSandbox().runUi(
+    counterApp,
+    libraryPath: _root,
+    stateJson: counter.stateJson,
+    eventName: '不存在',
+  );
+  check(
+    '分发未注册的事件会报错',
+    badDispatch.error != null && badDispatch.error!.contains('未注册的事件'),
+    badDispatch.error?.split('\n').first,
+  );
 
   // ---- 9. 坏契约 ----
   section('\n=== 8. 宿主侧校验（不信任脚本）===');
-  check('拒绝缺 tree 的契约',
-      _parseFails('{"version":1,"widget":"root"}', '缺少 tree'));
-  check('拒绝版本不对的契约',
-      _parseFails('{"version":99,"widget":"root","tree":{"\$widget":"Text"}}', '版本'));
-  check('拒绝缺 widget 名的节点',
-      _parseFails('{"version":1,"widget":"root","tree":{"\$args":{}}}', 'widget'));
+  check(
+    '拒绝缺 tree 的契约',
+    _parseFails('{"version":1,"widget":"root"}', '缺少 tree'),
+  );
+  check(
+    '拒绝版本不对的契约',
+    _parseFails(
+      '{"version":99,"widget":"root","tree":{"\$widget":"Text"}}',
+      '版本',
+    ),
+  );
+  check(
+    '拒绝缺 widget 名的节点',
+    _parseFails('{"version":1,"widget":"root","tree":{"\$args":{}}}', 'widget'),
+  );
 
   stderr.writeln('\n$_pass passed, $_fail failed');
   if (_fail == 0) {
-    stderr.writeln('\n'
-        'Lua 产出可被 Dart 完整消费，并编成合法的 rfw 远端库');
+    stderr.writeln(
+      '\n'
+      'Lua 产出可被 Dart 完整消费，并编成合法的 rfw 远端库',
+    );
   }
   exit(_fail == 0 ? 0 : 1);
 }

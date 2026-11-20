@@ -2,7 +2,7 @@
 // exception or Flutter error:
 //
 //   flutter test integration_test -d macos
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 import 'package:flutter_lua_bridge_example/game/formulas.dart';
 import 'package:flutter_lua_bridge_example/main.dart';

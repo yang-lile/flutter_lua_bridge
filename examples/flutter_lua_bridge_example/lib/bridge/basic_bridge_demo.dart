@@ -1,5 +1,6 @@
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 import 'package:flutter/services.dart';
+
 import 'basic_api.dart';
 
 typedef BridgeDemoResult = RandomResult;

@@ -69,8 +69,11 @@ void main() {
     if (r.error != null) {
       // 「会报错的样子」是故意出错的，跳过成功断言
       if (name == '会报错的样子') {
-        check('$name（预期报错）', r.displayListJson == null,
-            r.error!.split('\n').first);
+        check(
+          '$name（预期报错）',
+          r.displayListJson == null,
+          r.error!.split('\n').first,
+        );
       } else {
         check(name, false, r.error!.split('\n').first);
       }

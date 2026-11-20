@@ -43,7 +43,7 @@
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:rfw/rfw.dart';
 
@@ -69,10 +69,16 @@ const LibraryName _main = LibraryName(<String>['lua']);
 ConstructorCall _rowItemBody({String? readDataKey, String? readStateKey}) {
   final textArgs = <String, dynamic>{'text': '静态'};
   if (readDataKey != null) {
-    textArgs['text'] = <Object?>['值 ', DataReference(<String>[readDataKey])];
+    textArgs['text'] = <Object?>[
+      '值 ',
+      DataReference(<String>[readDataKey]),
+    ];
   }
   if (readStateKey != null) {
-    textArgs['text'] = <Object?>['值 ', StateReference(<String>[readStateKey])];
+    textArgs['text'] = <Object?>[
+      '值 ',
+      StateReference(<String>[readStateKey]),
+    ];
   }
 
   return ConstructorCall('Column', <String, dynamic>{
@@ -81,7 +87,10 @@ ConstructorCall _rowItemBody({String? readDataKey, String? readStateKey}) {
       ConstructorCall('Row', <String, dynamic>{
         'children': <Object?>[
           ConstructorCall('Icon', <String, dynamic>{
-            'icon': <String, dynamic>{'icon': 0xe145, 'fontFamily': 'MaterialIcons'},
+            'icon': <String, dynamic>{
+              'icon': 0xe145,
+              'fontFamily': 'MaterialIcons',
+            },
             'size': 16.0,
           }),
           ConstructorCall('Text', textArgs),
@@ -101,23 +110,23 @@ ConstructorCall _rowItemBody({String? readDataKey, String? readStateKey}) {
 RemoteWidgetLibrary _flatLibrary(int n, {int revision = 0, int readers = 0}) {
   final children = <Object?>[];
   for (var i = 0; i < n; i++) {
-    final body = _rowItemBody(
-      readDataKey: i < readers ? 'k' : null,
-    );
+    final body = _rowItemBody(readDataKey: i < readers ? 'k' : null);
     // revision 每次不同：确保换库一定被判为"变了"，走完整的重建路径
     if (revision != 0) {
-      children.add(ConstructorCall('Text', <String, dynamic>{
-        'text': 'r$revision',
-      }));
+      children.add(
+        ConstructorCall('Text', <String, dynamic>{'text': 'r$revision'}),
+      );
     }
     children.add(body);
   }
   return RemoteWidgetLibrary(
     <Import>[const Import(_coreWidgets), const Import(_coreMaterial)],
     <WidgetDeclaration>[
-      WidgetDeclaration('root', null, ConstructorCall('Column', <String, dynamic>{
-        'children': children,
-      })),
+      WidgetDeclaration(
+        'root',
+        null,
+        ConstructorCall('Column', <String, dynamic>{'children': children}),
+      ),
     ],
   );
 }
@@ -145,7 +154,9 @@ RemoteWidgetLibrary _componentLibrary(
   final refs = <Object?>[];
   for (var i = 0; i < n; i++) {
     if (revision != 0) {
-      refs.add(ConstructorCall('Text', <String, dynamic>{'text': 'r$revision'}));
+      refs.add(
+        ConstructorCall('Text', <String, dynamic>{'text': 'r$revision'}),
+      );
     }
     refs.add(ConstructorCall('RowItem', <String, dynamic>{'index': i}));
   }
@@ -154,9 +165,11 @@ RemoteWidgetLibrary _componentLibrary(
     <Import>[const Import(_coreWidgets), const Import(_coreMaterial)],
     <WidgetDeclaration>[
       item,
-      WidgetDeclaration('root', null, ConstructorCall('Column', <String, dynamic>{
-        'children': refs,
-      })),
+      WidgetDeclaration(
+        'root',
+        null,
+        ConstructorCall('Column', <String, dynamic>{'children': refs}),
+      ),
     ],
   );
 }
@@ -233,13 +246,7 @@ Future<void> runBench() async {
   _out('');
 
   final header = StringBuffer('  ${'规模'.padRight(8)}');
-  for (final c in <String>[
-    '地板',
-    '换库·平铺',
-    '换库·组件化',
-    '改data·全读',
-    '改data·1读',
-  ]) {
+  for (final c in <String>['地板', '换库·平铺', '换库·组件化', '改data·全读', '改data·1读']) {
     header.write(c.padRight(14));
   }
   _out(header.toString());
@@ -256,8 +263,7 @@ Future<void> runBench() async {
     _runtime.update(_main, _componentLibrary(n, revision: 1));
     await frameTime(() {});
     final comp = await measure(<String, void Function()>{
-      '换库·组件化': () =>
-          _runtime.update(_main, _componentLibrary(n, revision: 2)),
+      '换库·组件化': () => _runtime.update(_main, _componentLibrary(n, revision: 2)),
     });
 
     // ---- 改 data · 全读（平铺，所有节点都订阅 k）----
@@ -275,12 +281,14 @@ Future<void> runBench() async {
     });
 
     String f(double v) => v.toStringAsFixed(2);
-    _out('  ${n.toString().padRight(10)}'
-        '${f(flat.floor).padRight(14)}'
-        '${f(flat.net('换库·平铺')).padRight(14)}'
-        '${f(comp.net('换库·组件化')).padRight(14)}'
-        '${f(allRead.net('改data·全读')).padRight(14)}'
-        '${f(oneRead.net('改data·1读')).padRight(14)}');
+    _out(
+      '  ${n.toString().padRight(10)}'
+      '${f(flat.floor).padRight(14)}'
+      '${f(flat.net('换库·平铺')).padRight(14)}'
+      '${f(comp.net('换库·组件化')).padRight(14)}'
+      '${f(allRead.net('改data·全读')).padRight(14)}'
+      '${f(oneRead.net('改data·1读')).padRight(14)}',
+    );
 
     await Future<void>.delayed(const Duration(milliseconds: 60));
   }
@@ -339,6 +347,7 @@ void main() {
   // 等首帧之后再开始量
   SchedulerBinding.instance.addPostFrameCallback((_) {
     unawaited(
-        Future<void>.delayed(const Duration(milliseconds: 500), runBench));
+      Future<void>.delayed(const Duration(milliseconds: 500), runBench),
+    );
   });
 }
