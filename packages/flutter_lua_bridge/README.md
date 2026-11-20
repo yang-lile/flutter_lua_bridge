@@ -38,6 +38,35 @@ try {
 - **Threading**: calls are synchronous and confined to the isolate that
   created the runtime.
 
+## Coroutines and asynchronous Dart functions
+
+Lua coroutines are `LuaThread`s: `function.coroutine()`, then `resume`. A
+Dart function can also suspend the coroutine that called it, so Lua calls
+asynchronous Dart code as if it were synchronous:
+
+```dart
+lua['fetch'] = lua.function((args) async {
+  await Future.delayed(const Duration(milliseconds: 10)); // a network call, say
+  return 'body of ${args.single}';
+});
+
+final length = lua.eval('''
+  return function(url)
+    local body = fetch(url)          -- suspends here until the future completes
+    return #body
+  end''') as LuaFunction;
+
+print(await length.callAsync(['/home'])); // [13]
+```
+
+`callAsync` runs the function in a coroutine and awaits every `Future` a
+Dart function returns; a failed future raises a Lua error at the call. For
+a hand-written driver, return `LuaYield(values)` instead, and continue with
+`resume` or `resumeWithError`. The coroutine is suspended only after the
+Dart function has returned, so no Dart stack frame is ever unwound. For the
+same reason, Lua reached through another Dart callback cannot be suspended,
+and the call raises an error.
+
 ## Typed contracts
 
 Describe the API in Dart and let the generator write both sides:

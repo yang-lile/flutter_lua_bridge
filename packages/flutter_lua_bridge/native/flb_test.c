@@ -101,7 +101,9 @@ enum {
   FN_OBJECT_ID = 5,
   FN_INTERRUPT = 6,
   FN_LOADER = 7,
-  FN_SEARCHER = 8
+  FN_SEARCHER = 8,
+  FN_AWAIT = 9,
+  FN_CAN_YIELD = 10
 };
 
 static int released_functions = 0;
@@ -190,6 +192,15 @@ static void host_call(flb_state *S, int64_t id, const flb_value *args,
         flb_value result = string("\n\tno host module");
         flb_return(S, &result, 1);
       }
+      return;
+    }
+    case FN_AWAIT:
+      /* Suspends the calling coroutine, yielding the arguments. */
+      OK(flb_yield(S, args, count));
+      return;
+    case FN_CAN_YIELD: {
+      flb_value result = boolean(flb_can_yield(S));
+      flb_return(S, &result, 1);
       return;
     }
     default:
@@ -745,6 +756,111 @@ static void test_coroutines(flb_state *S) {
   CHECK(flb_thread_status(S, 987654, &status) == FLB_ERROR_ARGUMENT);
 }
 
+/* Runs `code`, a chunk returning a function, as a new coroutine. */
+static flb_ref coroutine_of(flb_state *S, const char *code) {
+  flb_ref thread = 0;
+  const flb_value *body = eval(S, code);
+  OK(flb_thread_new(S, body->i, &thread));
+  OK(flb_release(S, body->i));
+  return thread;
+}
+
+static void test_yielding_host_functions(flb_state *S) {
+  const flb_value *out = NULL;
+  size_t count = 0;
+  flb_ref thread;
+  flb_value arguments[2];
+  const char *code;
+
+  set_host_function(S, "await", FN_AWAIT);
+  set_host_function(S, "can_yield", FN_CAN_YIELD);
+  set_host_function(S, "call_back", FN_CALL_BACK);
+
+  /* The host function suspends the coroutine with its own values, and the
+   * resume arguments become its results. */
+  thread = coroutine_of(S, "return function(x)\n"
+                           "  local a, b = await('request', x)\n"
+                           "  return a .. b\n"
+                           "end");
+  arguments[0] = integer(7);
+  CHECK(flb_resume(S, thread, arguments, 1, &out, &count) == FLB_YIELD);
+  CHECK(count == 2 && is_string(&out[0], "request") && out[1].i == 7);
+  arguments[0] = string("got ");
+  arguments[1] = string("it");
+  OK(flb_resume(S, thread, arguments, 2, &out, &count));
+  CHECK(count == 1 && is_string(out, "got it"));
+  OK(flb_release(S, thread));
+
+  /* It can be suspended inside pcall, as the generated wrappers call it. */
+  thread = coroutine_of(S, "return function()\n"
+                           "  local ok, v = pcall(await, 'p')\n"
+                           "  return tostring(ok) .. ':' .. v\n"
+                           "end");
+  CHECK(flb_resume(S, thread, NULL, 0, &out, &count) == FLB_YIELD);
+  CHECK(count == 1 && is_string(out, "p"));
+  arguments[0] = integer(5);
+  OK(flb_resume(S, thread, arguments, 1, &out, &count));
+  CHECK(is_string(out, "true:5"));
+  OK(flb_release(S, thread));
+
+  /* flb_resume_failure makes the host function raise, like flb_fail: with
+   * its host id when Lua does not handle it... */
+  thread = coroutine_of(S, "return function() return await('q') end");
+  CHECK(flb_resume(S, thread, NULL, 0, NULL, NULL) == FLB_YIELD);
+  CHECK(flb_resume_failure(S, thread, 777, "remote failed", 13, &out, &count) ==
+        FLB_ERROR_HOST);
+  CHECK(flb_error_host_id(S) == 777);
+  CHECK(message_contains(S, "remote failed"));
+  OK(flb_release(S, thread));
+
+  /* ...and as an ordinary string error when it does. */
+  thread = coroutine_of(S, "return function()\n"
+                           "  local ok, e = pcall(await, 'q')\n"
+                           "  return tostring(ok) .. ':' .. e\n"
+                           "end");
+  CHECK(flb_resume(S, thread, NULL, 0, NULL, NULL) == FLB_YIELD);
+  OK(flb_resume_failure(S, thread, 778, "remote failed", 13, &out, &count));
+  CHECK(is_string(out, "false:remote failed"));
+  OK(flb_release(S, thread));
+
+  /* Outside a coroutine the host function raises instead of yielding. */
+  code = "return await('x')";
+  CHECK(flb_run(S, code, strlen(code), NULL, NULL, NULL) == FLB_ERROR_RUNTIME);
+  CHECK(message_contains(S, "outside a coroutine"));
+  CHECK(is_string(eval(S, "return tostring(can_yield())"), "false"));
+
+  /* Nor can a coroutine be suspended across a host function that called back
+   * into Lua: that would unwind the host's stack frames. */
+  out = eval(S, "return function(n) return can_yield() and 1 or 0 end");
+  call_back_target = out->i;
+  thread = coroutine_of(S, "return function()\n"
+                           "  return (can_yield() and 1 or 0), call_back(0, 'kept')\n"
+                           "end");
+  OK(flb_resume(S, thread, NULL, 0, &out, &count));
+  CHECK(count == 2 && out[0].i == 1 && out[1].i == 0);
+  OK(flb_release(S, thread));
+  OK(flb_release(S, call_back_target));
+
+  /* A coroutine resumed by Lua passes the values to Lua's resume. */
+  out = eval(S, "local co = coroutine.wrap(function() return await('in lua') .. '!' end)\n"
+                "local first = co()\n"
+                "return first .. '|' .. co('done')");
+  CHECK(is_string(out, "in lua|done!"));
+
+  /* flb_resume_failure needs a coroutine suspended in a host function. */
+  thread = coroutine_of(S, "return function() coroutine.yield() end");
+  CHECK(flb_resume(S, thread, NULL, 0, NULL, NULL) == FLB_YIELD);
+  CHECK(flb_resume_failure(S, thread, 1, "x", 1, NULL, NULL) == FLB_ERROR_ARGUMENT);
+  CHECK(message_contains(S, "not suspended in a host function"));
+  OK(flb_resume(S, thread, NULL, 0, NULL, NULL));
+  CHECK(flb_resume_failure(S, thread, 1, "x", 1, NULL, NULL) == FLB_ERROR_ARGUMENT);
+  OK(flb_release(S, thread));
+
+  /* flb_yield and flb_can_yield are only meaningful inside a host call. */
+  CHECK(flb_yield(S, NULL, 0) == FLB_ERROR_ARGUMENT);
+  CHECK(flb_can_yield(S) == 0);
+}
+
 static void test_tokens(flb_state *S) {
   const flb_value *out = eval(S, "probe = setmetatable({}, { __mode = 'v' })\n"
                                   "probe[1] = {} return probe[1]");
@@ -889,6 +1005,7 @@ int main(void) {
   test_host_objects(S);
   test_chunks(S);
   test_coroutines(S);
+  test_yielding_host_functions(S);
   test_tokens(S);
   flb_state_release(S);
   test_sandbox();
