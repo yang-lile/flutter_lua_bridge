@@ -1,3 +1,11 @@
+## 0.2.0
+
+- Require Dart 3.14 (Flutter 3.50) and the current majors of the build hook
+  dependencies: `hooks` and `code_assets` 2.2, `native_toolchain_c` 0.19.6,
+  `archive` 4.7.
+- The native bindings are regenerated with ffigen 23; the Dart API is
+  unchanged.
+
 ## 0.1.1
 
 - Allow the current major versions of the build hook dependencies:

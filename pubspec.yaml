@@ -3,7 +3,7 @@ description: Workspace for flutter_lua_bridge monorepo
 publish_to: none
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.14.0
 
 workspace:
   - packages/flutter_lua_bridge
@@ -12,8 +12,8 @@ workspace:
   - examples/flutter_lua_bridge_example
   - examples/lua_canvas_host
 dev_dependencies:
-  # 8.x needs cli_util 0.5, which ffigen 20 (flutter_lua_bridge) does not allow.
-  melos: ^7.8.1
+  melos: ^8.10.1
+  yaml: ^3.1.3
 
 # Melos reads the packages from `workspace:` above. Only the three packages
 # under packages/ are published; the examples have `publish_to: none`.
@@ -36,3 +36,6 @@ melos:
     publish:check:
       description: Validate the publishable packages without publishing.
       run: dart run melos publish --dry-run --yes
+    pana:
+      description: Score the publishable packages with pana as pub.dev does; fails below full points.
+      run: ./tool/pana.sh

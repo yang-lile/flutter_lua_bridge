@@ -376,10 +376,7 @@ final class LuaRuntime implements Finalizable {
   }
 
   /// Generator support; application code uses the generated API constructor.
-  LuaBinding bindLua({
-    required String module,
-    required List<String> methods,
-  }) {
+  LuaBinding bindLua({required String module, required List<String> methods}) {
     _moduleName(module);
     final table = _moduleTable(module);
     for (final method in methods) {

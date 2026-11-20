@@ -183,17 +183,16 @@ Uri _packageRoot() {
   if (Directory.fromUri(current.uri.resolve('third_party/')).existsSync()) {
     return current.uri;
   }
-  return Directory.fromUri(
-    current.uri.resolve('packages/flutter_lua_bridge/'),
-  ).absolute.uri;
+  return Directory.fromUri(current.uri.resolve('packages/flutter_lua_bridge/'))
+      .absolute
+      .uri;
 }
 
 Directory _createSourceTree({required int version}) {
   final root = Directory.systemTemp.createTempSync('flb-lua-custom-');
   final source = Directory.fromUri(root.uri.resolve('src/'))..createSync();
-  File.fromUri(
-    source.uri.resolve('lua.h'),
-  ).writeAsStringSync('#define LUA_VERSION_NUM $version\n');
+  File.fromUri(source.uri.resolve('lua.h'))
+      .writeAsStringSync('#define LUA_VERSION_NUM $version\n');
   for (final name in luaLibrarySources) {
     File.fromUri(source.uri.resolve(name)).createSync();
   }

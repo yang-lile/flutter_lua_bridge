@@ -13,7 +13,7 @@ void main(List<String> args) {
   const packageName = 'flutter_lua_bridge';
   FfiGenerator(
     output: Output(
-      dartFile: packageRoot.resolve('lib/src/flb.g.dart'),
+      dart: DartOutput(path: packageRoot.resolve('lib/src/flb.g.dart')),
       commentType: CommentType(CommentStyle.any, CommentLength.full),
       preamble:
           '''
@@ -27,13 +27,21 @@ library;
 ''',
       style: NativeExternalBindings(),
     ),
-    headers: Headers(entryPoints: [packageRoot.resolve('native/flb.h')]),
-    functions: Functions(include: (d) => d.originalName.startsWith('flb_')),
-    structs: Structs(include: (d) => d.originalName.startsWith('flb_')),
-    typedefs: Typedefs(include: (d) => d.originalName.startsWith('flb_')),
-    macros: Macros(include: (d) => d.originalName.startsWith('FLB_ABI')),
-    unnamedEnums: UnnamedEnums(
-      include: (d) => d.originalName.startsWith('FLB_'),
-    ),
+    input: Input(entryPoints: [packageRoot.resolve('native/flb.h')]),
+    visitors: [
+      Visitor(
+        func: (node) => node.isIncluded = node.originalName.startsWith('flb_'),
+        struct: (node) =>
+            node.isIncluded = node.originalName.startsWith('flb_'),
+        typealias: (node) =>
+            node.isIncluded = node.originalName.startsWith('flb_')
+            ? TypealiasInclude.ifUsed
+            : TypealiasInclude.never,
+        macroConstant: (node) =>
+            node.isIncluded = node.originalName.startsWith('FLB_ABI'),
+        unnamedEnumConstant: (node) =>
+            node.isIncluded = node.originalName.startsWith('FLB_'),
+      ),
+    ],
   ).generate();
 }
