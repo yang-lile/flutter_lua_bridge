@@ -5,6 +5,9 @@
   function; an asynchronous `@LuaApi` method returns
   `Future<LuaCallResult<T>>` (O1/O2) or `Future<T>` (O3) and may wait for
   them. Teal sees plain functions.
+- Contract methods may return `Stream<T>`: a Lua implementation yields the
+  items of a lazy Dart stream; a Dart one reaches Lua as a typed iterator for
+  a generic `for`.
 
 ## 0.2.0
 

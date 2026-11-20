@@ -26,12 +26,24 @@ return bridge.$bind({
     return later // 2
   end,
   syncWait = function(value) return bridge.getClockApi().later(value) end,
+  countdown = function(from)
+    if from < 0 then error("negative input", 0) end
+    for i = from, 1, -1 do
+      if i == 1 and from == 1 then coroutine.yield("not a number") end
+      coroutine.yield(bridge.getClockApi().later(i))
+    end
+  end,
+  sumTicks = function(count)
+    local sum = 0
+    for tick in bridge.getClockApi().ticks(count) do sum = sum + tick end
+    return sum
+  end,
 })
 ''';
 
 /// Answers after a real wait; 99 fails.
 class Clock implements ClockApi {
-  int ticks = 0;
+  int tickCount = 0;
 
   @override
   Future<int> later(int value) => Future.delayed(
@@ -40,7 +52,16 @@ class Clock implements ClockApi {
   );
 
   @override
-  Future<void> tick() async => ticks++;
+  Future<void> tick() async => tickCount++;
+
+  @override
+  Stream<int> ticks(int count) async* {
+    for (var i = 1; i <= count; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+      if (count == 99 && i == 2) throw StateError('ticks broke');
+      yield i;
+    }
+  }
 }
 
 void main() {
@@ -102,7 +123,7 @@ void main() {
         await api.halfLater(10),
         isA<LuaSuccess<int>>().having((r) => r.value, 'value', 5),
       );
-      expect(clock.ticks, 1);
+      expect(clock.tickCount, 1);
       expect(
         await api.halfLater(-1),
         isA<LuaFailure<int>>()
@@ -265,6 +286,120 @@ void main() {
     );
   });
 
+  group('streams', () {
+    test(
+      'O1 delivers items and reports failures as LuaFailure events',
+      () async {
+        final api = CheckedApiClient.load(
+          runtime: lua,
+          source: implementation('bindCheckedApi'),
+        );
+        expect(await api.countdown(3).toList(), [3, 2, 1]);
+        // Lua runs only as far as the listener reads.
+        expect(await api.countdown(1000).take(2).toList(), [1000, 999]);
+        await expectLater(
+          api.countdown(-1).toList(),
+          throwsA(
+            isA<LuaFailure<int>>()
+                .having((f) => f.kind, 'kind', LuaErrorKind.runtime)
+                .having((f) => f.message, 'message', 'negative input'),
+          ),
+        );
+        await expectLater(
+          api.countdown(1).toList(),
+          throwsA(
+            isA<LuaFailure<int>>()
+                .having((f) => f.kind, 'kind', LuaErrorKind.type)
+                .having(
+                  (f) => f.message,
+                  'message',
+                  contains('CheckedApi.countdown.item[0]'),
+                ),
+          ),
+        );
+        // Lua iterates a Dart stream with a generic for.
+        expect(
+          await api.sumTicks(4),
+          isA<LuaSuccess<int>>().having((r) => r.value, 'value', 10),
+        );
+        expect(
+          await api.sumTicks(99),
+          isA<LuaFailure<int>>()
+              .having((r) => r.kind, 'kind', LuaErrorKind.runtime)
+              .having((r) => r.message, 'message', contains('ticks broke')),
+        );
+      },
+    );
+
+    test(
+      'O2 delivers items and reports failures as LuaFailure events',
+      () async {
+        final api = GuardedApiClient.load(
+          runtime: lua,
+          source: implementation('bindGuardedApi'),
+        );
+        expect(await api.countdown(3).toList(), [3, 2, 1]);
+        await expectLater(
+          api.countdown(-1).toList(),
+          throwsA(
+            isA<LuaFailure<int>>().having(
+              (f) => f.message,
+              'message',
+              'negative input',
+            ),
+          ),
+        );
+        await expectLater(
+          api.countdown(1).toList(),
+          throwsA(
+            isA<LuaFailure<int>>().having(
+              (f) => f.kind,
+              'kind',
+              LuaErrorKind.type,
+            ),
+          ),
+        );
+        expect(
+          await api.sumTicks(4),
+          isA<LuaSuccess<int>>().having((r) => r.value, 'value', 10),
+        );
+      },
+    );
+
+    test('O3 delivers items and reports failures as exceptions', () async {
+      final Halver api = DirectApiClient.load(
+        runtime: lua,
+        source: implementation('bindDirectApi'),
+      );
+      expect(await api.countdown(3).toList(), [3, 2, 1]);
+      await expectLater(
+        api.countdown(-1).toList(),
+        throwsA(
+          isA<LuaBridgeException>().having(
+            (e) => e.message,
+            'message',
+            'negative input',
+          ),
+        ),
+      );
+      await expectLater(
+        api.countdown(1).toList(),
+        throwsA(isA<LuaTypeException>()),
+      );
+      expect(await api.sumTicks(4), 10);
+      await expectLater(
+        api.sumTicks(99),
+        throwsA(
+          isA<LuaBridgeException>().having(
+            (e) => e.cause,
+            'cause',
+            isA<StateError>(),
+          ),
+        ),
+      );
+    });
+  });
+
   test('one table cannot be bound to APIs of different levels', () {
     // The O1 wrappers replace the functions of the table in place, so
     // binding the same table again as O3 must fail instead of handing O3
@@ -278,6 +413,8 @@ return {
   ping = function() end,
   halfLater = function(value) return value // 2 end,
   syncWait = function(value) return value end,
+  countdown = function(from) end,
+  sumTicks = function(count) return 0 end,
 }
 ''',
     );

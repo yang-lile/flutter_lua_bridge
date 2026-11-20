@@ -160,21 +160,29 @@ class _Reader {
       final returnType = method.returnType;
       final isAsync =
           returnType is InterfaceType && returnType.isDartAsyncFuture;
-      if (isAsync &&
+      final isStream =
+          returnType is InterfaceType && returnType.isDartAsyncStream;
+      if ((isAsync || isStream) &&
           returnType.nullabilitySuffix == NullabilitySuffix.question) {
-        _fail('Use Future<T?> instead of a nullable Future', method);
+        _fail('A Future or Stream result cannot be nullable', method);
+      }
+      final result = _type(
+        isAsync || isStream ? returnType.typeArguments.single : returnType,
+        method,
+        result: !isStream,
+      );
+      if (isStream && result.nullable) {
+        // nil ends a Lua iteration, so it cannot also be an item.
+        _fail('Stream items cannot be nullable', method);
       }
       methods.add(
         BridgeMethod(
           methodName,
           _luaName(method, methodName),
-          _type(
-            isAsync ? returnType.typeArguments.single : returnType,
-            method,
-            result: true,
-          ),
+          result,
           parameters,
           isAsync: isAsync,
+          isStream: isStream,
         ),
       );
     }

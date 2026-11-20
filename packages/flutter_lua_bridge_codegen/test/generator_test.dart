@@ -239,6 +239,27 @@ class Score {
     expect(emitTeal(schema), contains('wait: function(): ()'));
   });
 
+  final streams = read({
+    'contract': '''
+@LuaApi(module: 'feed')
+abstract class FeedApi { Stream<String> lines(int count); }
+@DartApi(module: 'source')
+abstract class SourceApi { Stream<int> numbers(); }
+''',
+  });
+  test('a Stream result is produced by Lua or iterated by Lua', () async {
+    final schema = (await streams.schema())!;
+    final lines = schema.apis.first.methods.single;
+    expect(lines.isStream, isTrue);
+    expect(lines.result.name, 'String');
+    final dart = emitDart(schema);
+    expect(dart, contains('Stream<String> lines(int count) =>'));
+    expect(dart, contains('_binding.callStream<String>("lines"'));
+    final teal = emitTeal(schema);
+    expect(teal, contains('lines: function(integer): ()'));
+    expect(teal, contains('numbers: function(): (function(): integer)'));
+  });
+
   final named = parse('int add(int value, {required int bonus});');
   test('supports required named parameters', () async {
     final schema = (await named.schema())!;
@@ -324,7 +345,10 @@ abstract interface class Base { int get size; int add(int value); }
     'nullable Future': 'Future<int>? get_();',
     'nested Future': 'Future<Future<int>> get_();',
     'FutureOr': 'FutureOr<int> get_();',
-    'Stream': 'Stream<int> get_();',
+    'Stream parameter': 'int get_(Stream<int> values);',
+    'nullable Stream': 'Stream<int>? get_();',
+    'nullable Stream items': 'Stream<int?> get_();',
+    'Stream of void': 'Stream<void> get_();',
     'dynamic': 'dynamic get_();',
     'Object': 'Object get_();',
     'nullable array elements': 'List<int?> get_();',

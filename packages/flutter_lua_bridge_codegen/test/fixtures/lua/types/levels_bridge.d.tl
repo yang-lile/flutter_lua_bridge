@@ -8,6 +8,7 @@ local record BridgeContract
   record ClockApi
     later: function(integer): integer
     tick: function(): ()
+    ticks: function(integer): (function(): integer)
   end
   getClockApi: function(): ClockApi
   record CheckedApi
@@ -16,6 +17,8 @@ local record BridgeContract
     ping: function(): ()
     halfLater: function(integer): integer
     syncWait: function(integer): integer
+    countdown: function(integer): ()
+    sumTicks: function(integer): integer
   end
   bindCheckedApi: function(CheckedApi): CheckedApi
   record GuardedApi
@@ -24,6 +27,8 @@ local record BridgeContract
     ping: function(): ()
     halfLater: function(integer): integer
     syncWait: function(integer): integer
+    countdown: function(integer): ()
+    sumTicks: function(integer): integer
   end
   bindGuardedApi: function(GuardedApi): GuardedApi
   record DirectApi
@@ -32,6 +37,8 @@ local record BridgeContract
     ping: function(): ()
     halfLater: function(integer): integer
     syncWait: function(integer): integer
+    countdown: function(integer): ()
+    sumTicks: function(integer): integer
   end
   bindDirectApi: function(DirectApi): DirectApi
 end

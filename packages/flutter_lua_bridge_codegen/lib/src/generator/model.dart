@@ -50,6 +50,7 @@ class BridgeMethod {
     this.result,
     this.parameters, {
     this.isAsync = false,
+    this.isStream = false,
   });
   final String name, luaName;
 
@@ -61,6 +62,11 @@ class BridgeMethod {
   /// The Dart declaration returns a `Future`: the call may wait for
   /// asynchronous Dart APIs. Lua sees an ordinary function either way.
   final bool isAsync;
+
+  /// The Dart declaration returns a `Stream` of [result]: a Lua
+  /// implementation yields the items, and Lua iterates a Dart one with a
+  /// generic `for`.
+  final bool isStream;
 }
 
 class BridgeApi {

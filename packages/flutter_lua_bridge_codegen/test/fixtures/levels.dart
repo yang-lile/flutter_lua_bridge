@@ -20,6 +20,12 @@ abstract interface class Halver {
 
   /// Calls the asynchronous [ClockApi] without waiting for it: an error.
   int syncWait(int value);
+
+  /// Yields [from] down to 1, each after waiting for [ClockApi.later].
+  Stream<int> countdown(int from);
+
+  /// Sums the items of [ClockApi.ticks] in a Lua loop.
+  Future<int> sumTicks(int count);
 }
 
 /// Implemented in Dart, asynchronously; Lua calls it as plain functions.
@@ -27,6 +33,7 @@ abstract interface class Halver {
 abstract class ClockApi {
   Future<int> later(int value);
   Future<void> tick();
+  Stream<int> ticks(int count);
 }
 
 @LuaApi(module: 'checked', optimization: LuaOptimization.o1)

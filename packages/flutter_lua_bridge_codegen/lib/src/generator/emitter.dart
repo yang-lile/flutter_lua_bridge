@@ -213,7 +213,8 @@ void _collectCheckedTypes(
   for (final api in schema.apis) {
     if (!api.isLua || !api.optimization.checksTypes) continue;
     for (final method in api.methods) {
-      visit(method.result);
+      // Stream items are checked as Dart decodes them.
+      if (!method.isStream) visit(method.result);
       for (final parameter in method.parameters) {
         visit(parameter.type);
       }
@@ -265,7 +266,9 @@ void _emitSafeWrapper(
   out.writeln(
     '    if not call_ok then return _flb_error("runtime", tostring(result)) end',
   );
-  if (optimization.checksTypes && method.result.name != 'void') {
+  if (optimization.checksTypes &&
+      method.result.name != 'void' &&
+      !method.isStream) {
     final path = _luaPath('${api.name}.${method.name}.result');
     out.writeln(
       '    local valid_result, result_message = ${_validatorName(method.result)}(result, $path, 0)',
@@ -280,6 +283,7 @@ void _emitSafeWrapper(
 }
 
 String _resultType(BridgeApi api, BridgeMethod method) {
+  if (method.isStream) return 'Stream<${method.result.dart}>';
   final result = api.optimization.catchesErrors
       ? 'LuaCallResult<${method.result.dart}>'
       : method.result.dart;
@@ -360,7 +364,12 @@ String emitDart(BridgeSchema schema) {
         final encode = method.result.name == 'void'
             ? null
             : '${_codec(method.result)}.encode';
-        if (method.isAsync) {
+        if (method.isStream) {
+          // The runtime hands the stream to Lua as an iterator.
+          out.writeln(
+            'return $call.map((value) => $encode(value, ${_dartString('$path.item')}));',
+          );
+        } else if (method.isAsync) {
           // The runtime suspends the calling Lua code until the future
           // completes; Lua receives its encoded value.
           out.writeln(
@@ -410,6 +419,15 @@ String emitDart(BridgeSchema schema) {
           )
           .join(', ');
       final isVoid = method.result.name == 'void';
+      if (method.isStream) {
+        out.writeln(
+          '${catchesErrors ? '' : '@override '}${_resultType(api, method)} ${method.name}(${_params(method)}) => '
+          '_binding.callStream<${method.result.dart}>(${_dartString(method.luaName)}, [$args], '
+          'decode: ${_codec(method.result)}.decode, path: ${_dartString('$path.item')}, '
+          'envelope: $catchesErrors);',
+        );
+        continue;
+      }
       final call =
           '${method.isAsync ? 'await ' : ''}_binding.${method.isAsync ? 'callAsync' : 'call'}(${_dartString(method.luaName)}, [$args], isVoid: ${catchesErrors ? false : isVoid})';
       out.writeln(
@@ -550,8 +568,15 @@ String emitTeal(BridgeSchema schema) {
   for (final api in schema.apis) {
     out.writeln('  record ${api.name}');
     for (final method in api.methods) {
+      // A Lua implementation of a stream yields its items and returns
+      // nothing; a Dart stream reaches Lua as an iterator function.
+      final result = !method.isStream
+          ? _teal(method.result)
+          : api.isLua
+          ? '()'
+          : '(function(): ${_teal(method.result)})';
       out.writeln(
-        '    ${method.luaName}: function(${method.parameters.map((p) => _teal(p.type)).join(', ')}): ${_teal(method.result)}',
+        '    ${method.luaName}: function(${method.parameters.map((p) => _teal(p.type)).join(', ')}): $result',
       );
     }
     out.writeln('  end');
