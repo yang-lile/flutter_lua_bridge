@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
@@ -44,7 +45,8 @@ enum LuaThreadStatus { suspended, running, normal, dead }
 /// results; any other value is the single result. An asynchronous function
 /// returns a [Future]: the Lua code waits for it as for a plain call, provided
 /// Dart runs that code asynchronously, with [LuaFunction.callAsync] or a
-/// generated method that returns a `Future`.
+/// generated method that returns a `Future`. A [Stream] becomes a Lua
+/// iterator for a generic `for` (see [LuaRuntime.iterate]).
 typedef LuaCallback = Object? Function(List<Object?> arguments);
 
 /// A future a Dart function returned to Lua, which suspended its caller.
@@ -100,10 +102,15 @@ class _HostFunction {
     this.isVoid = false,
     this.byValue = false,
     this.pinned = false,
+    this.onRelease,
   });
   final LuaCallback invoke;
   final bool isVoid;
   final bool byValue;
+
+  /// Runs, in a microtask, once Lua no longer references the function or the
+  /// runtime closes.
+  final void Function()? onRelease;
 
   /// Owned by a registered module rather than by the Lua function object.
   final bool pinned;
@@ -255,14 +262,48 @@ final class LuaRuntime implements Finalizable {
   /// Wraps a Dart function as a Lua function. A Dart exception becomes a Lua
   /// error; if Lua does not catch it, it comes back as a
   /// [LuaBridgeException] whose `cause` is the original error.
-  LuaFunction function(LuaCallback body) => _enter((arena) {
+  LuaFunction function(LuaCallback body) => _function(_HostFunction(body));
+
+  LuaFunction _function(_HostFunction body) => _enter((arena) {
     final id = _nextId++;
-    _functions[id] = _HostFunction(body);
+    _functions[id] = body;
     final status = flb_function_new(_state, id, 0, _int64);
     if (status != FLB_OK) _functions.remove(id);
     _ok(status);
     return LuaFunction._(this, _int64.value);
   });
+
+  /// A Lua iterator over [stream], for a generic `for`:
+  ///
+  /// ```lua
+  /// for value in events do ... end
+  /// ```
+  ///
+  /// Each call waits for the next event, so the Lua code must run
+  /// asynchronously ([LuaFunction.callAsync]); the loop ends with the stream,
+  /// and an error event raises a Lua error. A `null` event also ends the
+  /// loop. The subscription is cancelled at the end, on an error, or once Lua
+  /// drops the iterator.
+  LuaFunction iterate(Stream<Object?> stream) {
+    final events = StreamIterator(stream);
+    var done = false;
+    Future<Object?> next(List<Object?> _) async {
+      if (done) return null;
+      try {
+        if (await events.moveNext()) return events.current;
+      } catch (_) {
+        done = true;
+        unawaited(events.cancel());
+        rethrow;
+      }
+      done = true;
+      return null;
+    }
+
+    return _function(
+      _HostFunction(next, onRelease: () => unawaited(events.cancel())),
+    );
+  }
 
   /// Creates the metatable shared by Dart objects of one kind; see [wrap].
   LuaTable createClass(String name) => _enter((arena) {
@@ -345,6 +386,10 @@ final class LuaRuntime implements Finalizable {
       _runtimes.remove(_state.address);
       _stateFinalizer.detach(this);
       flb_state_release(_state.cast());
+      for (final function in _functions.values) {
+        final onRelease = function.onRelease;
+        if (onRelease != null) scheduleMicrotask(onRelease);
+      }
       _functions.clear();
       _objects.clear();
       _hostErrors.clear();
@@ -531,6 +576,18 @@ final class LuaRuntime implements Finalizable {
         _suspendFor(result, isVoid: function.isVoid);
         return;
       }
+      if (result is Stream<Object?>) {
+        // Lua owns the iterator; Dart keeps no handle that would pin it.
+        final iterator = iterate(result);
+        try {
+          using((arena) {
+            _ok(flb_return(_state, _values(arena, [iterator]), 1));
+          });
+        } finally {
+          iterator.release();
+        }
+        return;
+      }
       final values = function.isVoid
           ? const <Object?>[]
           : result is LuaValues
@@ -642,6 +699,71 @@ final class LuaRuntime implements Finalizable {
     return (_readAll(_out.value, _count.value), pending);
   });
 
+  /// Generator support: [LuaBinding.callStream].
+  Stream<T> _callBindingStream<T>(
+    LuaBinding binding,
+    String method,
+    List<Object?> arguments,
+    T Function(Object? value, String path) decode,
+    String path,
+    bool envelope,
+  ) async* {
+    final function = _moduleTable(binding._module).get(method, raw: true);
+    if (function is! LuaFunction) {
+      if (function is LuaRef) function.release();
+      throw LuaBridgeException('declared Lua method is missing: $method');
+    }
+    final thread = function.coroutine();
+    function.release();
+    try {
+      var results = await _drive(thread, arguments, FLB_CALL_BY_VALUE);
+      for (var index = 0; !thread.isDead; index++) {
+        if (results.length > 1) {
+          throw LuaBridgeException("method '$method' must yield one value");
+        }
+        final T item;
+        try {
+          item = decode(
+            results.isEmpty ? null : results.single,
+            '$path[$index]',
+          );
+        } on LuaTypeException catch (error) {
+          if (!envelope) rethrow;
+          yield* Stream.error(
+            LuaFailure<T>(kind: LuaErrorKind.type, message: error.message),
+          );
+          return;
+        }
+        yield item;
+        results = await _drive(thread, const [], FLB_CALL_BY_VALUE);
+      }
+      if (envelope) {
+        final end = decodeLuaResult<void>(
+          results.isEmpty ? null : results.first,
+          '$path.result',
+          null,
+        );
+        if (end case LuaFailure(:final kind, :final message)) {
+          yield* Stream.error(LuaFailure<T>(kind: kind, message: message));
+        }
+      }
+    } on LuaBridgeException catch (error) {
+      if (!envelope) rethrow;
+      yield* Stream.error(
+        LuaFailure<T>(kind: LuaErrorKind.protocol, message: error.message),
+      );
+    } finally {
+      _closeThread(thread);
+    }
+  }
+
+  /// Stops a coroutine whose consumer went away, and drops the handle.
+  void _closeThread(LuaThread thread) {
+    if (isClosed) return;
+    if (thread.status == LuaThreadStatus.suspended) thread.close();
+    thread.release();
+  }
+
   /// Generator support: [LuaBinding.callAsync].
   Future<Object?> _callBindingAsync(
     LuaBinding binding,
@@ -679,7 +801,9 @@ final class LuaRuntime implements Finalizable {
     if (isObject) {
       _objects.remove(id);
     } else if (_functions[id]?.pinned == false) {
-      _functions.remove(id);
+      // Called during a Lua collection: nothing may re-enter Lua now.
+      final onRelease = _functions.remove(id)!.onRelease;
+      if (onRelease != null) scheduleMicrotask(onRelease);
     }
   }
 
@@ -1116,6 +1240,36 @@ final class LuaFunction extends LuaRef {
       if (!runtime.isClosed) thread.release();
     }
   }
+
+  /// Runs the function as a generator: every `coroutine.yield(value)` in it
+  /// is an event of the stream, and returning ends the stream. The function
+  /// runs only while the stream is listened to and not paused, so it can
+  /// produce without end; cancelling the subscription stops it. It may wait
+  /// for asynchronous Dart functions, as with [callAsync]. A Lua error is an
+  /// error event that ends the stream.
+  Stream<Object?> stream([List<Object?> arguments = const []]) async* {
+    final thread = coroutine();
+    try {
+      var results = await runtime._drive(thread, arguments, 0);
+      while (!thread.isDead) {
+        if (results.length > 1) {
+          for (final extra in results) {
+            if (extra is LuaRef) extra.release();
+          }
+          throw LuaBridgeException(
+            'a generator must yield one value at a time',
+          );
+        }
+        yield results.isEmpty ? null : results.single;
+        results = await runtime._drive(thread, const [], 0);
+      }
+      for (final value in results) {
+        if (value is LuaRef) value.release();
+      }
+    } finally {
+      runtime._closeThread(thread);
+    }
+  }
 }
 
 final class LuaThread extends LuaRef {
@@ -1179,6 +1333,24 @@ class LuaBinding {
   final String _module;
   Object? call(String method, List<Object?> arguments, {bool isVoid = false}) =>
       _runtime._callBinding(this, method, arguments, isVoid);
+
+  /// Like [call], for a method that produces a stream: the Lua function
+  /// yields every item. Failures are error events: [LuaFailure] when
+  /// [envelope] (O1 and O2), exceptions otherwise.
+  Stream<T> callStream<T>(
+    String method,
+    List<Object?> arguments, {
+    required T Function(Object? value, String path) decode,
+    required String path,
+    bool envelope = false,
+  }) => _runtime._callBindingStream(
+    this,
+    method,
+    arguments,
+    decode,
+    path,
+    envelope,
+  );
 
   /// Like [call], for a method that may wait for asynchronous Dart APIs.
   Future<Object?> callAsync(

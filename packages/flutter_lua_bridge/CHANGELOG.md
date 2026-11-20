@@ -5,6 +5,9 @@
   Lua with `LuaFunction.callAsync` (or a generated asynchronous method). A
   failed future raises a Lua error at the call. `LuaThread.resumeAsync`
   does the same for a coroutine driven by hand.
+- Streams: `LuaFunction.stream` runs a Lua generator as a lazy Dart
+  stream; a Dart function returning a `Stream` (or `LuaRuntime.iterate`)
+  gives Lua an iterator for a generic `for`.
 - The native ABI moves to 2 (`flb_yield`, `flb_can_yield`,
   `flb_resume_failure`, and a `flags` argument to `flb_resume`). Calls that
   do not wait are as fast as before.

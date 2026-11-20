@@ -66,6 +66,21 @@ With generated contracts, declare the method as returning a `Future`; see
 Lua coroutines remain available as `LuaThread`s (`function.coroutine()`,
 `resume`, `resumeAsync`).
 
+Streams work both ways. `function.stream(args)` runs a Lua function as a
+generator, each `coroutine.yield(item)` being an event, produced only as the
+listener reads; a Dart function returning a `Stream` gives Lua an iterator
+for a generic `for`:
+
+```dart
+lua['numbers'] = lua.function((_) => Stream.fromIterable([1, 2, 3]));
+final doubled = lua.eval('''
+  return function()
+    for n in numbers() do coroutine.yield(n * 2) end
+  end''') as LuaFunction;
+
+print(await doubled.stream().toList()); // [2, 4, 6]
+```
+
 ## Typed contracts
 
 Describe the API in Dart and let the generator write both sides:

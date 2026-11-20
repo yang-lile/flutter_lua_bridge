@@ -352,6 +352,135 @@ void main() {
     });
   });
 
+  group('streams', () {
+    LuaFunction function(String code) => lua.eval(code)! as LuaFunction;
+
+    test('a Lua generator is a Dart stream', () async {
+      final countdown = function(
+        'return function(n) for i = n, 1, -1 do coroutine.yield(i) end end',
+      );
+      expect(await countdown.stream([3]).toList(), [3, 2, 1]);
+    });
+
+    test('Lua produces only what the listener takes', () async {
+      var produced = 0;
+      lua['produced'] = lua.function((_) => ++produced);
+      final naturals = function(
+        'return function() local i = 0 while true do i = produced() coroutine.yield(i) end end',
+      );
+      expect(await naturals.stream().take(3).toList(), [1, 2, 3]);
+      await Future<void>.delayed(Duration.zero);
+      expect(produced, 3);
+    });
+
+    test('a generator may wait for Dart between items', () async {
+      lua['later'] = lua.function(
+        (a) => Future.delayed(const Duration(milliseconds: 2), () => a.single),
+      );
+      final generator = function(
+        'return function() for i = 1, 3 do coroutine.yield(later(i * 10)) end end',
+      );
+      expect(await generator.stream().toList(), [10, 20, 30]);
+    });
+
+    test('a Lua error is an error event after the items before it', () async {
+      final failing = function(
+        'return function() coroutine.yield(1) error("broken", 0) end',
+      );
+      final events = <Object?>[];
+      await expectLater(
+        failing.stream().forEach(events.add),
+        throwsA(
+          isA<LuaBridgeException>().having(
+            (e) => e.message,
+            'message',
+            'broken',
+          ),
+        ),
+      );
+      expect(events, [1]);
+    });
+
+    test('a Dart stream is a Lua iterator', () async {
+      lua['events'] = lua.function(
+        (_) => Stream.fromIterable([1, 2, 3]).asyncMap(
+          (v) => Future.delayed(const Duration(milliseconds: 1), () => v),
+        ),
+      );
+      final sum = function(
+        'return function() local s = 0 for v in events() do s = s + v end return s end',
+      );
+      expect(await sum.callAsync(), [6]);
+    });
+
+    test('a Dart error event raises in the Lua loop', () async {
+      lua['events'] = lua.function(
+        (_) => Stream<int>.multi((c) {
+          c.add(1);
+          c.addError(StateError('feed lost'));
+        }),
+      );
+      final reader = function('''return function()
+          local seen = 0
+          local ok, e = pcall(function() for v in events() do seen = seen + v end end)
+          return seen, tostring(e)
+        end''');
+      final results = await reader.callAsync();
+      expect(results.first, 1);
+      expect(results.last, contains('feed lost'));
+    });
+
+    test('an iterator needs Lua that Dart runs asynchronously', () {
+      lua['events'] = lua.function((_) => Stream.value(1));
+      expect(
+        () => lua.eval('for v in events() do end'),
+        throwsA(
+          isA<LuaBridgeException>().having(
+            (e) => e.message,
+            'message',
+            contains('runs synchronously'),
+          ),
+        ),
+      );
+    });
+
+    test('leaving the loop early cancels the subscription', () async {
+      var cancelled = false;
+      final controller = StreamController<int>(
+        onListen: () {},
+        onCancel: () => cancelled = true,
+      );
+      lua['events'] = lua.function((_) => controller.stream);
+      final firstOnly = function(
+        'return function() for v in events() do return v end end',
+      );
+      final call = firstOnly.callAsync();
+      await Future<void>.delayed(Duration.zero);
+      controller.add(7);
+      expect(await call, [7]);
+      lua.collectGarbage();
+      await Future<void>.delayed(Duration.zero);
+      expect(cancelled, isTrue);
+    });
+
+    test('closing the runtime cancels the subscriptions', () async {
+      var cancelled = false;
+      final controller = StreamController<int>(
+        onCancel: () => cancelled = true,
+      );
+      final iterator = lua.iterate(controller.stream);
+      final waiting = expectLater(
+        (lua.eval('return function(it) return it() end')! as LuaFunction)
+            .callAsync([iterator]),
+        throwsA(isA<StateError>()), // the runtime is closed
+      );
+      await Future<void>.delayed(Duration.zero);
+      lua.close();
+      await waiting;
+      expect(cancelled, isTrue);
+    });
+  });
+
   test('sandbox, memory limit and interruption', () {
     expect(lua.run('return io, os, debug, dofile, loadfile'), [
       null,
