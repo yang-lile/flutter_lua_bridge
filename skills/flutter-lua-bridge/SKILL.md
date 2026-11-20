@@ -232,6 +232,10 @@ Streams: a `@LuaApi` method returning `Stream<T>` is a Lua function that
 `for item in host.ticks(n) do ... end`, inside an asynchronous method.
 Raw runtime: `luaFunction.stream(args)`, and a `lua.function` returning a
 `Stream` gives Lua an iterator (`lua.iterate(stream)` for an argument).
+Each Lua stream is single-subscription and starts its own generator; share
+one with `asBroadcastStream(onCancel: (s) => s.cancel())` (without
+`onCancel` an endless generator keeps running). Cancel subscriptions before
+closing the runtime. No isolate is needed: waiting occupies no thread.
 
 ## Troubleshooting
 

@@ -142,6 +142,31 @@ await for (final line in feed.lines(3)) print(line);
 - Items cannot be nullable (`nil` ends a Lua iteration), nor `void`; `Stream`
   is accepted only as a method's result.
 
+No isolate is needed for either direction. Waiting for a future or for the
+next event occupies no thread: Lua is suspended and the isolate runs other
+work, frames included. Only the Lua code itself runs on the isolate, between
+two waits, as a synchronous call does. A generator that produces without
+waiting gives the event loop a turn every few milliseconds. Move a runtime
+to a background isolate only for Lua that computes for long stretches, and
+note that plugins (location, sensors) then need
+`BackgroundIsolateBinaryMessenger`.
+
+### Subscribing and cancelling
+
+| Situation | What to do | What happens |
+| --- | --- | --- |
+| One listener | `await for`, or `listen` and keep the subscription | Each call to the method starts its own generator; a stream can be listened to once |
+| Several listeners on one generator | `feed.lines(n).asBroadcastStream(onCancel: (s) => s.cancel())` | Lua runs once for all of them. Without `onCancel`, `asBroadcastStream` keeps the source running after the last listener leaves, so an endless generator would never stop |
+| The consumer goes away (widget disposed) | `await subscription.cancel()` before closing the runtime | The coroutine is closed at once, even if it waits for a Dart future; Lua does not run again |
+| Pause | `subscription.pause()` | Lua stops before its next item |
+| The runtime is closed while listened to | Prefer cancelling first | The stream ends with a `StateError` error event |
+| Lua iterates a Dart broadcast stream (location updates) | Return the broadcast stream; several Lua loops may iterate it at once | Each loop subscribes on its own; events that arrive while a loop body waits are buffered, not lost |
+| A Dart method returns a single-subscription stream | Return a new stream on every call | Returning the same instance twice raises "Stream has already been listened to" in the second loop |
+
+A Dart stream whose events take time, such as a position that arrives after
+a permission prompt and a GPS fix, needs nothing special: the Lua loop waits
+for each event without blocking anything.
+
 Binding wraps the functions of the Lua table in place, so a table can be bound
 to one API only. Binding it again to an API of another level fails with
 "already bound as ..."; give each binding its own table, for example
