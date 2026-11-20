@@ -1,3 +1,9 @@
+## 0.2.0
+
+- Require Dart 3.14 (Flutter 3.50), `analyzer` 14.7, `build` 5 and
+  `source_gen` 4.3.
+- `dart run build_runner build` no longer needs `--force-jit`.
+
 ## 0.1.1
 
 - Support `analyzer` 8.4 to 14 and `build` 4 or 5. The reader no longer uses

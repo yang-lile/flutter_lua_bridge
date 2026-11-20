@@ -36,9 +36,9 @@ class TealWorkerClient {
   var _nextId = 0;
 
   static Future<TealWorkerClient> start() async {
-    final dart = File(
-      Platform.resolvedExecutable,
-    ).parent.uri.resolve(Platform.isWindows ? 'dart.exe' : 'dart').toFilePath();
+    final dart = File(Platform.resolvedExecutable).parent.uri
+        .resolve(Platform.isWindows ? 'dart.exe' : 'dart')
+        .toFilePath();
     final process = await Process.start(dart, const [
       'run',
       'flutter_lua_bridge_codegen:teal_worker',
@@ -67,9 +67,9 @@ class TealWorkerClient {
     // a line break, so the marker is not always at the start of the line.
     final start = line.indexOf(tealWorkerMarker);
     if (start < 0) return;
-    final message =
-        jsonDecode(line.substring(start + tealWorkerMarker.length))
-            as Map<String, Object?>;
+    final message = jsonDecode(
+      line.substring(start + tealWorkerMarker.length),
+    ) as Map<String, Object?>;
     if (message['ready'] == true) {
       if (!_ready.isCompleted) _ready.complete();
       return;

@@ -17,9 +17,8 @@ void main() {
     'battle_bridge': {
       'd.tl': {
         'path': 'test/fixtures/lua/types/battle_bridge.d.tl',
-        'source': File(
-          'test/fixtures/lua/types/battle_bridge.d.tl',
-        ).readAsStringSync(),
+        'source': File('test/fixtures/lua/types/battle_bridge.d.tl')
+            .readAsStringSync(),
       },
     },
   };
@@ -80,8 +79,7 @@ void main() {
         'util': {
           'tl': {
             'path': 'lua/src/util.tl',
-            'source':
-                'local util = {}\nfunction util.twice(n: integer): integer return n * 2 end\nreturn util\n',
+            'source': 'local util = {}\nfunction util.twice(n: integer): integer return n * 2 end\nreturn util\n',
           },
         },
       },

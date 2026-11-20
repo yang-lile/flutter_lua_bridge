@@ -16,12 +16,9 @@ dev_dependencies:
 
 ```sh
 dart run flutter_lua_bridge_codegen:init      # once: directories, build.yaml, tlconfig.lua
-dart run build_runner build --force-jit       # or: watch
+dart run build_runner build                   # or: watch
 dart run flutter_lua_bridge_codegen:run       # run lua/test without the app
 ```
-
-`--force-jit` is needed before Dart 3.12 (Flutter 3.38 ships Dart 3.10) and
-harmless after it.
 
 ## How it works
 

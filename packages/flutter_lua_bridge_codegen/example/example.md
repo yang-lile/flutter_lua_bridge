@@ -50,7 +50,7 @@ return bridge.bindBasicApi(implementation)
 ```
 
 ```sh
-dart run build_runner build --force-jit
+dart run build_runner build
 ```
 
 This writes `basic_api.g.dart` and compiles the Teal to `assets/lua/basic.lua`

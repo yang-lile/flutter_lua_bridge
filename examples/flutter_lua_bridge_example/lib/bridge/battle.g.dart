@@ -115,12 +115,10 @@ final _$SkillSpecCodec = BridgeCodec<SkillSpec>(
     "multiplier": bridgeDouble.encode(value.multiplier, "$path.multiplier"),
     "target": _$SkillTargetCodec.encode(value.target, "$path.target"),
     "cooldown": bridgeInt.encode(value.cooldown, "$path.cooldown"),
-    "ignoreDefense": bridgeNullable(
-      bridgeDouble,
-    ).encode(value.ignoreDefense, "$path.ignoreDefense"),
-    "healBase": bridgeNullable(
-      bridgeInt,
-    ).encode(value.healBase, "$path.healBase"),
+    "ignoreDefense": bridgeNullable(bridgeDouble)
+        .encode(value.ignoreDefense, "$path.ignoreDefense"),
+    "healBase": bridgeNullable(bridgeInt)
+        .encode(value.healBase, "$path.healBase"),
   }),
   (value, path) {
     final fields = bridgeFields(value, path);
@@ -137,12 +135,10 @@ final _$SkillSpecCodec = BridgeCodec<SkillSpec>(
       multiplier: bridgeDouble.decode(fields["multiplier"], "$path.multiplier"),
       target: _$SkillTargetCodec.decode(fields["target"], "$path.target"),
       cooldown: bridgeInt.decode(fields["cooldown"], "$path.cooldown"),
-      ignoreDefense: bridgeNullable(
-        bridgeDouble,
-      ).decode(fields["ignoreDefense"], "$path.ignoreDefense"),
-      healBase: bridgeNullable(
-        bridgeInt,
-      ).decode(fields["healBase"], "$path.healBase"),
+      ignoreDefense: bridgeNullable(bridgeDouble)
+          .decode(fields["ignoreDefense"], "$path.ignoreDefense"),
+      healBase: bridgeNullable(bridgeInt)
+          .decode(fields["healBase"], "$path.healBase"),
     );
   },
 );
@@ -176,9 +172,8 @@ final _$CardSpecCodec = BridgeCodec<CardSpec>(
       "$path.normalAttack",
     ),
     "skill": _$SkillSpecCodec.encode(value.skill, "$path.skill"),
-    "passive": bridgeNullable(
-      _$PassiveSpecCodec,
-    ).encode(value.passive, "$path.passive"),
+    "passive": bridgeNullable(_$PassiveSpecCodec)
+        .encode(value.passive, "$path.passive"),
   }),
   (value, path) {
     final fields = bridgeFields(value, path);
@@ -196,9 +191,8 @@ final _$CardSpecCodec = BridgeCodec<CardSpec>(
         "$path.normalAttack",
       ),
       skill: _$SkillSpecCodec.decode(fields["skill"], "$path.skill"),
-      passive: bridgeNullable(
-        _$PassiveSpecCodec,
-      ).decode(fields["passive"], "$path.passive"),
+      passive: bridgeNullable(_$PassiveSpecCodec)
+          .decode(fields["passive"], "$path.passive"),
     );
   },
 );
@@ -445,9 +439,8 @@ class FormulasO1ApiClient {
   LuaCallResult<List<int>> actionOrder(List<Fighter> fighters) {
     return decodeLuaResult<List<int>>(
       _binding.call("actionOrder", [
-        bridgeList(
-          _$FighterCodec,
-        ).encode(fighters, "FormulasO1Api.actionOrder.fighters"),
+        bridgeList(_$FighterCodec)
+            .encode(fighters, "FormulasO1Api.actionOrder.fighters"),
       ], isVoid: false),
       "FormulasO1Api.actionOrder.result",
       bridgeList(bridgeInt).decode,
@@ -533,9 +526,8 @@ class FormulasO2ApiClient {
   LuaCallResult<List<int>> actionOrder(List<Fighter> fighters) {
     return decodeLuaResult<List<int>>(
       _binding.call("actionOrder", [
-        bridgeList(
-          _$FighterCodec,
-        ).encode(fighters, "FormulasO2Api.actionOrder.fighters"),
+        bridgeList(_$FighterCodec)
+            .encode(fighters, "FormulasO2Api.actionOrder.fighters"),
       ], isVoid: false),
       "FormulasO2Api.actionOrder.result",
       bridgeList(bridgeInt).decode,
@@ -622,9 +614,8 @@ class FormulasO3ApiClient implements FormulasO3Api {
   List<int> actionOrder(List<Fighter> fighters) {
     return bridgeList(bridgeInt).decode(
       _binding.call("actionOrder", [
-        bridgeList(
-          _$FighterCodec,
-        ).encode(fighters, "FormulasO3Api.actionOrder.fighters"),
+        bridgeList(_$FighterCodec)
+            .encode(fighters, "FormulasO3Api.actionOrder.fighters"),
       ], isVoid: false),
       "FormulasO3Api.actionOrder.result",
     );

@@ -88,9 +88,8 @@ class ValuesApiClient implements ValuesApi {
   Map<String, List<int>> scores(Map<String, List<int>> values) {
     return bridgeMap(bridgeList(bridgeInt)).decode(
       _binding.call("scores", [
-        bridgeMap(
-          bridgeList(bridgeInt),
-        ).encode(values, "ValuesApi.scores.values"),
+        bridgeMap(bridgeList(bridgeInt))
+            .encode(values, "ValuesApi.scores.values"),
       ], isVoid: false),
       "ValuesApi.scores.result",
     );

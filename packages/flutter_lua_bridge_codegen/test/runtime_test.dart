@@ -1,6 +1,8 @@
 import 'dart:io';
+
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 import 'package:test/test.dart';
+
 import 'fixtures/battle.dart' as battle;
 import 'fixtures/values.dart';
 
@@ -151,8 +153,7 @@ void main() {
     callbacks.onNotify = () => throw StateError('host failed');
     load(
       script(
-        text:
-            'local ok, err = pcall(callbacks.notify, value); return ok and "ok" or err',
+        text: 'local ok, err = pcall(callbacks.notify, value); return ok and "ok" or err',
       ),
     );
     expect(api.text('test'), contains('host failed'));
@@ -310,8 +311,7 @@ void main() {
   test('checks required methods when binding', () {
     lua.loadModule(
       'values',
-      source:
-          'local b = require("values_bridge"); local m = require("values"); m.add = nil; return m',
+      source: 'local b = require("values_bridge"); local m = require("values"); m.add = nil; return m',
     );
     expect(
       () => ValuesApiClient(runtime: lua),

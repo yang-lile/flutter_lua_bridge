@@ -328,17 +328,14 @@ abstract interface class Base { int get size; int add(int value); }
 
   final dataCases = {
     'recursive': 'class Data { final Data? child; Data(this.child); }',
-    'inheritance':
-        'class Base {} class Data extends Base { final int value; Data(this.value); }',
+    'inheritance': 'class Base {} class Data extends Base { final int value; Data(this.value); }',
     'mutable field': 'class Data { int value; Data(this.value); }',
-    'field outside the constructor':
-        'class Data { final int value; final int extra = 1; Data(this.value); }',
+    'field outside the constructor': 'class Data { final int value; final int extra = 1; Data(this.value); }',
     'optional constructor parameter':
         'class Data { final int value; Data([this.value = 1]); }',
     'no unnamed constructor':
         'class Data { final int value; Data.named(this.value); }',
-    'duplicate Lua field':
-        'class Data { @LuaName("v") final int a; @LuaName("v") final int b; Data(this.a, this.b); }',
+    'duplicate Lua field': 'class Data { @LuaName("v") final int a; @LuaName("v") final int b; Data(this.a, this.b); }',
     'Object member field':
         'class Data { final int toString; Data(this.toString); }',
     'enhanced enum': 'enum Data { a; int get code => 1; }',
@@ -356,8 +353,7 @@ abstract interface class Base { int get size; int add(int value); }
 @LuaApi(module: "a") abstract class A { int get_(); }
 @DartApi(module: "a") abstract class B { int get_(); }
 ''',
-    'both directions':
-        '@LuaApi(module: "a") @DartApi(module: "b") abstract class A { int get_(); }',
+    'both directions': '@LuaApi(module: "a") @DartApi(module: "b") abstract class A { int get_(); }',
     'concrete class': '@LuaApi(module: "a") class A { int get_() => 1; }',
     'module name': '@LuaApi(module: "a b") abstract class A { int get_(); }',
     'API passed as data': '''
