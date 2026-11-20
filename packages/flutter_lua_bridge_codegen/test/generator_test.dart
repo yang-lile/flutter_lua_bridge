@@ -5,6 +5,7 @@ import 'package:source_gen/source_gen.dart';
 import 'package:test/test.dart';
 
 const _import =
+    "import 'dart:async';\n"
     "import 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';";
 
 /// One contract to resolve. Every case is declared while `main` runs, and
@@ -220,6 +221,24 @@ class Score {
     expect(schema.enums.single.values.keys, ['low', 'high']);
   });
 
+  final asynchronous = parse(
+    'Future<int> later(int value); Future<void> wait(); int now();',
+  );
+  test('a Future result marks an asynchronous method', () async {
+    final schema = (await asynchronous.schema())!;
+    final methods = {for (final m in schema.apis.single.methods) m.name: m};
+    expect(methods['later']!.isAsync, isTrue);
+    expect(methods['later']!.result.name, 'int');
+    expect(methods['wait']!.result.name, 'void');
+    expect(methods['now']!.isAsync, isFalse);
+    final dart = emitDart(schema);
+    expect(dart, contains('Future<LuaCallResult<int>> later(int value) async'));
+    expect(dart, contains('_binding.callAsync("later"'));
+    // Lua sees plain functions.
+    expect(emitTeal(schema), contains('later: function(integer): integer'));
+    expect(emitTeal(schema), contains('wait: function(): ()'));
+  });
+
   final named = parse('int add(int value, {required int bonus});');
   test('supports required named parameters', () async {
     final schema = (await named.schema())!;
@@ -301,7 +320,10 @@ abstract interface class Base { int get size; int add(int value); }
   });
 
   final unsupported = {
-    'Future': 'Future<int> get_();',
+    'Future parameter': 'int get_(Future<int> value);',
+    'nullable Future': 'Future<int>? get_();',
+    'nested Future': 'Future<Future<int>> get_();',
+    'FutureOr': 'FutureOr<int> get_();',
     'Stream': 'Stream<int> get_();',
     'dynamic': 'dynamic get_();',
     'Object': 'Object get_();',

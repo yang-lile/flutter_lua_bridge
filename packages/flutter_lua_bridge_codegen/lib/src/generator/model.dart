@@ -44,10 +44,23 @@ class BridgeField {
 }
 
 class BridgeMethod {
-  const BridgeMethod(this.name, this.luaName, this.result, this.parameters);
+  const BridgeMethod(
+    this.name,
+    this.luaName,
+    this.result,
+    this.parameters, {
+    this.isAsync = false,
+  });
   final String name, luaName;
+
+  /// The result type; for an asynchronous method, the type the future
+  /// completes with.
   final BridgeType result;
   final List<BridgeField> parameters;
+
+  /// The Dart declaration returns a `Future`: the call may wait for
+  /// asynchronous Dart APIs. Lua sees an ordinary function either way.
+  final bool isAsync;
 }
 
 class BridgeApi {

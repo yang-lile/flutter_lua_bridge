@@ -157,12 +157,24 @@ class _Reader {
           ),
         );
       }
+      final returnType = method.returnType;
+      final isAsync =
+          returnType is InterfaceType && returnType.isDartAsyncFuture;
+      if (isAsync &&
+          returnType.nullabilitySuffix == NullabilitySuffix.question) {
+        _fail('Use Future<T?> instead of a nullable Future', method);
+      }
       methods.add(
         BridgeMethod(
           methodName,
           _luaName(method, methodName),
-          _type(method.returnType, method, result: true),
+          _type(
+            isAsync ? returnType.typeArguments.single : returnType,
+            method,
+            result: true,
+          ),
           parameters,
+          isAsync: isAsync,
         ),
       );
     }

@@ -14,6 +14,19 @@ abstract interface class Halver {
   int half(int value);
   Point move(Point point, int by);
   void ping();
+
+  /// Waits for [ClockApi] in Lua, then halves like [half].
+  Future<int> halfLater(int value);
+
+  /// Calls the asynchronous [ClockApi] without waiting for it: an error.
+  int syncWait(int value);
+}
+
+/// Implemented in Dart, asynchronously; Lua calls it as plain functions.
+@DartApi(module: 'clock')
+abstract class ClockApi {
+  Future<int> later(int value);
+  Future<void> tick();
 }
 
 @LuaApi(module: 'checked', optimization: LuaOptimization.o1)

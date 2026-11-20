@@ -5,22 +5,33 @@ local record BridgeContract
     x: integer
     y: integer
   end
+  record ClockApi
+    later: function(integer): integer
+    tick: function(): ()
+  end
+  getClockApi: function(): ClockApi
   record CheckedApi
     half: function(integer): integer
     move: function(Point, integer): Point
     ping: function(): ()
+    halfLater: function(integer): integer
+    syncWait: function(integer): integer
   end
   bindCheckedApi: function(CheckedApi): CheckedApi
   record GuardedApi
     half: function(integer): integer
     move: function(Point, integer): Point
     ping: function(): ()
+    halfLater: function(integer): integer
+    syncWait: function(integer): integer
   end
   bindGuardedApi: function(GuardedApi): GuardedApi
   record DirectApi
     half: function(integer): integer
     move: function(Point, integer): Point
     ping: function(): ()
+    halfLater: function(integer): integer
+    syncWait: function(integer): integer
   end
   bindDirectApi: function(DirectApi): DirectApi
 end
