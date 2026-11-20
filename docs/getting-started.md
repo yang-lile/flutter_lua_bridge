@@ -162,8 +162,11 @@ the declaration):
 
 - Types: `bool`, `int`, `double`, `String`, simple enums, data classes,
   `List<T>`, `Map<String, T>`, the nullable forms of these, and `void`
-  results. `dynamic`, `Object`, `Future`, `Stream`, functions, untyped
-  collections, non-`String` map keys and nullable elements are rejected.
+  results. A method may also return `Future<T>` when a step takes time
+  (see [Asynchronous methods](codegen-guide.md#asynchronous-methods)); Lua
+  still sees a plain function. `dynamic`, `Object`, `Stream`, functions,
+  untyped collections, non-`String` map keys and nullable elements are
+  rejected.
 - Data classes: one unnamed constructor whose parameters are all required
   (nullable ones too) and initialise `final` fields of the same names; no
   other fields, no inheritance, no recursion.

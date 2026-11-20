@@ -81,7 +81,8 @@ declaration):
 
 - Types: `bool`, `int`, `double`, `String`, simple enums, data classes,
   `List<T>`, `Map<String, T>`, nullable forms of these, and `void` returns.
-  Rejected: `dynamic`, `Object`, `Future`, `Stream`, function types,
+  A method result may be `Future<T>` / `Future<void>` (see below).
+  Rejected: `dynamic`, `Object`, `Stream`, `FutureOr`, function types,
   untyped collections, non-`String` map keys, and nullable elements
   (`List<int?>`, `Map<String, int?>`).
 - Data classes: one unnamed constructor whose parameters are all required
@@ -215,11 +216,13 @@ Values are `null`, `bool`, `int`, `double`, `String`, `Uint8List` or handles
 (`LuaTable`, `LuaFunction`, ...); Dart `Map`/`List` are copied into tables.
 Prefer the generated APIs for anything with a stable shape.
 
-Asynchronous Dart from Lua: a `lua.function` may return a `Future`; run the
-Lua that calls it with `luaFunction.callAsync(args)` (a coroutine awaiting
-every such future), and Lua reads the call as synchronous. It fails outside
-a coroutine or when reached through another Dart callback. Contracts
-(`@DartApi`) cannot return `Future` yet.
+Asynchronous methods: declare `Future<T>` results. A `@DartApi` method is
+then plain `async` Dart; Lua calls it as an ordinary function and waits
+without blocking the isolate. A `@LuaApi` method that may wait for one must
+itself return `Future<T>` (the client returns `Future<LuaCallResult<T>>` at
+O1/O2); a synchronous one that calls an async Dart method fails with "runs
+synchronously". Raw runtime: a `lua.function` may return a `Future` when the
+Lua is run with `luaFunction.callAsync(args)`.
 
 ## Troubleshooting
 

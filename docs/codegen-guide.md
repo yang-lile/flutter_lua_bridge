@@ -45,6 +45,52 @@ The O3 client then also implements `BattleFormulas`. Interfaces must be
 abstract, without type arguments, annotations or members other than abstract
 instance methods; `extends` and mixins are rejected.
 
+## Asynchronous methods
+
+A method may return `Future<T>` (or `Future<void>`) when a step takes time:
+a network request, a database, a dialog. Lua is unaware of it; there are no
+callbacks or `await` in Lua.
+
+```dart
+@DartApi(module: 'host')
+abstract class HostApi {
+  Future<Profile> loadProfile(String id);    // implemented with async/await
+}
+
+@LuaApi(module: 'quests')
+abstract class QuestApi {
+  Future<Reward> complete(String questId);   // may wait for HostApi
+}
+```
+
+```lua
+complete = function(questId: string): bridge.Reward
+  local profile = host.loadProfile("me")      -- a plain call in Lua
+  return { gold = profile.level * 10 }
+end,
+```
+
+```dart
+switch (await quests.complete('q1')) {        // Future<LuaCallResult<Reward>>
+  case LuaSuccess(:final value): ...
+  case LuaFailure(:final message): ...
+}
+```
+
+- An asynchronous `@DartApi` method is an ordinary `async` Dart method. While
+  its future is pending, the Lua call that is waiting for it is paused; a
+  failed future raises an error at that call, which the safety level reports
+  as usual (`LuaFailure` at `O1`/`O2`, an exception at `O3`).
+- An asynchronous `@LuaApi` method returns `Future<LuaCallResult<T>>` at
+  `O1`/`O2` and `Future<T>` at `O3`. Only these methods can wait: a
+  synchronous one whose Lua calls an asynchronous Dart method fails with
+  "called from Lua code that Dart runs synchronously", so declare every
+  method that may wait as returning a `Future`.
+- While a call waits, the runtime stays usable: other calls, synchronous or
+  asynchronous, run in between, as with any Dart `async` code.
+- `Future` is accepted only as a method's result; `Future?`, nested futures,
+  `FutureOr` and `Stream` are rejected.
+
 Binding wraps the functions of the Lua table in place, so a table can be bound
 to one API only. Binding it again to an API of another level fails with
 "already bound as ..."; give each binding its own table, for example
@@ -128,5 +174,4 @@ their file, line and column. LuaRocks, Cyan and a system Lua are not used.
 Not implemented yet:
 
 - Compiling Teal inside the running application. Only compiled Lua is shipped.
-- Asynchronous (`Future`) host methods. Calls are synchronous in both
-  directions.
+- `Stream` results.
