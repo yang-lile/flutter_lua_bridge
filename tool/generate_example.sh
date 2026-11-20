@@ -32,11 +32,8 @@ snapshot() {
 }
 
 before=$(snapshot)
-# JIT: before Dart 3.12, `dart compile` refuses packages whose dependencies
-# have build hooks, so build_runner cannot AOT-compile the build script. JIT
-# works on every SDK and saves the AOT compile on a one-off build.
 for package in "$example" packages/flutter_lua_bridge_codegen; do
-  (cd "$package" && $dart_cmd --suppress-analytics run build_runner build --force-jit)
+  (cd "$package" && $dart_cmd --suppress-analytics run build_runner build)
 done
 
 if $check; then

@@ -41,11 +41,10 @@ flutter:
 
 ```sh
 dart run flutter_lua_bridge_codegen:init     # directories, build.yaml, tlconfig.lua, lua/test/main.tl
-dart run build_runner build --force-jit      # after every contract or lua/src change (or: watch)
+dart run build_runner build                  # after every contract or lua/src change (or: watch)
 ```
 
-`--force-jit` is required before Dart 3.12 (Flutter 3.38 ships 3.10) because
-build hooks block AOT build scripts; it is harmless later. In a Flutter
+The packages need Dart 3.14 (Flutter 3.50) or later. In a Flutter
 project use `flutter pub add` / `dart run` the same way. `init` prints the
 steps it could not do (assets entry, missing dependencies, an existing
 `build.yaml` without `lua/**`).
@@ -204,7 +203,6 @@ Prefer the generated APIs for anything with a stable shape.
   `include_dir` covering `lua/src` and `lua/types`.
 - Nothing generated for `lua/`: `build.yaml` must list `lua/**` under
   `targets.$default.sources` (`init` writes it).
-- `dart compile` / build script errors mentioning hooks: add `--force-jit`.
 - Asset not found at runtime: list `assets/lua/` under `flutter: assets:`.
 - Lua version: 5.4 by default; set `hooks: user_defines: flutter_lua_bridge:
   lua_version: "5.3" | "5.5"` in the workspace root `pubspec.yaml`.

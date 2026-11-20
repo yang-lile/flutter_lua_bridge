@@ -45,7 +45,7 @@ return bridge.bindBattleApi({
 
 ```sh
 dart run flutter_lua_bridge_codegen:init
-dart run build_runner build --force-jit
+dart run build_runner build
 ```
 
 ```dart

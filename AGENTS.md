@@ -107,6 +107,15 @@ python3 packages/flutter_lua_bridge/tool/test_native.py   # C tests, every bundl
 Any change to `native/`, `hook/` or `lib/src/hook/` must pass both multi-version commands, and
 so must a change to the Teal builder or to `tl.lua`.
 
+Before publishing, `./tool/pana.sh` must give every package full points; it
+scores the packed packages locally as pub.dev does. Publishing is described
+in [`docs/development.md`](docs/development.md#publishing).
+
+The Flutter release is pinned in `.fvmrc`; use `fvm flutter` and `fvm dart`.
+Do not keep compatibility with older SDKs or dependency majors: when a
+dependency needs a newer SDK, move `.fvmrc`, the `sdk:` constraints and the
+CI workflows to the newer stable release.
+
 If native asset hooks fail locally because of stale `.dart_tool` state, repeat
 the check in a clean checkout or CI runner and report the environment failure;
 do not weaken runtime tests to bypass the hook.

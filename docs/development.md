@@ -4,6 +4,15 @@ Rules for changing the code (source ownership, generated files, commits) are
 in [`AGENTS.md`](../AGENTS.md); what each test tier covers is in
 [`testing-matrix.md`](testing-matrix.md).
 
+## SDK
+
+The repository pins its Flutter release in `.fvmrc` (currently 3.50.1, with
+Dart 3.14); run `fvm install` once and call `fvm flutter` / `fvm dart`. The
+packages require that Dart release or later and track the current majors of
+their dependencies: when a dependency needs a newer SDK, move `.fvmrc`, the
+`environment: sdk:` constraints and the CI workflows to the newer stable
+release rather than keeping compatibility with older ones.
+
 ## Checks
 
 ```sh
@@ -36,7 +45,7 @@ options:
 ```
 
 The release workflow uses a temporary x64 Flutter configuration in the local
-Podman wrapper because Flutter 3.38.10 does not publish a Linux arm64 archive.
+Podman wrapper because Flutter does not publish a Linux arm64 archive.
 On Apple Silicon, the native ASan test may still fail under amd64 emulation;
 use `./tool/ci.sh` on the host or the GitHub release workflow for the
 authoritative native check.
@@ -53,8 +62,8 @@ Open the repository root. `.vscode/launch.json` (Run and Debug, F5) has:
 | Lua Canvas Studio (macOS, flutter_driver) | The same with `lib/driver_main.dart` |
 | Lua: run current file | The open `.tl`/`.lua` entry without an app |
 
-`.vscode/settings.json` points the Dart extension at fvm's global Flutter
-(`~/fvm/default`); change it if your SDK lives elsewhere. If the debugger
+`.vscode/settings.json` points the Dart extension at the SDK that fvm links
+under `.fvm/` for `.fvmrc`. If the debugger
 cannot attach to Lua Canvas Studio, the task "canvas: build and open
 (tools/dev.sh)" builds it with Xcode and opens it. The other tasks
 (Terminal > Run Task) run the Lua entries and both end-to-end tests; see
@@ -70,8 +79,17 @@ packages in dependency order: `flutter_lua_bridge_codegen_annotation`,
 
 ```sh
 dart run melos run publish:check            # dry run of every package
+dart run melos run pana                     # the pub.dev score, locally; must be full
 dart run melos publish --no-dry-run -t      # publish what pub.dev lacks, tag each release
 ```
+
+`pana` (`tool/pana.sh`) runs the analysis behind the pub.dev score on each
+package exactly as it would be uploaded (`dart pub publish --to-archive`),
+outside the workspace, against the newest dependency versions and the
+lowest ones allowed. Packages released together resolve each other through
+`tool/pana_repository.dart`, a local repository that adds the packed
+versions to pub.dev's. Publish only when every package scores full points;
+the script prints the full report of a package that does not.
 
 `-t` creates one git tag per package (`<package>-v<version>`); push them
 with `git push origin --tags`. Before publishing, raise `version:` in the

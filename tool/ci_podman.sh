@@ -110,7 +110,7 @@ run_workflow() {
 }
 
 run_release() {
-  # Flutter 3.38.10 has no Linux arm64 archive. act reports the Podman VM's
+  # Flutter publishes no Linux arm64 archive. act reports the Podman VM's
   # host architecture, so use a temporary x64 workflow for this local check.
   TEMP_WORKFLOW="$(mktemp "${TMPDIR:-/tmp}/flutter-lua-bridge-act.XXXXXX.yml")"
   python3 - "$RELEASE_WORKFLOW" "$TEMP_WORKFLOW" <<'PY'

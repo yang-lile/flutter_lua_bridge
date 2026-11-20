@@ -127,10 +127,6 @@ Lua 侧通过 `require("x_bridge")` 拿到 `bindXxx(impl)`（提交实现）和
   否则 `5.3`），`gen_compat` 关闭。
 - Teal 的 `require` 在内存中解析：`lua/src` 与 `lua/types` 下的全部模块
   交给编译器，不访问文件系统的搜索路径。
-- Dart 3.12 之前（例如 Flutter 3.38 自带的 Dart 3.10），只要依赖里有带 build
-  hook 的包，`dart compile` 就拒绝编译，而 `build_runner` 只在遇到
-  `dart:mirrors` 时才回退到 JIT。所以旧 SDK 需要 `build_runner build
-  --force-jit`；仓库脚本统一加这个参数。
 - worker 的 stdout 上可能混有 `dart run` 的进度输出（不换行），协议行按
   标记 `FLB-TEAL:` 在行内查找，而不是要求它在行首。
 - `build_runner` 默认不读取 `lua/` 目录，所以需要 `build.yaml` 里的

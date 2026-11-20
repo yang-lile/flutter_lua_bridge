@@ -125,11 +125,6 @@ on the Lua release selected for the application and generates Lua for it
 among `lua/src` and `lua/types`. Type and syntax errors fail the build with
 their file, line and column. LuaRocks, Cyan and a system Lua are not used.
 
-Before Dart 3.12 (Flutter 3.38 ships Dart 3.10), `dart compile` refuses
-packages whose dependencies have build hooks, and `flutter_lua_bridge` has
-one, so build_runner cannot AOT-compile its build script. Pass `--force-jit`
-to `build_runner`; the flag works on every SDK.
-
 Not implemented yet:
 
 - Compiling Teal inside the running application. Only compiled Lua is shipped.
