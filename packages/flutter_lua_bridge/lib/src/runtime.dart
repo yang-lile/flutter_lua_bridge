@@ -628,11 +628,15 @@ final class LuaRuntime implements Finalizable {
   /// Runs [thread] until it returns or yields by itself, waiting for every
   /// future of a Dart function that suspended it: Lua then receives the
   /// value, or the error raised by the call.
+  ///
+  /// When [stopped] returns true once a future completes, the thread is not
+  /// resumed again and the result is empty: its consumer went away.
   Future<List<Object?>> _drive(
     LuaThread thread,
     List<Object?> arguments,
-    int flags,
-  ) async {
+    int flags, [
+    bool Function()? stopped,
+  ]) async {
     var (results, pending) = _resumeOnce(thread, arguments, flags, null);
     while (pending != null) {
       final waited = pending;
@@ -642,6 +646,16 @@ final class LuaRuntime implements Finalizable {
         value = await waited.future;
       } catch (error, stackTrace) {
         failure = (error, stackTrace);
+      }
+      if (stopped != null && stopped()) {
+        if (value is LuaValues) {
+          for (final v in value.values) {
+            if (v is LuaRef) v.release();
+          }
+        } else if (value is LuaRef) {
+          value.release();
+        }
+        return const [];
       }
       (results, pending) = _resumeOnce(
         thread,
@@ -707,61 +721,159 @@ final class LuaRuntime implements Finalizable {
     T Function(Object? value, String path) decode,
     String path,
     bool envelope,
-  ) async* {
+  ) {
     final function = _moduleTable(binding._module).get(method, raw: true);
     if (function is! LuaFunction) {
       if (function is LuaRef) function.release();
-      throw LuaBridgeException('declared Lua method is missing: $method');
+      return Stream.error(
+        LuaBridgeException('declared Lua method is missing: $method'),
+      );
     }
-    final thread = function.coroutine();
-    function.release();
-    try {
-      var results = await _drive(thread, arguments, FLB_CALL_BY_VALUE);
-      for (var index = 0; !thread.isDead; index++) {
-        if (results.length > 1) {
+    return _generate<T>(
+      () {
+        try {
+          return function.coroutine();
+        } finally {
+          function.release();
+        }
+      },
+      arguments,
+      FLB_CALL_BY_VALUE,
+      item: (yielded, index) {
+        if (yielded.length > 1) {
           throw LuaBridgeException("method '$method' must yield one value");
         }
-        final T item;
         try {
-          item = decode(
-            results.isEmpty ? null : results.single,
+          return decode(
+            yielded.isEmpty ? null : yielded.single,
             '$path[$index]',
           );
         } on LuaTypeException catch (error) {
           if (!envelope) rethrow;
-          yield* Stream.error(
-            LuaFailure<T>(kind: LuaErrorKind.type, message: error.message),
-          );
-          return;
+          throw LuaFailure<T>(kind: LuaErrorKind.type, message: error.message);
         }
-        yield item;
-        results = await _drive(thread, const [], FLB_CALL_BY_VALUE);
-      }
-      if (envelope) {
+      },
+      end: (returned) {
+        if (!envelope) return;
         final end = decodeLuaResult<void>(
-          results.isEmpty ? null : results.first,
+          returned.isEmpty ? null : returned.first,
           '$path.result',
           null,
         );
         if (end case LuaFailure(:final kind, :final message)) {
-          yield* Stream.error(LuaFailure<T>(kind: kind, message: message));
+          throw LuaFailure<T>(kind: kind, message: message);
         }
-      }
-    } on LuaBridgeException catch (error) {
-      if (!envelope) rethrow;
-      yield* Stream.error(
-        LuaFailure<T>(kind: LuaErrorKind.protocol, message: error.message),
-      );
-    } finally {
-      _closeThread(thread);
-    }
+      },
+      failure: envelope
+          ? (error) => error is LuaBridgeException
+                ? LuaFailure<T>(
+                    kind: LuaErrorKind.protocol,
+                    message: error.message,
+                  )
+                : error
+          : null,
+    );
   }
 
-  /// Stops a coroutine whose consumer went away, and drops the handle.
-  void _closeThread(LuaThread thread) {
-    if (isClosed) return;
-    if (thread.status == LuaThreadStatus.suspended) thread.close();
-    thread.release();
+  /// Runs the coroutine [start] creates as a generator, for a single
+  /// listener. Lua runs only while the subscription is active and not
+  /// paused; [item] turns each yield into an event (or throws an error event
+  /// that ends the stream), [end] checks what the function returned.
+  /// Cancelling closes the coroutine at once, even while it waits for a Dart
+  /// future, and Lua does not run again. A long run of items that need no
+  /// waiting gives the event loop a turn every few milliseconds, so an
+  /// endless generator cannot starve timers, input or frames.
+  Stream<T> _generate<T>(
+    LuaThread Function() start,
+    List<Object?> arguments,
+    int flags, {
+    required T Function(List<Object?> yielded, int index) item,
+    void Function(List<Object?> returned)? end,
+    Object Function(Object error)? failure,
+  }) {
+    late final StreamController<T> out;
+    LuaThread? thread;
+    var stopped = false;
+    Completer<void>? wake;
+    void wakeUp() {
+      final waiting = wake;
+      if (waiting != null && !waiting.isCompleted) waiting.complete();
+    }
+
+    void finish() {
+      final current = thread;
+      if (current == null || isClosed) return;
+      // A coroutine that is running reaches finish() again when it returns
+      // to the loop below.
+      switch (current.status) {
+        case LuaThreadStatus.suspended:
+          current.close();
+        case LuaThreadStatus.dead:
+          break;
+        case _:
+          return;
+      }
+      current.release();
+      thread = null;
+    }
+
+    void releaseAll(List<Object?> values) {
+      for (final value in values) {
+        if (value is LuaRef) value.release();
+      }
+    }
+
+    Future<void> run() async {
+      final clock = Stopwatch()..start();
+      try {
+        final current = thread = start();
+        var results = await _drive(current, arguments, flags, () => stopped);
+        for (var index = 0; !stopped; index++) {
+          if (current.isDead) {
+            try {
+              end?.call(results);
+            } finally {
+              releaseAll(results);
+            }
+            break;
+          }
+          final T value;
+          try {
+            value = item(results, index);
+          } catch (_) {
+            releaseAll(results);
+            rethrow;
+          }
+          out.add(value); // synchronous: the listener may pause or cancel
+          if (clock.elapsedMilliseconds >= 4) {
+            await Future<void>.delayed(Duration.zero);
+            clock.reset();
+          }
+          while (!stopped && out.isPaused) {
+            await (wake = Completer<void>()).future;
+          }
+          if (stopped) break;
+          results = await _drive(current, const [], flags, () => stopped);
+        }
+      } catch (error, stackTrace) {
+        if (!stopped) out.addError(failure?.call(error) ?? error, stackTrace);
+      } finally {
+        finish();
+        if (!stopped) await out.close();
+      }
+    }
+
+    out = StreamController<T>(
+      sync: true,
+      onListen: () => unawaited(run()),
+      onResume: wakeUp,
+      onCancel: () {
+        stopped = true;
+        wakeUp();
+        finish();
+      },
+    );
+    return out.stream;
   }
 
   /// Generator support: [LuaBinding.callAsync].
@@ -1244,31 +1356,28 @@ final class LuaFunction extends LuaRef {
   /// Runs the function as a generator: every `coroutine.yield(value)` in it
   /// is an event of the stream, and returning ends the stream. The function
   /// runs only while the stream is listened to and not paused, so it can
-  /// produce without end; cancelling the subscription stops it. It may wait
-  /// for asynchronous Dart functions, as with [callAsync]. A Lua error is an
+  /// produce without end, and an endless run still gives the event loop a
+  /// turn every few milliseconds. Cancelling the subscription stops it at
+  /// once, even while it waits for a Dart future. It may wait for
+  /// asynchronous Dart functions, as with [callAsync]. A Lua error is an
   /// error event that ends the stream.
-  Stream<Object?> stream([List<Object?> arguments = const []]) async* {
-    final thread = coroutine();
-    try {
-      var results = await runtime._drive(thread, arguments, 0);
-      while (!thread.isDead) {
-        if (results.length > 1) {
-          for (final extra in results) {
-            if (extra is LuaRef) extra.release();
-          }
+  ///
+  /// Each call starts a new generator for one listener; share one with
+  /// `asBroadcastStream(onCancel: (s) => s.cancel())`.
+  Stream<Object?> stream([List<Object?> arguments = const []]) {
+    return runtime._generate<Object?>(
+      coroutine,
+      arguments,
+      0,
+      item: (yielded, _) {
+        if (yielded.length > 1) {
           throw LuaBridgeException(
             'a generator must yield one value at a time',
           );
         }
-        yield results.isEmpty ? null : results.single;
-        results = await runtime._drive(thread, const [], 0);
-      }
-      for (final value in results) {
-        if (value is LuaRef) value.release();
-      }
-    } finally {
-      runtime._closeThread(thread);
-    }
+        return yielded.isEmpty ? null : yielded.single;
+      },
+    );
   }
 }
 

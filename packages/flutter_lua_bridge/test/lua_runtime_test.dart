@@ -373,6 +373,67 @@ void main() {
       expect(produced, 3);
     });
 
+    test('pausing the subscription pauses Lua', () async {
+      var produced = 0;
+      lua['produced'] = lua.function((_) => ++produced);
+      final naturals = function(
+        'return function() while true do coroutine.yield(produced()) end end',
+      );
+      final subscription = naturals.stream().listen(null);
+      // An endless generator that never waits still lets timers run.
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      subscription.pause();
+      final atPause = produced;
+      expect(atPause, greaterThan(0));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(produced, atPause);
+      subscription.resume();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(produced, greaterThan(atPause));
+      await subscription.cancel();
+    });
+
+    test('cancelling while Lua waits stops it at once', () async {
+      final gate = Completer<Object?>();
+      var resumed = false;
+      lua['wait'] = lua.function((_) => gate.future);
+      lua['resumed'] = lua.function((_) => resumed = true);
+      final events = <Object?>[];
+      final subscription = function(
+        'return function() coroutine.yield(1) wait() resumed() coroutine.yield(2) end',
+      ).stream().listen(events.add);
+      await Future<void>.delayed(Duration.zero);
+      // Completes although the future Lua waits for never has.
+      await subscription.cancel();
+      gate.complete(0);
+      await Future<void>.delayed(Duration.zero);
+      expect(events, [1]);
+      expect(resumed, isFalse);
+      expect(lua.eval('return 1'), 1);
+    });
+
+    test('several listeners share a generator through a broadcast', () async {
+      var produced = 0;
+      lua['tick'] = lua.function(
+        (_) =>
+            Future.delayed(const Duration(milliseconds: 1), () => ++produced),
+      );
+      final shared = function(
+        'return function() while true do coroutine.yield(tick()) end end',
+      ).stream().asBroadcastStream(onCancel: (s) => s.cancel());
+      final both = await Future.wait([
+        shared.take(3).toList(),
+        shared.take(2).toList(),
+      ]);
+      expect(both, [
+        [1, 2, 3],
+        [1, 2],
+      ]);
+      final atEnd = produced;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(produced, atEnd); // the last listener left: Lua stopped
+    });
+
     test('a generator may wait for Dart between items', () async {
       lua['later'] = lua.function(
         (a) => Future.delayed(const Duration(milliseconds: 2), () => a.single),
@@ -428,6 +489,34 @@ void main() {
       final results = await reader.callAsync();
       expect(results.first, 1);
       expect(results.last, contains('feed lost'));
+    });
+
+    test('Lua loops over a broadcast stream, several at once', () async {
+      final positions = StreamController<int>.broadcast();
+      lua['positions'] = lua.function((_) => positions.stream);
+      lua['slow'] = lua.function(
+        (_) => Future<void>.delayed(const Duration(milliseconds: 5)),
+      );
+      final reader = function('''return function(n, busy)
+          local seen = {}
+          for p in positions() do
+            if busy then slow() end -- events meanwhile are buffered, not lost
+            seen[#seen + 1] = p
+            if #seen == n then break end
+          end
+          return table.concat(seen, ",")
+        end''');
+      final quick = reader.callAsync([3, false]);
+      final busy = reader.callAsync([3, true]);
+      await Future<void>.delayed(Duration.zero);
+      positions
+        ..add(1)
+        ..add(2)
+        ..add(3);
+      expect(await Future.wait([quick, busy]), [
+        ['1,2,3'],
+        ['1,2,3'],
+      ]);
     });
 
     test('an iterator needs Lua that Dart runs asynchronously', () {
