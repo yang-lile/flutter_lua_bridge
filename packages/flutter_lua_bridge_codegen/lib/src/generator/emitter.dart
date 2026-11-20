@@ -279,10 +279,12 @@ void _emitSafeWrapper(
   out.writeln('end');
 }
 
-String _resultType(BridgeApi api, BridgeMethod method) =>
-    api.optimization.catchesErrors
-    ? 'LuaCallResult<${method.result.dart}>'
-    : method.result.dart;
+String _resultType(BridgeApi api, BridgeMethod method) {
+  final result = api.optimization.catchesErrors
+      ? 'LuaCallResult<${method.result.dart}>'
+      : method.result.dart;
+  return method.isAsync ? 'Future<$result>' : result;
+}
 
 /// The Dart declarations for a contract, to be placed in a `part` of the
 /// library that declares it. That library imports
@@ -355,12 +357,21 @@ String emitDart(BridgeSchema schema) {
           );
         }
         final call = 'api.${method.name}(${args.join(', ')})';
-        if (method.result.name == 'void') {
+        final encode = method.result.name == 'void'
+            ? null
+            : '${_codec(method.result)}.encode';
+        if (method.isAsync) {
+          // The runtime suspends the calling Lua code until the future
+          // completes; Lua receives its encoded value.
+          out.writeln(
+            encode == null
+                ? 'return $call.then((_) => null);'
+                : 'return $call.then((value) => $encode(value, ${_dartString('$path.result')}));',
+          );
+        } else if (encode == null) {
           out.writeln('$call; return null;');
         } else {
-          out.writeln(
-            'return ${_codec(method.result)}.encode($call, ${_dartString('$path.result')});',
-          );
+          out.writeln('return $encode($call, ${_dartString('$path.result')});');
         }
         out.writeln('}, isVoid: ${method.result.name == 'void'}),');
       }
@@ -400,9 +411,9 @@ String emitDart(BridgeSchema schema) {
           .join(', ');
       final isVoid = method.result.name == 'void';
       final call =
-          '_binding.call(${_dartString(method.luaName)}, [$args], isVoid: ${catchesErrors ? false : isVoid})';
+          '${method.isAsync ? 'await ' : ''}_binding.${method.isAsync ? 'callAsync' : 'call'}(${_dartString(method.luaName)}, [$args], isVoid: ${catchesErrors ? false : isVoid})';
       out.writeln(
-        '${catchesErrors ? '' : '@override '}${_resultType(api, method)} ${method.name}(${_params(method)}) {',
+        '${catchesErrors ? '' : '@override '}${_resultType(api, method)} ${method.name}(${_params(method)})${method.isAsync ? ' async' : ''} {',
       );
       if (catchesErrors) {
         final decoder = isVoid ? 'null' : '${_codec(method.result)}.decode';

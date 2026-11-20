@@ -1,3 +1,11 @@
+## Unreleased
+
+- Contract methods may return `Future<T>` or `Future<void>`. An asynchronous
+  `@DartApi` method is plain `async` Dart that Lua calls as an ordinary
+  function; an asynchronous `@LuaApi` method returns
+  `Future<LuaCallResult<T>>` (O1/O2) or `Future<T>` (O3) and may wait for
+  them. Teal sees plain functions.
+
 ## 0.2.0
 
 - Require Dart 3.14 (Flutter 3.50), `analyzer` 14.7, `build` 5 and
