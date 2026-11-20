@@ -51,7 +51,16 @@ abstract class BattleApi {
 
 This library re-exports the annotations, so a contract imports only
 `package:flutter_lua_bridge/flutter_lua_bridge.dart`. See
-[`flutter_lua_bridge_codegen`](https://pub.dev/packages/flutter_lua_bridge_codegen).
+[`flutter_lua_bridge_codegen`](https://pub.dev/packages/flutter_lua_bridge_codegen)
+and the step-by-step
+[Getting started](https://github.com/yang-lile/flutter_lua_bridge/blob/main/docs/getting-started.md).
+
+## Lua from a server
+
+The Lua source is plain text loaded at runtime, so it can be delivered
+without an app release. It must implement the contract the app was built
+with, as source text (bytecode is rejected) within the sandbox you open.
+See [Loading Lua at runtime](https://github.com/yang-lile/flutter_lua_bridge/blob/main/docs/dynamic-lua.md).
 
 ## Lua version
 

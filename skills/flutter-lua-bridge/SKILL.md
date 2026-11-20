@@ -30,10 +30,10 @@ There is no `<name>_bridge.lua` file; that module lives inside `<name>.g.dart`.
 ```yaml
 # pubspec.yaml
 dependencies:
-  flutter_lua_bridge: ^0.1.0
+  flutter_lua_bridge: ^0.2.0
 dev_dependencies:
-  build_runner: ^2.10.0
-  flutter_lua_bridge_codegen: ^0.1.0
+  build_runner: ^2.17.1
+  flutter_lua_bridge_codegen: ^0.2.0
 flutter:
   assets:
     - assets/lua/
@@ -165,6 +165,25 @@ Set the project default with `optimization: O1|O2|O3` in the builder options
 of `build.yaml`, or per interface with
 `@LuaApi(module: 'battle', optimization: LuaOptimization.o3)`. Use O1 for
 scripts that can change at runtime, O3 for trusted hot paths.
+
+## Lua delivered at runtime
+
+The Lua source is text passed to `XxxClient.load(source: ...)`, so it may
+come from a server. The contract and the `<name>_bridge` glue are compiled
+into the app, so a delivered script replaces only the implementation:
+
+- Deliver the `assets/lua/<module>.lua` that `build_runner` writes from the
+  same contract version as the installed app; source text only, bytecode is
+  rejected. Version contracts yourself (a constant raised on every change).
+- It must `return bridge.bindXxx(t)` with every contract method (a missing
+  one fails at load; extras are ignored), use only the opened libraries,
+  and `require` only modules loaded first with `runtime.loadModule`.
+- Type mismatches surface per call (`LuaFailure`, `kind: type`), so keep
+  `O1`, load into a new `LuaRuntime`, make one test call, then swap and
+  `close()` the old runtime; fall back to the bundled asset on failure.
+  Verify a signature before loading.
+
+Details: `docs/dynamic-lua.md`.
 
 ## Testing the Lua side without the app
 

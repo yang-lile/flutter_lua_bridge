@@ -8,10 +8,10 @@ toolchain is installed and only Lua is shipped.
 
 ```yaml
 dependencies:
-  flutter_lua_bridge: ^0.1.0
+  flutter_lua_bridge: ^0.2.0
 dev_dependencies:
-  build_runner: ^2.10.0
-  flutter_lua_bridge_codegen: ^0.1.0
+  build_runner: ^2.17.1
+  flutter_lua_bridge_codegen: ^0.2.0
 ```
 
 ```sh
@@ -121,6 +121,11 @@ Set the default with `optimization` in `build.yaml`, or per interface with
 
 ## More
 
+- [Getting started](https://github.com/yang-lile/flutter_lua_bridge/blob/main/docs/getting-started.md):
+  the whole workflow step by step, with what each step does and why.
+- [Loading Lua at runtime](https://github.com/yang-lile/flutter_lua_bridge/blob/main/docs/dynamic-lua.md):
+  delivering scripts from a server, the conditions they must meet, and a
+  safe way to swap them in.
 - [Code generator reference](https://github.com/yang-lile/flutter_lua_bridge/blob/main/docs/codegen-guide.md):
   generated API, contract rules, interface inheritance, `build.yaml` options,
   `tlconfig.lua`, the `run` command and the bundled Teal compiler.
