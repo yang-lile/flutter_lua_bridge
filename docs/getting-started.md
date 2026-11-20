@@ -163,8 +163,9 @@ the declaration):
 - Types: `bool`, `int`, `double`, `String`, simple enums, data classes,
   `List<T>`, `Map<String, T>`, the nullable forms of these, and `void`
   results. A method may also return `Future<T>` when a step takes time
-  (see [Asynchronous methods](codegen-guide.md#asynchronous-methods)); Lua
-  still sees a plain function. `dynamic`, `Object`, `Stream`, functions,
+  (see [Asynchronous methods](codegen-guide.md#asynchronous-methods)), or
+  `Stream<T>` (see [Streams](codegen-guide.md#streams)); Lua still sees
+  plain functions and loops. `dynamic`, `Object`, functions,
   untyped collections, non-`String` map keys and nullable elements are
   rejected.
 - Data classes: one unnamed constructor whose parameters are all required

@@ -88,8 +88,59 @@ switch (await quests.complete('q1')) {        // Future<LuaCallResult<Reward>>
   method that may wait as returning a `Future`.
 - While a call waits, the runtime stays usable: other calls, synchronous or
   asynchronous, run in between, as with any Dart `async` code.
-- `Future` is accepted only as a method's result; `Future?`, nested futures,
-  `FutureOr` and `Stream` are rejected.
+- `Future` is accepted only as a method's result; `Future?`, nested futures
+  and `FutureOr` are rejected.
+
+## Streams
+
+A method may return `Stream<T>`, in either direction:
+
+```dart
+@DartApi(module: 'ticker')
+abstract class TickerApi {
+  Stream<int> ticks(int count);       // a Dart stream that Lua iterates
+}
+
+@LuaApi(module: 'feed')
+abstract class FeedApi {
+  Stream<String> lines(int count);    // a Lua generator that Dart listens to
+  Future<int> total(int count);
+}
+```
+
+```lua
+lines = function(count: integer)
+  for i = 1, count do
+    coroutine.yield("line " .. i)     -- one item of the stream
+  end
+end,                                  -- returning ends the stream
+total = function(count: integer): integer
+  local sum = 0
+  for tick in ticker.ticks(count) do  -- tick is an integer for Teal
+    sum = sum + tick
+  end
+  return sum
+end,
+```
+
+```dart
+await for (final line in feed.lines(3)) print(line);
+```
+
+- **Lua to Dart**: the Lua function yields every item with
+  `coroutine.yield(item)` and ends the stream by returning. It runs only while
+  the stream is listened to and not paused, so it can produce without end;
+  cancelling the subscription stops it. Between items it may wait for
+  asynchronous Dart methods. The client returns `Stream<T>` at every level;
+  items are checked as Dart decodes them. Failures are error events that end
+  the stream: a `LuaFailure` at `O1`/`O2`, an exception at `O3`.
+- **Dart to Lua**: Lua gets an iterator for a generic `for`, typed for Teal.
+  Each step waits for the next event, so the Lua code must run asynchronously
+  (inside an asynchronous method). An error event raises a Lua error in the
+  loop. The subscription is cancelled when the stream ends, on an error, or
+  once Lua drops the iterator (leaving the loop early).
+- Items cannot be nullable (`nil` ends a Lua iteration), nor `void`; `Stream`
+  is accepted only as a method's result.
 
 Binding wraps the functions of the Lua table in place, so a table can be bound
 to one API only. Binding it again to an API of another level fails with
@@ -174,4 +225,3 @@ their file, line and column. LuaRocks, Cyan and a system Lua are not used.
 Not implemented yet:
 
 - Compiling Teal inside the running application. Only compiled Lua is shipped.
-- `Stream` results.

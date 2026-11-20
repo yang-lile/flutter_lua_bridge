@@ -81,8 +81,9 @@ declaration):
 
 - Types: `bool`, `int`, `double`, `String`, simple enums, data classes,
   `List<T>`, `Map<String, T>`, nullable forms of these, and `void` returns.
-  A method result may be `Future<T>` / `Future<void>` (see below).
-  Rejected: `dynamic`, `Object`, `Stream`, `FutureOr`, function types,
+  A method result may be `Future<T>` / `Future<void>` or `Stream<T>` (see
+  below). Rejected: `dynamic`, `Object`, `FutureOr`, nullable or void stream
+  items, function types,
   untyped collections, non-`String` map keys, and nullable elements
   (`List<int?>`, `Map<String, int?>`).
 - Data classes: one unnamed constructor whose parameters are all required
@@ -223,6 +224,14 @@ itself return `Future<T>` (the client returns `Future<LuaCallResult<T>>` at
 O1/O2); a synchronous one that calls an async Dart method fails with "runs
 synchronously". Raw runtime: a `lua.function` may return a `Future` when the
 Lua is run with `luaFunction.callAsync(args)`.
+
+Streams: a `@LuaApi` method returning `Stream<T>` is a Lua function that
+`coroutine.yield(item)`s each item and returns to end; Dart gets a lazy
+`Stream<T>` (errors: `LuaFailure` events at O1/O2, exceptions at O3). A
+`@DartApi` method returning `Stream<T>` reaches Lua as an iterator:
+`for item in host.ticks(n) do ... end`, inside an asynchronous method.
+Raw runtime: `luaFunction.stream(args)`, and a `lua.function` returning a
+`Stream` gives Lua an iterator (`lua.iterate(stream)` for an argument).
 
 ## Troubleshooting
 
