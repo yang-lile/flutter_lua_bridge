@@ -215,6 +215,12 @@ Values are `null`, `bool`, `int`, `double`, `String`, `Uint8List` or handles
 (`LuaTable`, `LuaFunction`, ...); Dart `Map`/`List` are copied into tables.
 Prefer the generated APIs for anything with a stable shape.
 
+Asynchronous Dart from Lua: a `lua.function` may return a `Future`; run the
+Lua that calls it with `luaFunction.callAsync(args)` (a coroutine awaiting
+every such future), and Lua reads the call as synchronous. It fails outside
+a coroutine or when reached through another Dart callback. Contracts
+(`@DartApi`) cannot return `Future` yet.
+
 ## Troubleshooting
 
 - `require("x_bridge")` reported missing in the editor: `tlconfig.lua` must
