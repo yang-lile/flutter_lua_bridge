@@ -38,11 +38,11 @@ try {
 - **Threading**: calls are synchronous and confined to the isolate that
   created the runtime.
 
-## Coroutines and asynchronous Dart functions
+## Asynchronous Dart functions
 
-Lua coroutines are `LuaThread`s: `function.coroutine()`, then `resume`. A
-Dart function can also suspend the coroutine that called it, so Lua calls
-asynchronous Dart code as if it were synchronous:
+A Dart function given to Lua may return a `Future`. Lua calls it as an
+ordinary function and waits for the result without blocking the isolate,
+when Dart runs that Lua code asynchronously:
 
 ```dart
 lua['fetch'] = lua.function((args) async {
@@ -52,20 +52,19 @@ lua['fetch'] = lua.function((args) async {
 
 final length = lua.eval('''
   return function(url)
-    local body = fetch(url)          -- suspends here until the future completes
+    local body = fetch(url)          -- waits here; other Dart code keeps running
     return #body
   end''') as LuaFunction;
 
 print(await length.callAsync(['/home'])); // [13]
 ```
 
-`callAsync` runs the function in a coroutine and awaits every `Future` a
-Dart function returns; a failed future raises a Lua error at the call. For
-a hand-written driver, return `LuaYield(values)` instead, and continue with
-`resume` or `resumeWithError`. The coroutine is suspended only after the
-Dart function has returned, so no Dart stack frame is ever unwound. For the
-same reason, Lua reached through another Dart callback cannot be suspended,
-and the call raises an error.
+A failed future raises a Lua error at the call. Lua code that Dart runs
+synchronously (`call`, `eval`) cannot wait and gets an error explaining so.
+With generated contracts, declare the method as returning a `Future`; see
+[Asynchronous methods](https://github.com/yang-lile/flutter_lua_bridge/blob/main/docs/codegen-guide.md#asynchronous-methods).
+Lua coroutines remain available as `LuaThread`s (`function.coroutine()`,
+`resume`, `resumeAsync`).
 
 ## Typed contracts
 

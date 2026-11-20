@@ -443,13 +443,15 @@ external int flb_ref_type(
 external int flb_release(ffi.Pointer<flb_state> state, int ref);
 
 /// Starts or continues a coroutine. Returns FLB_YIELD with the yielded
-/// values, FLB_OK with the returned values, or an error status.
+/// values, FLB_OK with the returned values, or an error status. `flags` is a
+/// mask of FLB_CALL_BY_VALUE (for the results) and FLB_RESUME_HOST_YIELD.
 @ffi.Native<
   ffi.Int32 Function(
     ffi.Pointer<flb_state>,
     flb_ref,
     ffi.Pointer<flb_value>,
     ffi.Size,
+    ffi.Int32,
     ffi.Pointer<ffi.Pointer<flb_value>>,
     ffi.Pointer<ffi.Size>,
   )
@@ -459,6 +461,7 @@ external int flb_resume(
   int thread,
   ffi.Pointer<flb_value> arguments,
   int argument_count,
+  int flags,
   ffi.Pointer<ffi.Pointer<flb_value>> results,
   ffi.Pointer<ffi.Size> count,
 );
@@ -474,6 +477,7 @@ external int flb_resume(
     ffi.Int64,
     ffi.Pointer<ffi.Char>,
     ffi.Size,
+    ffi.Int32,
     ffi.Pointer<ffi.Pointer<flb_value>>,
     ffi.Pointer<ffi.Size>,
   )
@@ -484,6 +488,7 @@ external int flb_resume_failure(
   int host_error_id,
   ffi.Pointer<ffi.Char> message,
   int length,
+  int flags,
   ffi.Pointer<ffi.Pointer<flb_value>> results,
   ffi.Pointer<ffi.Size> count,
 );
@@ -707,16 +712,16 @@ external int flb_tostring(
 external ffi.Pointer<ffi.Char> flb_type_name(int type);
 
 /// Inside a host call: instead of returning, suspends the coroutine that
-/// called the host function and yields `values` to whoever resumes it. The
-/// coroutine is suspended only after the host callback has returned, so no
-/// host stack frame is ever unwound. When it is resumed with flb_resume, the
-/// resume arguments become the results of the host function; with
-/// flb_resume_failure, the host function raises an error instead.
+/// called the host function, and the flb_resume that runs it returns
+/// FLB_YIELD with `values`. The coroutine is suspended only after the host
+/// callback has returned, so no host stack frame is ever unwound. When it is
+/// resumed again, the resume arguments become the results of the host
+/// function; with flb_resume_failure, the host function raises instead.
 ///
-/// Lua cannot suspend a coroutine across a C function that called back into
-/// Lua, nor outside a coroutine; the host function then raises the Lua error
-/// "attempt to yield across a C-call boundary" or "attempt to yield from
-/// outside a coroutine". flb_can_yield tells in advance.
+/// Only a coroutine run by flb_resume with FLB_RESUME_HOST_YIELD can be
+/// suspended, and only from its own code: not from a coroutine that Lua
+/// resumed, nor through a host function that called back into Lua. Otherwise
+/// the host function raises a Lua error. flb_can_yield tells in advance.
 @ffi.Native<
   ffi.Int32 Function(ffi.Pointer<flb_state>, ffi.Pointer<flb_value>, ffi.Size)
 >()
@@ -799,6 +804,8 @@ const int FLB_NIL = 0;
 const int FLB_NUMBER = 3;
 
 const int FLB_OK = 0;
+
+const int FLB_RESUME_HOST_YIELD = 2;
 
 const int FLB_STRING = 4;
 

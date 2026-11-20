@@ -24,5 +24,4 @@ export 'src/runtime.dart'
         LuaThread,
         LuaThreadStatus,
         LuaUserdata,
-        LuaValues,
-        LuaYield;
+        LuaValues;

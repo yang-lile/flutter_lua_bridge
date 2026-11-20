@@ -97,6 +97,9 @@ struct flb_state {
   frame *frames[FLB_MAX_DEPTH];
   int depth;
   int override_status; /* set by an operation just before raising */
+  /* The coroutine of the innermost flb_resume with FLB_RESUME_HOST_YIELD, or
+   * NULL: the only one a host function may suspend. */
+  lua_State *host_yield_thread;
   int status;
   char *message;
   size_t message_length;
@@ -1687,6 +1690,12 @@ static frame *host_frame(lua_State *L, flb_state *S) {
   return f;
 }
 
+/* Whether a host function running on `L` may suspend it: L must be the
+ * coroutine a host resume allowed it for, with nothing in between. */
+static int host_can_yield(flb_state *S, lua_State *L) {
+  return L == S->host_yield_thread && lua_isyieldable(L);
+}
+
 /* Raises the error held in S->host_failure, as a failed host call does. */
 static int raise_host_failure(lua_State *L, flb_state *S) {
   lua_pushlstring(L, S->host_failure ? S->host_failure : "", S->host_failure_length);
@@ -1757,8 +1766,11 @@ static int host_function(lua_State *L) {
   }
   lua_settop(L, count + f->returned);
   if (f->yielded) {
+    if (!host_can_yield(S, L)) {
+      return luaL_error(L, "this host function cannot suspend the code that called it");
+    }
     /* The host has returned: only C frames lie between here and the resume,
-     * so Lua may unwind them. Raises if the caller cannot yield. */
+     * so Lua may unwind them. */
     return lua_yieldk(L, f->returned, (lua_KContext)count, host_continue);
   }
   return f->returned;
@@ -1830,7 +1842,7 @@ int32_t flb_yield(flb_state *state, const flb_value *values, size_t count) {
 
 int32_t flb_can_yield(flb_state *state) {
   if (!state || !state->L || state->depth == 0) return 0;
-  return lua_isyieldable(state->frames[state->depth]->L) ? 1 : 0;
+  return host_can_yield(state, state->frames[state->depth]->L);
 }
 
 int32_t flb_fail(flb_state *state, int64_t host_error_id, const char *message,
@@ -2025,7 +2037,7 @@ static int body_push_arguments(lua_State *L) {
 
 static int body_emit_arguments(lua_State *L) {
   op *o = begin(L);
-  return emit(L, o->target, lua_gettop(L));
+  return emit_results(L, o);
 }
 
 static int body_thread_traceback(lua_State *L) {
@@ -2077,10 +2089,12 @@ static int body_push_failure(lua_State *L) {
 static int32_t resume(flb_state *state, flb_ref thread_ref,
                       const flb_value *arguments, size_t argument_count,
                       int failure, int64_t host_error_id, const char *message,
-                      size_t length, const flb_value **results, size_t *count) {
-  lua_State *thread;
+                      size_t length, int32_t flags, const flb_value **results,
+                      size_t *count) {
+  lua_State *thread, *outer_yield_thread;
   int status, code, produced, pushed;
   ENTER(state);
+  o.flag = flags;
   give(f, FLB_ERROR_ARGUMENT, results, count);
   thread = thread_of(f, thread_ref);
   if (!thread) return fail(state, FLB_ERROR_ARGUMENT, "not a thread");
@@ -2114,12 +2128,17 @@ static int32_t resume(flb_state *state, flb_ref thread_ref,
     state->host_failure_id = host_error_id;
   }
   lua_xmove(f->L, thread, pushed);
+  /* Host functions may suspend this coroutine only if the host asked for it;
+   * a nested resume decides for itself and restores this one afterwards. */
+  outer_yield_thread = state->host_yield_thread;
+  state->host_yield_thread = (flags & FLB_RESUME_HOST_YIELD) ? thread : NULL;
 #if LUA_VERSION_NUM >= 504
   code = lua_resume(thread, f->L, pushed, &produced);
 #else
   code = lua_resume(thread, f->L, pushed);
   produced = lua_gettop(thread);
 #endif
+  state->host_yield_thread = outer_yield_thread;
   if (code != LUA_OK && code != LUA_YIELD) return capture_thread_error(&o, thread, code);
   status = run_with(&o, body_emit_arguments, thread, produced);
   if (status != FLB_OK) return status;
@@ -2131,17 +2150,17 @@ static int32_t resume(flb_state *state, flb_ref thread_ref,
 
 int32_t flb_resume(flb_state *state, flb_ref thread_ref,
                     const flb_value *arguments, size_t argument_count,
-                    const flb_value **results, size_t *count) {
+                    int32_t flags, const flb_value **results, size_t *count) {
   return resume(state, thread_ref, arguments, argument_count, 0, 0, NULL, 0,
-                results, count);
+                flags, results, count);
 }
 
 int32_t flb_resume_failure(flb_state *state, flb_ref thread_ref,
                             int64_t host_error_id, const char *message,
-                            size_t length, const flb_value **results,
-                            size_t *count) {
+                            size_t length, int32_t flags,
+                            const flb_value **results, size_t *count) {
   return resume(state, thread_ref, NULL, 0, 1, host_error_id, message, length,
-                results, count);
+                flags, results, count);
 }
 
 int32_t flb_thread_status(flb_state *state, flb_ref thread_ref,

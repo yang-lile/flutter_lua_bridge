@@ -716,17 +716,17 @@ static void test_coroutines(flb_state *S) {
   CHECK(status == FLB_THREAD_SUSPENDED);
 
   argument = integer(1);
-  CHECK(flb_resume(S, thread, &argument, 1, &out, &count) == FLB_YIELD);
+  CHECK(flb_resume(S, thread, &argument, 1, 0, &out, &count) == FLB_YIELD);
   CHECK(count == 1 && out->i == 2);
   argument = integer(10);
-  CHECK(flb_resume(S, thread, &argument, 1, &out, &count) == FLB_YIELD);
+  CHECK(flb_resume(S, thread, &argument, 1, 0, &out, &count) == FLB_YIELD);
   CHECK(count == 2 && out[0].i == 20 && is_string(&out[1], "second"));
   argument = integer(100);
-  OK(flb_resume(S, thread, &argument, 1, &out, &count));
+  OK(flb_resume(S, thread, &argument, 1, 0, &out, &count));
   CHECK(count == 1 && out->i == 111);
   OK(flb_thread_status(S, thread, &status));
   CHECK(status == FLB_THREAD_DEAD);
-  CHECK(flb_resume(S, thread, NULL, 0, &out, &count) == FLB_ERROR_ARGUMENT);
+  CHECK(flb_resume(S, thread, NULL, 0, 0, &out, &count) == FLB_ERROR_ARGUMENT);
   OK(flb_release(S, thread));
 
   /* An error inside a coroutine is reported with the coroutine's traceback. */
@@ -734,8 +734,8 @@ static void test_coroutines(flb_state *S) {
   OK(flb_release(S, body));
   body = out->i;
   OK(flb_thread_new(S, body, &thread));
-  CHECK(flb_resume(S, thread, NULL, 0, NULL, NULL) == FLB_YIELD);
-  CHECK(flb_resume(S, thread, NULL, 0, &out, &count) == FLB_ERROR_RUNTIME);
+  CHECK(flb_resume(S, thread, NULL, 0, 0, NULL, NULL) == FLB_YIELD);
+  CHECK(flb_resume(S, thread, NULL, 0, 0, &out, &count) == FLB_ERROR_RUNTIME);
   CHECK(message_contains(S, "in coroutine"));
   CHECK(strstr(flb_error_traceback(S, NULL), "stack traceback") != NULL);
   OK(flb_thread_status(S, thread, &status));
@@ -744,7 +744,7 @@ static void test_coroutines(flb_state *S) {
 
   /* Closing a suspended coroutine. */
   OK(flb_thread_new(S, body, &thread));
-  CHECK(flb_resume(S, thread, NULL, 0, NULL, NULL) == FLB_YIELD);
+  CHECK(flb_resume(S, thread, NULL, 0, 0, NULL, NULL) == FLB_YIELD);
   OK(flb_thread_close(S, thread));
   if (flb_lua_version() >= 504) {
     OK(flb_thread_status(S, thread, &status));
@@ -766,6 +766,7 @@ static flb_ref coroutine_of(flb_state *S, const char *code) {
 }
 
 static void test_yielding_host_functions(flb_state *S) {
+  const int32_t Y = FLB_RESUME_HOST_YIELD;
   const flb_value *out = NULL;
   size_t count = 0;
   flb_ref thread;
@@ -783,11 +784,11 @@ static void test_yielding_host_functions(flb_state *S) {
                            "  return a .. b\n"
                            "end");
   arguments[0] = integer(7);
-  CHECK(flb_resume(S, thread, arguments, 1, &out, &count) == FLB_YIELD);
+  CHECK(flb_resume(S, thread, arguments, 1, Y, &out, &count) == FLB_YIELD);
   CHECK(count == 2 && is_string(&out[0], "request") && out[1].i == 7);
   arguments[0] = string("got ");
   arguments[1] = string("it");
-  OK(flb_resume(S, thread, arguments, 2, &out, &count));
+  OK(flb_resume(S, thread, arguments, 2, Y, &out, &count));
   CHECK(count == 1 && is_string(out, "got it"));
   OK(flb_release(S, thread));
 
@@ -796,18 +797,18 @@ static void test_yielding_host_functions(flb_state *S) {
                            "  local ok, v = pcall(await, 'p')\n"
                            "  return tostring(ok) .. ':' .. v\n"
                            "end");
-  CHECK(flb_resume(S, thread, NULL, 0, &out, &count) == FLB_YIELD);
+  CHECK(flb_resume(S, thread, NULL, 0, Y, &out, &count) == FLB_YIELD);
   CHECK(count == 1 && is_string(out, "p"));
   arguments[0] = integer(5);
-  OK(flb_resume(S, thread, arguments, 1, &out, &count));
+  OK(flb_resume(S, thread, arguments, 1, Y, &out, &count));
   CHECK(is_string(out, "true:5"));
   OK(flb_release(S, thread));
 
   /* flb_resume_failure makes the host function raise, like flb_fail: with
    * its host id when Lua does not handle it... */
   thread = coroutine_of(S, "return function() return await('q') end");
-  CHECK(flb_resume(S, thread, NULL, 0, NULL, NULL) == FLB_YIELD);
-  CHECK(flb_resume_failure(S, thread, 777, "remote failed", 13, &out, &count) ==
+  CHECK(flb_resume(S, thread, NULL, 0, Y, NULL, NULL) == FLB_YIELD);
+  CHECK(flb_resume_failure(S, thread, 777, "remote failed", 13, Y, &out, &count) ==
         FLB_ERROR_HOST);
   CHECK(flb_error_host_id(S) == 777);
   CHECK(message_contains(S, "remote failed"));
@@ -818,15 +819,15 @@ static void test_yielding_host_functions(flb_state *S) {
                            "  local ok, e = pcall(await, 'q')\n"
                            "  return tostring(ok) .. ':' .. e\n"
                            "end");
-  CHECK(flb_resume(S, thread, NULL, 0, NULL, NULL) == FLB_YIELD);
-  OK(flb_resume_failure(S, thread, 778, "remote failed", 13, &out, &count));
+  CHECK(flb_resume(S, thread, NULL, 0, Y, NULL, NULL) == FLB_YIELD);
+  OK(flb_resume_failure(S, thread, 778, "remote failed", 13, Y, &out, &count));
   CHECK(is_string(out, "false:remote failed"));
   OK(flb_release(S, thread));
 
   /* Outside a coroutine the host function raises instead of yielding. */
   code = "return await('x')";
   CHECK(flb_run(S, code, strlen(code), NULL, NULL, NULL) == FLB_ERROR_RUNTIME);
-  CHECK(message_contains(S, "outside a coroutine"));
+  CHECK(message_contains(S, "cannot suspend"));
   CHECK(is_string(eval(S, "return tostring(can_yield())"), "false"));
 
   /* Nor can a coroutine be suspended across a host function that called back
@@ -836,24 +837,45 @@ static void test_yielding_host_functions(flb_state *S) {
   thread = coroutine_of(S, "return function()\n"
                            "  return (can_yield() and 1 or 0), call_back(0, 'kept')\n"
                            "end");
-  OK(flb_resume(S, thread, NULL, 0, &out, &count));
+  OK(flb_resume(S, thread, NULL, 0, Y, &out, &count));
   CHECK(count == 2 && out[0].i == 1 && out[1].i == 0);
   OK(flb_release(S, thread));
   OK(flb_release(S, call_back_target));
 
-  /* A coroutine resumed by Lua passes the values to Lua's resume. */
-  out = eval(S, "local co = coroutine.wrap(function() return await('in lua') .. '!' end)\n"
-                "local first = co()\n"
-                "return first .. '|' .. co('done')");
-  CHECK(is_string(out, "in lua|done!"));
+  /* Only a coroutine the host runs with FLB_RESUME_HOST_YIELD: one that Lua
+   * resumes cannot be suspended by a host function... */
+  thread = coroutine_of(S, "return function()\n"
+                           "  local co = coroutine.wrap(function() return await('in lua') end)\n"
+                           "  return co()\n"
+                           "end");
+  CHECK(flb_resume(S, thread, NULL, 0, Y, &out, &count) == FLB_ERROR_RUNTIME);
+  CHECK(message_contains(S, "cannot suspend"));
+  OK(flb_release(S, thread));
+  CHECK(is_string(eval(S, "return tostring(coroutine.wrap(function() return can_yield() end)())"),
+                  "false"));
+
+  /* ...nor one the host resumes without the flag. */
+  thread = coroutine_of(S, "return function() return await('x') end");
+  CHECK(flb_resume(S, thread, NULL, 0, 0, &out, &count) == FLB_ERROR_RUNTIME);
+  CHECK(message_contains(S, "cannot suspend"));
+  OK(flb_release(S, thread));
+
+  /* Results can be copied by value, as generated clients read them. */
+  thread = coroutine_of(S, "return function() local v = await() return { got = v } end");
+  CHECK(flb_resume(S, thread, NULL, 0, Y | FLB_CALL_BY_VALUE, &out, &count) == FLB_YIELD);
+  CHECK(count == 0);
+  arguments[0] = integer(9);
+  OK(flb_resume(S, thread, arguments, 1, Y | FLB_CALL_BY_VALUE, &out, &count));
+  CHECK(count == 1 && out->type == FLB_TABLE_VALUE && field(out, "got")->i == 9);
+  OK(flb_release(S, thread));
 
   /* flb_resume_failure needs a coroutine suspended in a host function. */
   thread = coroutine_of(S, "return function() coroutine.yield() end");
-  CHECK(flb_resume(S, thread, NULL, 0, NULL, NULL) == FLB_YIELD);
-  CHECK(flb_resume_failure(S, thread, 1, "x", 1, NULL, NULL) == FLB_ERROR_ARGUMENT);
+  CHECK(flb_resume(S, thread, NULL, 0, Y, NULL, NULL) == FLB_YIELD);
+  CHECK(flb_resume_failure(S, thread, 1, "x", 1, Y, NULL, NULL) == FLB_ERROR_ARGUMENT);
   CHECK(message_contains(S, "not suspended in a host function"));
-  OK(flb_resume(S, thread, NULL, 0, NULL, NULL));
-  CHECK(flb_resume_failure(S, thread, 1, "x", 1, NULL, NULL) == FLB_ERROR_ARGUMENT);
+  OK(flb_resume(S, thread, NULL, 0, Y, NULL, NULL));
+  CHECK(flb_resume_failure(S, thread, 1, "x", 1, Y, NULL, NULL) == FLB_ERROR_ARGUMENT);
   OK(flb_release(S, thread));
 
   /* flb_yield and flb_can_yield are only meaningful inside a host call. */

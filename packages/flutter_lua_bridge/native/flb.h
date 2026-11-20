@@ -291,7 +291,10 @@ FLB_API int32_t flb_dump(flb_state *state, flb_ref function, int32_t strip,
 enum {
   /* Results are copied as by flb_copy: plain data, no references. A result
    * that cannot be copied makes the call fail with FLB_ERROR_RUNTIME. */
-  FLB_CALL_BY_VALUE = 1
+  FLB_CALL_BY_VALUE = 1,
+  /* flb_resume only: host functions run by the coroutine may suspend it
+   * with flb_yield, which returns to this resume. */
+  FLB_RESUME_HOST_YIELD = 2
 };
 
 /*
@@ -394,16 +397,16 @@ FLB_API int32_t flb_fail(flb_state *state, int64_t host_error_id,
                            const char *message, size_t length);
 /*
  * Inside a host call: instead of returning, suspends the coroutine that
- * called the host function and yields `values` to whoever resumes it. The
- * coroutine is suspended only after the host callback has returned, so no
- * host stack frame is ever unwound. When it is resumed with flb_resume, the
- * resume arguments become the results of the host function; with
- * flb_resume_failure, the host function raises an error instead.
+ * called the host function, and the flb_resume that runs it returns
+ * FLB_YIELD with `values`. The coroutine is suspended only after the host
+ * callback has returned, so no host stack frame is ever unwound. When it is
+ * resumed again, the resume arguments become the results of the host
+ * function; with flb_resume_failure, the host function raises instead.
  *
- * Lua cannot suspend a coroutine across a C function that called back into
- * Lua, nor outside a coroutine; the host function then raises the Lua error
- * "attempt to yield across a C-call boundary" or "attempt to yield from
- * outside a coroutine". flb_can_yield tells in advance.
+ * Only a coroutine run by flb_resume with FLB_RESUME_HOST_YIELD can be
+ * suspended, and only from its own code: not from a coroutine that Lua
+ * resumed, nor through a host function that called back into Lua. Otherwise
+ * the host function raises a Lua error. flb_can_yield tells in advance.
  */
 FLB_API int32_t flb_yield(flb_state *state, const flb_value *values,
                             size_t count);
@@ -459,11 +462,13 @@ FLB_API int32_t flb_thread_new(flb_state *state, flb_ref function,
                                  flb_ref *out);
 /*
  * Starts or continues a coroutine. Returns FLB_YIELD with the yielded
- * values, FLB_OK with the returned values, or an error status.
+ * values, FLB_OK with the returned values, or an error status. `flags` is a
+ * mask of FLB_CALL_BY_VALUE (for the results) and FLB_RESUME_HOST_YIELD.
  */
 FLB_API int32_t flb_resume(flb_state *state, flb_ref thread,
                              const flb_value *arguments, size_t argument_count,
-                             const flb_value **results, size_t *count);
+                             int32_t flags, const flb_value **results,
+                             size_t *count);
 /*
  * Continues a coroutine suspended by flb_yield, making the host function
  * that yielded raise an error, as flb_fail does, instead of returning.
@@ -473,7 +478,7 @@ FLB_API int32_t flb_resume(flb_state *state, flb_ref thread,
 FLB_API int32_t flb_resume_failure(flb_state *state, flb_ref thread,
                                      int64_t host_error_id,
                                      const char *message, size_t length,
-                                     const flb_value **results,
+                                     int32_t flags, const flb_value **results,
                                      size_t *count);
 FLB_API int32_t flb_thread_status(flb_state *state, flb_ref thread,
                                     int32_t *out);

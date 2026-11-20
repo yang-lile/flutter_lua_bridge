@@ -1,11 +1,13 @@
 ## Unreleased
 
-- A Dart function called from Lua can suspend the calling coroutine: return
-  `LuaYield(values)`, or a `Future`, which `LuaFunction.callAsync` and
-  `LuaThread.resumeAsync` await before resuming Lua with its value or
-  error. `LuaThread.resumeWithError` continues with an error.
+- A Dart function called from Lua may return a `Future`: Lua waits for it
+  as for a plain call, without blocking the isolate, when Dart runs that
+  Lua with `LuaFunction.callAsync` (or a generated asynchronous method). A
+  failed future raises a Lua error at the call. `LuaThread.resumeAsync`
+  does the same for a coroutine driven by hand.
 - The native ABI moves to 2 (`flb_yield`, `flb_can_yield`,
-  `flb_resume_failure`). Calls that do not suspend are as fast as before.
+  `flb_resume_failure`, and a `flags` argument to `flb_resume`). Calls that
+  do not wait are as fast as before.
 
 ## 0.2.0
 

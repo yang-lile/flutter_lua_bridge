@@ -228,41 +228,27 @@ void main() {
     expect(thread.isDead, isTrue);
   });
 
-  group('Dart functions that suspend the calling coroutine', () {
+  group('asynchronous Dart functions', () {
     LuaFunction function(String code) => lua.eval(code)! as LuaFunction;
 
-    test('LuaYield hands values out and takes the results back', () {
-      lua['ask'] = lua.function((a) => LuaYield(['question', a.single]));
-      final thread = function(
-        'return function(x) local a, b = ask(x) return a .. b end',
-      ).coroutine();
-      expect(thread.resume([7]), ['question', 7]);
-      expect(thread.status, LuaThreadStatus.suspended);
-      expect(thread.resume(['got ', 'it']), ['got it']);
-      expect(thread.isDead, isTrue);
-    });
-
-    test(
-      'an asynchronous Dart function reads as a plain call in Lua',
-      () async {
-        final requests = <String>[];
-        lua['fetch'] = lua.function((a) {
-          final url = a.single! as String;
-          requests.add(url);
-          return Future.delayed(
-            const Duration(milliseconds: 5),
-            () => url == '/user' ? 'ana' : 42,
-          );
-        });
-        final results = await function('''return function()
+    test('read as plain calls in Lua that Dart runs asynchronously', () async {
+      final requests = <String>[];
+      lua['fetch'] = lua.function((a) {
+        final url = a.single! as String;
+        requests.add(url);
+        return Future.delayed(
+          const Duration(milliseconds: 5),
+          () => url == '/user' ? 'ana' : 42,
+        );
+      });
+      final results = await function('''return function()
           local user = fetch("/user")
           local ok, score = pcall(fetch, "/score/" .. user)
           return user .. ":" .. score
         end''').callAsync();
-        expect(results, ['ana:42']);
-        expect(requests, ['/user', '/score/ana']);
-      },
-    );
+      expect(results, ['ana:42']);
+      expect(requests, ['/user', '/score/ana']);
+    });
 
     test(
       'several values, and the runtime stays usable while it waits',
@@ -309,48 +295,43 @@ void main() {
       },
     );
 
-    test('only a coroutine that can be suspended can call them', () async {
+    test('Lua that Dart runs synchronously cannot wait', () async {
       lua['fetch'] = lua.function((_) => Future.value(1));
-      expect(
-        () => lua.eval('return fetch()'),
-        throwsA(
-          isA<LuaBridgeException>().having(
-            (e) => e.message,
-            'message',
-            contains('cannot be suspended'),
-          ),
-        ),
+      final notAsync = isA<LuaBridgeException>().having(
+        (e) => e.message,
+        'message',
+        contains('runs synchronously'),
       );
-      // Not through another Dart function either: that would unwind its frames.
+      expect(() => lua.eval('return fetch()'), throwsA(notAsync));
+      final thread = function('return function() return fetch() end')
+          .coroutine();
+      expect(() => thread.resume(), throwsA(notAsync));
+      // Nor Lua reached through another Dart function, nor a coroutine that
+      // Lua resumes itself: only the code Dart runs asynchronously waits.
       lua['through'] = lua.function((a) => (a.single! as LuaFunction).call());
       await expectLater(
         function(
           'return function() return through(function() return fetch() end) end',
         ).callAsync(),
-        throwsA(isA<LuaBridgeException>()),
+        throwsA(notAsync),
       );
-      lua['ask'] = lua.function((_) => const LuaYield());
-      expect(
-        () => lua.eval('return ask()'),
-        throwsA(
-          isA<LuaBridgeException>().having(
-            (e) => e.message,
-            'message',
-            contains('outside a coroutine'),
-          ),
-        ),
+      await expectLater(
+        function(
+          'return function() return coroutine.wrap(function() return fetch() end)() end',
+        ).callAsync(),
+        throwsA(notAsync),
       );
     });
 
-    test('resumeWithError needs a coroutine suspended by Dart', () {
+    test('resumeAsync returns what the coroutine yields by itself', () async {
+      lua['fetch'] = lua.function((a) => Future.value((a.single! as int) * 2));
       final thread = function(
-        'return function() coroutine.yield() end',
-      ).coroutine()..resume();
-      expect(
-        () => thread.resumeWithError(StateError('x')),
-        throwsA(isA<LuaBridgeException>()),
-      );
-      expect(thread.status, LuaThreadStatus.suspended);
+        'return function(x) local y = coroutine.yield(fetch(x)) return fetch(y) end',
+      ).coroutine();
+      expect(await thread.resumeAsync([3]), [6]);
+      expect(thread.isDead, isFalse);
+      expect(await thread.resumeAsync([10]), [20]);
+      expect(thread.isDead, isTrue);
     });
 
     test('callAsync refuses a function that yields by itself', () async {
