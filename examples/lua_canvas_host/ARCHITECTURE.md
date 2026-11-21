@@ -462,18 +462,21 @@ remote server"，为此提供 `widget Button { down: false }` + `set state.down`
 建 widget，状态是 Lua 里的响应式代理，按组件记录依赖，一次交互只重渲染
 读过变化 key 的组件，Dart 侧每个组件一个 notifier，只重建它自己。
 
-`lib/bench_lua_view.dart`（profile，同样每项 6 个节点，UI 线程上一次交互
-的总耗时 = Lua 执行与复制 + 建 widget + 随后一帧的 build/layout，中位数）：
+`lib/bench_lua_view.dart`（macOS profile，同样每项 6 个节点，UI 线程上一次
+交互的总耗时 = Lua 执行与复制 + 建 widget + 随后一帧的 build/layout，
+中位数；两次运行的范围）：
 
-| 规模 | 无组件·整树 | 组件·改 1 项 | 组件·全改 | 组件·父级重渲染 |
-|---|---|---|---|---|
-| 200 | 11.06 ms | 1.40 ms | 10.15 ms | 5.51 ms |
-| 1000 | 83.52 ms | 6.25 ms | 87.88 ms | 9.45 ms |
+| 规模 | 无组件·整树 | 改 1 项·Column | 改 1 项·ListView | 改 1 项·ListView.builder | 组件·全改 | 父级·Column | 父级·builder |
+|---|---|---|---|---|---|---|---|
+| 200 | 8.8–9.0 ms | 3.0–5.1 ms | 0.9–1.3 ms | 0.8–1.2 ms | 9.5–9.7 ms | 4.8–5.8 ms | 1.3–1.9 ms |
+| 1000 | 58.7 ms | 4.5–5.9 ms | 0.5–0.7 ms | 0.9–1.0 ms | 61.5 ms | 8.1–9.2 ms | 2.1–2.3 ms |
 
-改 1 项时 Lua 侧始终约 0.02 ms，与规模无关；剩下随规模增长的部分推测是
-Flutter 对 1000 个孩子的 Column 重新布局（尚未单独验证）。同一台机器上
-rfw 换库·平铺 1000 项净耗时约 101 ms。另外它按名字注册 const IconData，
-release 构建不需要 `--no-tree-shake-icons`。
+改 1 项时 Lua 侧始终约 0.02–0.03 ms，与规模无关。之前推测剩下随规模增长的
+部分是 Column 布局，现在已验证：同样改 1 项，换成 `ListView`（只布局可见
+项）后 1000 项降到 0.5–0.7 ms，`ListView.builder`（只建可见项，每项是一个
+builder 实例）0.9–1.0 ms，都不再随规模增长。同一台机器上 rfw 换库·平铺
+1000 项净耗时约 101 ms。另外它按名字注册 const IconData，release 构建不需要
+`--no-tree-shake-icons`。
 
 ## 旧：为什么组件化曾经看起来必要
 
