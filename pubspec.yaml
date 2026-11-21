@@ -10,6 +10,9 @@ workspace:
   - packages/flutter_lua_bridge_codegen_annotation
   - packages/flutter_lua_bridge_codegen
   - packages/flutter_lua_bridge_ui
+  - packages/flutter_lua_bridge_ui_material
+  - packages/flutter_lua_bridge_ui_cupertino
+  - packages/flutter_lua_bridge_remote
   - examples/flutter_lua_bridge_example
   - examples/lua_canvas_host
 dev_dependencies:

@@ -74,9 +74,12 @@ run_with() {
     flutter_lua_bridge_codegen:run)
   if command -v "${flutter_cmd%% *}" >/dev/null 2>&1; then
     (cd "$example" && $flutter_cmd test test/bridge/basic_bridge_test.dart)
-    # The flb.ui Lua module relies on __len, __pairs and table library
-    # metamethods, which differ between releases.
-    (cd "$ui" && $flutter_cmd test)
+    # The flb.ui Lua modules rely on __len, __pairs, table library
+    # metamethods and multiple returns, which differ between releases.
+    for widgets in "$ui" "${ui}_material" "${ui}_cupertino" packages/flutter_lua_bridge_remote; do
+      (cd "$widgets" && $flutter_cmd test)
+    done
+    DART_CMD="$dart_cmd" ./tool/check_teal_ui.sh
   fi
 }
 
