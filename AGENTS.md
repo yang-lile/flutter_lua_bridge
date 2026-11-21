@@ -2,7 +2,7 @@
 
 ## Architecture
 
-This repository is a Dart workspace with four packages:
+This repository is a Dart workspace with seven packages:
 
 - `packages/flutter_lua_bridge`: the bundled Lua releases (5.3, 5.4, 5.5), the
   native asset hook, the `flb` C shim, its generated bindings, the `LuaRuntime`
@@ -12,15 +12,38 @@ This repository is a Dart workspace with four packages:
   read a Dart contract and generate its Dart part file and Teal declarations,
   and compile Teal to Lua with the bundled `tl.lua`.
 - `packages/flutter_lua_bridge_ui`: widget trees from Lua. `LuaView`, the
-  `flb.ui` Lua module (embedded in `lib/src/ui_lua.dart`, declared in
-  `lua/types/flb/ui.d.tl`), `LuaWidgetLibrary` registries and `LuaStore`.
+  `flb.ui` Lua module, `LuaWidgetLibrary` registries, the `core` registry
+  and `LuaStore`.
+- `packages/flutter_lua_bridge_ui_material` and
+  `packages/flutter_lua_bridge_ui_cupertino`: the `material` and `cupertino`
+  registries with their `flb.ui.material` / `flb.ui.cupertino` Lua modules.
+- `packages/flutter_lua_bridge_remote`: Lua bundles (`bundle.json`), the
+  verified and cached `LuaBundleLoader` and `RemoteLuaView`.
 
 `flutter_lua_bridge_ui` is the core widget layer: it depends on the runtime
 and on `package:flutter/widgets.dart` only, never on the code generator,
-`material_ui`, `cupertino_ui` or `rfw` (`tool/ci_light.sh` checks this).
-Material and Cupertino widgets belong in separate packages that register a
-`LuaWidgetLibrary`. Keep the core widget names identical in `coreLibrary`,
-the `M.core` list of `ui_lua.dart` and `ui.d.tl` (`test/catalog_test.dart`).
+`material_ui`, `cupertino_ui` or `rfw`. The Cupertino package must not pull
+`material_ui`, and the remote package depends on the core layer only
+(`tool/ci_light.sh` checks all of this). Widget packages import
+`package:material_ui` / `package:cupertino_ui`, not
+`package:flutter/material.dart`.
+
+A widget package's Lua lives in `lua/` (for example `lua/flb/ui.lua`) and is
+the source of truth: `lib/src/lua_modules.dart` is generated from it with
+`dart run tool/embed_lua.dart <package> <constant>` and must not be edited.
+Its Teal declarations live in `lua/types/` (the module and a `prelude.d.tl`
+of the globals). Keep each package's widget names identical in the Dart
+registry, the name list of its Lua module (`CORE`, `MATERIAL`,
+`CUPERTINO`) and the Teal declarations; `test/catalog_test.dart` checks
+that and the embedded modules. `lua/test/*_test.tl` must type check and
+run, and `lua/test_fail/*_test.tl` must be rejected by Teal with the
+message on its `-- expect:` line (`tool/check_teal_ui.sh`).
+
+Lua view code follows Flutter: widgets and values are globals written as in
+Flutter, array entries are only Flutter positional parameters, callbacks
+receive the Flutter callback parameters, and a function argument named
+`*builder`/`*Builder` is a builder. Keep new widgets and values to that
+rule; document any unavoidable difference in the package README.
 
 The runtime package must not depend on the code generator. The generator
 depends on the runtime: Teal is compiled by `tl.lua` running on `LuaRuntime`
