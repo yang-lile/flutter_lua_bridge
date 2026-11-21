@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'args.dart';
@@ -11,27 +12,43 @@ class ComponentMiss implements Exception {
   String toString() => 'ComponentMiss($id)';
 }
 
-/// Turns the node tables Lua returns into widgets and keeps one
-/// [ValueNotifier] per component instance.
+/// Runs a Lua builder and returns `{node = , removed = }`, or `null` when
+/// the builder is gone.
+typedef LuaTreeBuild = Map<Object?, Object?>? Function(
+  int id,
+  List<Object?> arguments,
+);
+
+/// Releases the builder output [id] in Lua and returns `{removed = }`.
+typedef LuaTreeRelease = Map<Object?, Object?>? Function(Object id);
+
+/// Turns the node tables Lua returns into widgets and keeps one listenable
+/// per component instance.
 ///
 /// A node is a map `{t = type, a = args, k = key}`. `{c = id, n = node}` is
 /// the output of component instance `id`: it becomes a [LuaComponentWidget]
-/// that listens to the instance's notifier. `{$c = id}` is an instance whose
+/// that listens to the instance's content. `{$c = id}` is an instance whose
 /// output did not change, so its existing widget is reused and Flutter skips
-/// it. A patch from Lua only replaces the notifier value of the instances
-/// that rendered again, so only their elements rebuild.
+/// it. A patch from Lua only replaces the content of the instances that
+/// rendered again, so only their elements rebuild.
 class LuaTree {
-  LuaTree(this.widgets, this.events);
+  LuaTree(this.widgets, this.events, {this.onBuild, this.onRelease});
 
   final Map<String, LuaWidgetBuilder> widgets;
   final LuaEventSink events;
+  final LuaTreeBuild? onBuild;
+  final LuaTreeRelease? onRelease;
   final Map<Object, _Instance> _instances = {};
+  bool _disposed = false;
 
   /// The root component, or `null` before the first render.
   Widget? root;
 
   /// Number of component instances, for tests and benchmarks.
   int get instanceCount => _instances.length;
+
+  /// Stops releasing builder outputs in Lua; the tree is being replaced.
+  void dispose() => _disposed = true;
 
   /// Replaces everything with the root component node [node].
   void mount(Object? node) {
@@ -52,15 +69,39 @@ class LuaTree {
         if (patch is! Map) continue;
         final id = patch['id'];
         final instance = _instances[id] ?? (throw ComponentMiss(id));
-        instance.notifier.value = _widget(patch['tree']);
+        instance.content.replace(_widget(patch['tree']), notify: true);
       }
     }
-    final removed = result['removed'];
+    _remove(result['removed']);
+  }
+
+  void _remove(Object? removed) {
     if (removed is List) {
       for (final id in removed) {
         _instances.remove(id);
       }
     }
+  }
+
+  /// Runs the Lua builder [id]; this is the [LuaBuildSink] of the args.
+  Widget build(int id, List<Object?> arguments) {
+    final result = onBuild?.call(id, arguments);
+    if (result == null) {
+      return ErrorWidget.withDetails(message: 'The Lua builder $id is gone');
+    }
+    final node = result['node'];
+    _remove(result['removed']);
+    if (node is Map && node['c'] != null) {
+      return _component(node['c']!, node['n'], item: true);
+    }
+    return _widget(node);
+  }
+
+  void _release(Object id, LuaComponentWidget widget) {
+    if (_disposed || !identical(_instances[id]?.widget, widget)) return;
+    _instances.remove(id);
+    final result = onRelease?.call(id);
+    if (result != null) _remove(result['removed']);
   }
 
   Widget _widget(Object? node) {
@@ -99,20 +140,22 @@ class LuaTree {
     }
   }
 
-  Widget _component(Object id, Object? node) {
+  /// The widget of instance [id] with output [node]. An existing instance
+  /// gets the new content without a notification and a new widget: it is
+  /// inside a subtree that is rebuilding anyway, which updates its element.
+  Widget _component(Object id, Object? node, {bool item = false}) {
     final child = _widget(node);
     final existing = _instances[id];
-    if (existing != null) {
-      existing.notifier.value = child;
-      return existing.widget;
-    }
-    final notifier = ValueNotifier<Widget>(child);
-    final widget = LuaComponentWidget(
+    final content = existing?.content ?? _Content(child);
+    if (existing != null) content.replace(child, notify: false);
+    late final LuaComponentWidget widget;
+    widget = LuaComponentWidget(
       key: ValueKey<Object>(id),
       id: id,
-      notifier: notifier,
+      content: content,
+      onDispose: item ? () => _release(id, widget) : null,
     );
-    _instances[id] = _Instance(notifier, widget);
+    _instances[id] = _Instance(content, widget);
     return widget;
   }
 
@@ -130,16 +173,30 @@ class LuaTree {
     return LuaNodeWidget(
       name: name,
       builder: builder,
-      args: LuaWidgetArgs(args, events),
+      args: LuaWidgetArgs(args, events, build),
       key: key == null ? null : ValueKey<Object>(key),
     );
   }
 }
 
 class _Instance {
-  _Instance(this.notifier, this.widget);
-  final ValueNotifier<Widget> notifier;
+  _Instance(this.content, this.widget);
+  final _Content content;
   final LuaComponentWidget widget;
+}
+
+/// The current output of one component instance.
+class _Content extends ChangeNotifier implements ValueListenable<Widget> {
+  _Content(this._value);
+  Widget _value;
+
+  @override
+  Widget get value => _value;
+
+  void replace(Widget value, {required bool notify}) {
+    _value = value;
+    if (notify) notifyListeners();
+  }
 }
 
 const String _refKey = r'$c';
@@ -156,12 +213,19 @@ class LuaComponentWidget extends StatefulWidget {
   const LuaComponentWidget({
     super.key,
     required this.id,
-    required this.notifier,
+    required this.content,
+    this.onDispose,
   });
 
   /// The instance id, such as `root/3`.
   final Object id;
-  final ValueNotifier<Widget> notifier;
+
+  /// The instance's current output.
+  final ValueListenable<Widget> content;
+
+  /// Called when the element is removed for good; builder outputs use it to
+  /// release their Lua instance.
+  final VoidCallback? onDispose;
 
   @override
   State<LuaComponentWidget> createState() => _LuaComponentState();
@@ -171,28 +235,29 @@ class _LuaComponentState extends State<LuaComponentWidget> {
   @override
   void initState() {
     super.initState();
-    widget.notifier.addListener(_changed);
+    widget.content.addListener(_changed);
   }
 
   @override
   void didUpdateWidget(LuaComponentWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.notifier != widget.notifier) {
-      oldWidget.notifier.removeListener(_changed);
-      widget.notifier.addListener(_changed);
+    if (oldWidget.content != widget.content) {
+      oldWidget.content.removeListener(_changed);
+      widget.content.addListener(_changed);
     }
   }
 
   @override
   void dispose() {
-    widget.notifier.removeListener(_changed);
+    widget.content.removeListener(_changed);
+    widget.onDispose?.call();
     super.dispose();
   }
 
   void _changed() => setState(() {});
 
   @override
-  Widget build(BuildContext context) => widget.notifier.value;
+  Widget build(BuildContext context) => widget.content.value;
 }
 
 /// One Lua node. Building it runs the registered builder.

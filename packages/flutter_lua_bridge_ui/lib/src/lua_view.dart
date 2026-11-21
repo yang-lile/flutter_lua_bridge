@@ -4,9 +4,9 @@ import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
 
 import 'core_library.dart';
 import 'library.dart';
+import 'lua_modules.dart';
 import 'store.dart';
 import 'tree.dart';
-import 'ui_lua.dart';
 
 /// Builds the widget shown instead of a Lua view that failed.
 typedef LuaViewErrorBuilder = Widget Function(
@@ -37,29 +37,32 @@ class LuaViewController {
 
 /// Shows the widget tree that a Lua app returns.
 ///
-/// [source] is a Lua chunk that returns `ui.app{...}` from the `flb.ui`
-/// module, which the view loads into [runtime]:
+/// [source] is a Lua chunk that returns `App {...}`. Before running it, the
+/// view loads the `flb.ui` module and the Lua modules of [libraries] into
+/// [runtime] and installs their widgets and value types as globals, written
+/// the way Flutter writes them:
 ///
 /// ```lua
-/// local ui = require("flb.ui")
-///
 /// local Counter = ui.component(function(props)
 ///   local state = ui.state { count = 0 }
 ///   return function(props)
-///     return ui.GestureDetector {
+///     return GestureDetector {
 ///       onTap = function() state.count = state.count + 1 end,
-///       child = ui.Text { props.label .. ": " .. state.count },
+///       child = Text { props.label .. ": " .. state.count },
 ///     }
 ///   end
 /// end)
 ///
-/// return ui.app {
+/// return App {
 ///   store = { title = "Counters" },
 ///   view = function(store, props)
-///     return ui.Column {
-///       ui.Text { store.title },
-///       Counter { key = "a", label = "a" },
-///       Counter { key = "b", label = "b" },
+///     return Column {
+///       mainAxisAlignment = MainAxisAlignment.center,
+///       children = {
+///         Text { store.title, style = TextStyle { fontSize = 20 } },
+///         Counter { key = "a", label = "a" },
+///         Counter { key = "b", label = "b" },
+///       },
 ///     }
 ///   end,
 /// }
@@ -123,7 +126,9 @@ class LuaView extends StatefulWidget {
 }
 
 class _LuaViewState extends State<LuaView> {
-  late LuaTree _tree;
+  LuaTree? _treeOrNull;
+  LuaTree get _tree => _treeOrNull!;
+  set _tree(LuaTree tree) => _treeOrNull = tree;
   LuaTable? _app;
   final Map<String, LuaFunction> _api = {};
   Object? _error;
@@ -135,6 +140,8 @@ class _LuaViewState extends State<LuaView> {
     'call',
     'set',
     'snapshot',
+    'build',
+    'release',
   ];
 
   @override
@@ -165,6 +172,11 @@ class _LuaViewState extends State<LuaView> {
       _tree = _newTree();
       _load();
     } else if (!listEquals(oldWidget.libraries, widget.libraries)) {
+      try {
+        _installModules(widget.runtime);
+      } catch (error, stack) {
+        _fail(error, stack);
+      }
       _tree = _newTree();
     } else if (!mapEquals(oldWidget.props, widget.props) &&
         _tree.root != null) {
@@ -174,20 +186,28 @@ class _LuaViewState extends State<LuaView> {
 
   @override
   void dispose() {
+    _treeOrNull?.dispose();
     if (widget.controller?._state == this) widget.controller!._state = null;
     widget.store?.detach(_writeStore);
     _release(widget.runtime);
     super.dispose();
   }
 
-  LuaTree _newTree() {
+  List<LuaWidgetLibrary> get _libraries {
     final libraries = widget.libraries;
+    return [
+      if (!libraries.any((library) => library.name == 'core')) coreLibrary(),
+      ...libraries,
+    ];
+  }
+
+  LuaTree _newTree() {
+    _treeOrNull?.dispose();
     return LuaTree(
-      mergeLibraries([
-        if (!libraries.any((library) => library.name == 'core')) coreLibrary(),
-        ...libraries,
-      ]),
+      mergeLibraries(_libraries),
       _onEvent,
+      onBuild: _onBuild,
+      onRelease: _onRelease,
     );
   }
 
@@ -195,12 +215,12 @@ class _LuaViewState extends State<LuaView> {
     _error = null;
     try {
       final runtime = widget.runtime;
-      runtime.ensureModule(uiLuaModule, source: uiLuaSource);
+      _installModules(runtime);
       final results = runtime.run(widget.source, name: widget.name);
       final app = results.isEmpty ? null : results.first;
       if (app is! LuaTable) {
         throw LuaBridgeException(
-          '${widget.name} must return ui.app{...}, got ${app ?? 'nothing'}',
+          '${widget.name} must return App {...}, got ${app ?? 'nothing'}',
         );
       }
       _app = app;
@@ -212,6 +232,35 @@ class _LuaViewState extends State<LuaView> {
       _fail(error, stack);
     }
   }
+
+  /// Loads `flb.ui` and the libraries' Lua modules, and installs their
+  /// globals.
+  void _installModules(LuaRuntime runtime) {
+    final globals = <String>[];
+    for (final modules in [
+      uiLuaModules,
+      for (final library in _libraries) library.luaModules,
+    ]) {
+      for (final entry in modules.entries) {
+        runtime.ensureModule(entry.key, source: entry.value);
+      }
+    }
+    for (final library in _libraries) {
+      if (library.luaGlobals case final module?) globals.add(module);
+    }
+    final install = runtime.load(_install, name: '=flb.ui.install');
+    try {
+      install.call(globals);
+    } finally {
+      install.release();
+    }
+  }
+
+  static const _install = r'''
+local ui = require("flb.ui")
+ui.install()
+for i = 1, select("#", ...) do ui.install((require((select(i, ...))))) end
+''';
 
   void _attachStore() {
     final store = widget.store;
@@ -280,8 +329,34 @@ class _LuaViewState extends State<LuaView> {
     if (mounted) setState(() => _tree.root = null);
   }
 
-  void _onEvent(int id, Map<String, Object?>? arguments) =>
-      _run('dispatch', [id, arguments]);
+  void _onEvent(int id, List<Object?> arguments) =>
+      _run('dispatch', [id, arguments, arguments.length]);
+
+  Map<Object?, Object?>? _onBuild(int id, List<Object?> arguments) {
+    final function = _api['build'];
+    if (function == null || widget.runtime.isClosed) return null;
+    try {
+      final result = _plain(
+        function.call([id, arguments, arguments.length]).firstOrNull,
+      );
+      return result is Map<Object?, Object?> ? result : null;
+    } catch (error, stack) {
+      _fail(error, stack);
+      return null;
+    }
+  }
+
+  Map<Object?, Object?>? _onRelease(Object id) {
+    final function = _api['release'];
+    if (function == null || widget.runtime.isClosed) return null;
+    try {
+      final result = _plain(function.call([id]).firstOrNull);
+      return result is Map<Object?, Object?> ? result : null;
+    } catch (error, stack) {
+      _fail(error, stack);
+      return null;
+    }
+  }
 
   Object? _callMethod(String name, Object? arguments) {
     if (_api['call'] == null) throw StateError('The Lua app is not loaded');

@@ -1,14 +1,19 @@
 # flutter_lua_bridge_ui
 
 Build Flutter widget trees from Lua, on
-[`flutter_lua_bridge`](https://pub.dev/packages/flutter_lua_bridge). A Lua app
-returns nodes; `LuaView` turns them into widgets from registered libraries.
-State is reactive: after an event, only the components that read a changed
+[`flutter_lua_bridge`](https://pub.dev/packages/flutter_lua_bridge). Lua
+scripts read like Flutter code with braces instead of parentheses, and
+state is reactive: after an event, only the components that read a changed
 value render again in Lua, cross to Dart and rebuild in Flutter.
 
 The package depends on `package:flutter/widgets.dart` only. Material and
-Cupertino widgets are registered the same way as application widgets, from
-packages of their own, so a core-only app never pulls them in.
+Cupertino widgets come from
+[`flutter_lua_bridge_ui_material`](https://pub.dev/packages/flutter_lua_bridge_ui_material)
+and
+[`flutter_lua_bridge_ui_cupertino`](https://pub.dev/packages/flutter_lua_bridge_ui_cupertino),
+registered the same way as application widgets, so a core-only app never
+pulls them in. To deliver scripts over the network, see
+[`flutter_lua_bridge_remote`](https://pub.dev/packages/flutter_lua_bridge_remote).
 
 ## Usage
 
@@ -26,40 +31,68 @@ LuaView(
 ```
 
 ```lua
-local ui = require("flb.ui")
-
 -- setup runs once per instance and returns the render function.
-local Item = ui.component(function(props)
+local TodoItem = ui.component(function(props)
   local local_state = ui.state { pressed = false }
   return function(props)
-    return ui.GestureDetector {
-      onTap = function() props.item.done = not props.item.done end,
-      child = ui.Text { (props.item.done and "✓ " or "") .. props.item.title },
+    return GestureDetector {
+      onTap = function() props.todo.done = not props.todo.done end,
+      child = Padding {
+        padding = EdgeInsets.symmetric { horizontal = 16, vertical = 8 },
+        child = Text {
+          (props.todo.done and "✓ " or "") .. props.todo.title,
+          style = TextStyle { fontWeight = FontWeight.w500 },
+        },
+      },
     }
   end
 end)
 
-return ui.app {
+return App {
   store = { todos = { { title = "Write the docs", done = false } } },
   methods = {
     add = function(store, title) table.insert(store.todos, { title = title, done = false }) end,
   },
   view = function(store, props)
-    local children = {}
-    for i, todo in ipairs(store.todos) do
-      children[i] = Item { key = i, item = todo }
-    end
-    return ui.Column { spacing = 8, children = children }
+    return ListView.builder {
+      itemCount = #store.todos,
+      itemBuilder = function(context, index)
+        return TodoItem { key = index, todo = store.todos[index + 1] }
+      end,
+    }
   end,
 }
 ```
 
-- **Nodes.** `ui.Column{...}`, `ui.node("library.Widget", {...})`. Positional
-  entries are children (and a single one is also `child`); a string as the
-  only entry of `Text` is its text; functions are event handlers; `key` is
-  the widget key.
-- **Components.** `ui.component(setup)`. An instance renders again only when
-  reactive state it read changed, or when its parent passes props that
+## Writing views
+
+`LuaView` installs the widgets, the value types and `App` as globals, and
+`ui` for the helpers below.
+
+- **Widgets** take one table: `Column { mainAxisAlignment = ..., children = {...} }`.
+  Arguments have their Flutter names. Array entries are the Flutter
+  positional parameters only (`Text { "hi" }`, `Icon { Icons.add }`,
+  `Image.network { url }`); children are always `child = ...` or
+  `children = {...}`. Named constructors are fields:
+  `ListView.builder {...}`, `SizedBox.shrink {}`. `key` is the widget key.
+- **Values** are written like Flutter: `EdgeInsets.all(8)`,
+  `EdgeInsets.symmetric { horizontal = 16 }`, `BorderRadius.circular(8)`,
+  `Color(0xFF2196F3)`, `Color.fromARGB(255, 0, 0, 0)`, `Alignment.center`,
+  `Offset(0, 2)`, `BoxDecoration {...}`, `TextStyle {...}`,
+  `Duration { milliseconds = 300 }`, `NetworkImage(url)`. Enums are tables
+  of names (`MainAxisAlignment.spaceBetween`, `FontWeight.w600`); a
+  misspelled member is an error. `end` is a Lua keyword: write
+  `CrossAxisAlignment["end"]` or `CrossAxisAlignment.end_`.
+- **Events.** A function argument is an event handler and receives the
+  Flutter callback's parameters (`onChanged = function(value) ... end`).
+- **Builders.** A function argument whose name ends in `builder`/`Builder`
+  is called by Flutter when it needs the widget, with `nil` for the
+  `BuildContext` and Flutter's other parameters (`itemBuilder =
+  function(context, index)`, zero-based). Each output is a component
+  instance of its own: it renders again alone when state it read changes,
+  and Lua releases it when Flutter disposes it.
+- **Components.** `ui.component(setup)`. An instance renders again only
+  when reactive state it read changed, or when its parent passes props that
   differ field by field. Otherwise Lua sends a reference and Flutter skips
   the instance.
 - **State.** `ui.state{}` inside setup, and the app `store`. Both are
@@ -76,60 +109,63 @@ return ui.app {
 
 Each event, method call or store write is one synchronous Lua call that
 returns only the changed components; each component instance is a
-`LuaComponentWidget` with its own notifier.
+`LuaComponentWidget` with its own listenable.
 
 ## Libraries
 
-Lua names a widget `library.Widget`; without a library it means `core`.
-`coreLibrary` registers `Align`, `AspectRatio`, `Center`, `ClipRRect`,
-`ColoredBox`, `Column`, `Container`, `DecoratedBox`, `DefaultTextStyle`,
-`Expanded`, `Flexible`, `GestureDetector`, `Icon`, `Image`, `ListView`,
-`Opacity`, `Padding`, `Positioned`, `Row`, `SafeArea`,
-`SingleChildScrollView`, `SizedBox`, `Spacer`, `Stack`, `Text` and `Wrap`.
+Lua names a widget `library.Widget`. `coreLibrary` registers `Align`,
+`AspectRatio`, `Center`, `ClipRRect`, `ColoredBox`, `Column`, `Container`,
+`DecoratedBox`, `DefaultTextStyle`, `Expanded`, `Flexible`,
+`GestureDetector`, `Icon`, `Image` (and `.asset`, `.network`), `ListView`
+(and `.builder`, `.separated`), `Opacity`, `Padding`, `Positioned`, `Row`,
+`SafeArea`, `SingleChildScrollView`, `SizedBox` (and `.expand`, `.shrink`),
+`Spacer`, `Stack`, `Text` and `Wrap`.
 
 A widget is in the app only because a registered builder references it, so
 the Dart tree shaker keeps exactly what is registered. Icons are registered
 by name with constant `IconData`, so the icon font tree shaker keeps working
 (no `--no-tree-shake-icons`).
 
-Other libraries, including the planned `flutter_lua_bridge_ui_material`
-(depending on `material_ui`) and `flutter_lua_bridge_ui_cupertino`
-(depending on `cupertino_ui`), are a name and a map of builders:
+Application widgets are a name, builders and optionally Lua constructors:
 
 ```dart
-final material = LuaWidgetLibrary(
-  name: 'material',
+final app = LuaWidgetLibrary(
+  name: 'app',
   widgets: {
-    'ElevatedButton': (context, args) => ElevatedButton(
-      onPressed: args.voidHandler(['onPressed']),
-      child: args.optionalChild(['child']),
+    'Avatar': (context, args) => Avatar(
+      url: args.v<String>(['url']),
+      onTap: args.voidHandler(['onTap']),
     ),
-    'Switch': (context, args) => Switch(
-      value: args.v<bool>(['value']) ?? false,
+    'Rating': (context, args) => Rating(
+      value: args.v<int>(['value']) ?? 0,
       onChanged: args.handler(['onChanged'],
-          (trigger) => (bool value) => trigger({'value': value})),
+          (trigger) => (int value) => trigger([value])),
     ),
   },
+  luaModules: {
+    'app.widgets': 'return require("flb.ui").library("app", { "Avatar", "Rating" })',
+  },
+  luaGlobals: 'app.widgets', // its table becomes globals: Avatar {...}
 );
 ```
 
-```lua
-local material = ui.library("material", { "ElevatedButton", "Switch" })
-material.Switch { value = store.on, onChanged = function(e) store.on = e.value end }
-```
-
 `LuaWidgetArgs` reads arguments by key path, as `DataSource` does in
-`package:rfw`: `args.v<double>(['style', 'fontSize'])`, `args.childList(['children'])`.
-`LuaDecoders` turns Lua values into colors (`0xAARRGGBB`, `"#RRGGBB"`), edge
-insets, alignments, border radii, decorations, gradients, text styles,
-enums (by name), durations (milliseconds) and images.
+`package:rfw`: `args.v<double>(['style', 'fontSize'])`,
+`args.childList(['children'])`, `args.indexedBuilder(['itemBuilder'])`.
+`LuaDecoders` turns Lua values into colors, edge insets, alignments, border
+radii, decorations, gradients, text styles, enums, durations and images.
+`LuaControlledText` keeps a `TextEditingController` for text fields whose
+text Lua controls.
 
 ## Teal
 
-`lua/types/flb/ui.d.tl` declares the module. Add the package's `lua/types`
-to `include_dir` in `tlconfig.lua`. Teal table types cannot mix array and
-map entries, so Teal code writes `children = {...}` and `text = ...` instead
-of positional entries.
+`lua/types/flb/ui.d.tl` declares the module, with a record of arguments per
+widget, and `lua/types/flb/ui/prelude.d.tl` its globals. Add the package's
+`lua/types` and `lua` to `include_dir` in `tlconfig.lua` and start Teal
+scripts with `local ui = require("flb.ui.prelude")`: misspelled arguments,
+enum values and callback types are type errors. `App` is generic over the
+store, so `view = function(s: Store, props: ui.Props): ui.Node` types the
+store as your record.
 
 ## Performance
 
@@ -137,15 +173,16 @@ macOS profile build, a list of N items of 6 nodes each, time on the UI thread
 for one interaction (Lua, copying, building widgets, then the frame's build
 and layout), median of 10:
 
-| Items | Whole tree renders | Components, 1 item changes | Components, root re-renders |
-| --- | --- | --- | --- |
-| 200 | 11.1 ms | 1.4 ms | 5.5 ms |
-| 1000 | 83.5 ms | 6.3 ms | 9.5 ms |
+| Items | Whole tree renders | 1 item changes, `Column` | 1 item, `ListView` | 1 item, `ListView.builder` | Root re-renders, `ListView.builder` |
+| --- | --- | --- | --- | --- | --- |
+| 200 | 8.9 ms | 3.0–5.1 ms | 0.9–1.3 ms | 0.8–1.2 ms | 1.3–1.9 ms |
+| 1000 | 58.7 ms | 4.5–5.9 ms | 0.5–0.7 ms | 0.9–1.0 ms | 2.1–2.3 ms |
 
-With components, the Lua side of a one-item change stays at 0.02 ms for any
-list size. Swapping the whole library in `package:rfw` costs about 100 ms
-for 1000 such items. The benchmark is
-`examples/lua_canvas_host/lib/bench_lua_view.dart`.
+The Lua side of a one-item change stays at 0.02–0.03 ms for any list size.
+What grows with a `Column` is Flutter laying out every child; `ListView`
+lays out the visible ones and `ListView.builder` also builds only those.
+Swapping the whole library in `package:rfw` costs about 100 ms for 1000
+such items. The benchmark is `examples/lua_canvas_host/lib/bench_lua_view.dart`.
 
 Lua runs synchronously on the isolate that created the runtime. Give the
 runtime a memory limit for code you do not trust, and keep long work out of

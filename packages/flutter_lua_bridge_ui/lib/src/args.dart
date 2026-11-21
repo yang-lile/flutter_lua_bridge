@@ -1,11 +1,20 @@
 import 'package:flutter/widgets.dart';
 
-/// Calls the Lua event handler [id] with [arguments].
-typedef LuaEventSink = void Function(int id, Map<String, Object?>? arguments);
+/// Calls the Lua event handler [id] with the positional [arguments].
+typedef LuaEventSink = void Function(int id, List<Object?> arguments);
 
-/// Calls the Lua function behind a handler, optionally merging
-/// [arguments] into the table the Lua function receives.
-typedef LuaHandlerTrigger = void Function([Map<String, Object?>? arguments]);
+/// Calls the Lua builder [id] with the positional [arguments] and returns
+/// the widget it built.
+typedef LuaBuildSink = Widget Function(int id, List<Object?> arguments);
+
+/// Calls the Lua function behind a handler with the positional
+/// [arguments], matching the Flutter callback's parameters: a
+/// `ValueChanged<bool>` calls `trigger([value])`.
+typedef LuaHandlerTrigger = void Function([List<Object?> arguments]);
+
+/// Calls the Lua builder function behind an argument with the positional
+/// [arguments] (the first is the `BuildContext` slot, sent as `nil`).
+typedef LuaBuilderTrigger = Widget Function(List<Object?> arguments);
 
 /// The arguments of one Lua node, as seen by a [LuaWidgetBuilder].
 ///
@@ -15,15 +24,18 @@ typedef LuaHandlerTrigger = void Function([Map<String, Object?>? arguments]);
 /// `['children', 2]`.
 ///
 /// Values arrive as Lua sent them: `bool`, `int`, `double`, `String`, `List`
-/// and `Map`. Child nodes have already been turned into widgets, and Lua
-/// functions into handler references that [voidHandler] and [handler] wrap.
+/// and `Map`. Child nodes have already been turned into widgets, Lua
+/// functions into handler references that [voidHandler] and [handler] wrap,
+/// and functions passed as `...builder`/`...Builder` into builder
+/// references that [builder] and [indexedBuilder] wrap.
 class LuaWidgetArgs {
   /// Wraps the argument table [values] of a node.
-  LuaWidgetArgs(this.values, this._events);
+  LuaWidgetArgs(this.values, this._events, [this._builds]);
 
   /// The raw arguments.
   final Map<Object?, Object?> values;
   final LuaEventSink _events;
+  final LuaBuildSink? _builds;
 
   /// The value at [key], or `null` when there is none.
   Object? operator [](List<Object> key) {
@@ -92,21 +104,18 @@ class LuaWidgetArgs {
   }
 
   /// A callback for the Lua function at [key], or `null` when there is none.
-  /// [arguments] are passed to the Lua function as a table.
-  VoidCallback? voidHandler(
-    List<Object> key, [
-    Map<String, Object?>? arguments,
-  ]) => handler<VoidCallback>(
+  VoidCallback? voidHandler(List<Object> key) => handler<VoidCallback>(
     key,
     (trigger) =>
-        () => trigger(arguments),
+        () => trigger(),
   );
 
   /// A callback of type [T] for the Lua function at [key], or `null`.
   ///
   /// [generator] receives a trigger that calls the Lua function and must
-  /// return a function of type [T] that calls it, for example
-  /// `(trigger) => (double value) => trigger({'value': value})`.
+  /// return a function of type [T] that calls it with the Flutter
+  /// callback's parameters, for example
+  /// `(trigger) => (double value) => trigger([value])`.
   T? handler<T extends Function>(
     List<Object> key,
     T Function(LuaHandlerTrigger trigger) generator,
@@ -114,9 +123,42 @@ class LuaWidgetArgs {
     final value = this[key];
     if (value is! Map || value[handlerKey] is! int) return null;
     final id = value[handlerKey] as int;
-    return generator(([arguments]) => _events(id, arguments));
+    return generator(([arguments = const []]) => _events(id, arguments));
   }
+
+  /// A builder of type [T] for the Lua builder function at [key], or
+  /// `null`. [generator] receives a trigger that runs the Lua function and
+  /// returns its widget, for example
+  /// `(build) => (context, index) => build([null, index])`.
+  ///
+  /// Each call's output is a component instance of its own in Lua, so the
+  /// state it reads re-renders only that output, and Lua releases it when
+  /// Flutter disposes the widget.
+  T? builder<T extends Function>(
+    List<Object> key,
+    T Function(LuaBuilderTrigger build) generator,
+  ) {
+    final value = this[key];
+    final builds = _builds;
+    if (builds == null || value is! Map || value[builderKey] is! int) {
+      return null;
+    }
+    final id = value[builderKey] as int;
+    return generator((arguments) => builds(id, arguments));
+  }
+
+  /// An [IndexedWidgetBuilder] for the Lua function at [key], called as
+  /// `function(context, index)` with a zero-based index, or `null`.
+  IndexedWidgetBuilder? indexedBuilder(List<Object> key) =>
+      builder<IndexedWidgetBuilder>(
+        key,
+        (build) =>
+            (context, index) => build([null, index]),
+      );
 }
 
 /// The key under which Lua sends a handler reference.
 const String handlerKey = r'$h';
+
+/// The key under which Lua sends a builder reference.
+const String builderKey = r'$b';

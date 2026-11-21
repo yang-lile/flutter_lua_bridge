@@ -6,13 +6,17 @@ import 'args.dart';
 /// `package:flutter/widgets.dart`.
 ///
 /// Every decoder returns `null` when the value is absent or not understood,
-/// so a builder can fall back to the widget's default. The representations
-/// are chosen to be convenient in Lua:
+/// so a builder can fall back to the widget's default. Lua scripts write
+/// values with the Flutter-style constructors of `flb.ui`
+/// (`EdgeInsets.all(8)`, `Color(0xFF2196F3)`, `MainAxisAlignment.center`),
+/// which produce these representations:
 ///
-/// * colors: `0xAARRGGBB`, or a string `"#RGB"`, `"#RRGGBB"`, `"#AARRGGBB"`;
+/// * colors: `0xAARRGGBB`, a string `"#RGB"`, `"#RRGGBB"`, `"#AARRGGBB"`,
+///   or a swatch table `{value = 0xAARRGGBB, ...}`;
 /// * edge insets: a number for every side, or a table with `all`,
 ///   `horizontal`, `vertical`, `left`, `top`, `right`, `bottom`;
 /// * alignments: a name such as `"center"` or `"topLeft"`, or `{x = , y = }`;
+/// * offsets: `{dx = , dy = }`;
 /// * border radii: a number, or a table with `topLeft`, `topRight`,
 ///   `bottomLeft`, `bottomRight`;
 /// * enums: the name of the value, such as `"spaceBetween"`;
@@ -26,6 +30,8 @@ abstract final class LuaDecoders {
   /// Parses a Lua color value.
   static Color? parseColor(Object? value) {
     if (value is int) return Color(value);
+    // A swatch such as `Colors.red` of flb.ui.material: its primary value.
+    if (value is Map && value['value'] is int) return Color(value['value']);
     if (value is! String || !value.startsWith('#')) return null;
     var hex = value.substring(1);
     if (hex.length == 3) hex = hex.split('').map((c) => '$c$c').join();
@@ -127,7 +133,8 @@ abstract final class LuaDecoders {
     );
   }
 
-  /// Box shadows at [key]: a list of `{color = , blur = , spread = , x = , y = }`.
+  /// Box shadows at [key]: a list of `BoxShadow {color = , blurRadius = ,
+  /// spreadRadius = , offset = Offset(dx, dy)}`.
   static List<BoxShadow>? boxShadows(LuaWidgetArgs args, List<Object> key) {
     final count = args.length(key);
     if (count == 0) return null;
@@ -135,11 +142,11 @@ abstract final class LuaDecoders {
       for (var i = 0; i < count; i++)
         BoxShadow(
           color: color(args, [...key, i, 'color']) ?? const Color(0x33000000),
-          blurRadius: args.v<double>([...key, i, 'blur']) ?? 0,
-          spreadRadius: args.v<double>([...key, i, 'spread']) ?? 0,
+          blurRadius: args.v<double>([...key, i, 'blurRadius']) ?? 0,
+          spreadRadius: args.v<double>([...key, i, 'spreadRadius']) ?? 0,
           offset: Offset(
-            args.v<double>([...key, i, 'x']) ?? 0,
-            args.v<double>([...key, i, 'y']) ?? 0,
+            args.v<double>([...key, i, 'offset', 'dx']) ?? 0,
+            args.v<double>([...key, i, 'offset', 'dy']) ?? 0,
           ),
         ),
     ];

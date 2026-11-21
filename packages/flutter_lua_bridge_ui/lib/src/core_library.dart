@@ -106,18 +106,16 @@ LuaWidgetLibrary coreLibrary({Map<String, IconData> icons = const {}}) {
         );
       },
       'Image': (context, args) {
-        final image = LuaDecoders.image(args, ['source']);
+        final image = LuaDecoders.image(args, ['image']);
         if (image == null) {
-          return ErrorWidget.withDetails(message: 'Image needs a source');
+          return ErrorWidget.withDetails(message: 'Image needs an image');
         }
-        return Image(
-          image: image,
-          width: args.v<double>(['width']),
-          height: args.v<double>(['height']),
-          fit: LuaDecoders.enumValue(BoxFit.values, args, ['fit']),
-          semanticLabel: args.v<String>(['semanticLabel']),
-        );
+        return _image(args, image);
       },
+      'Image.asset': (context, args) =>
+          _image(args, AssetImage(args.v<String>(['name']) ?? '')),
+      'Image.network': (context, args) =>
+          _image(args, NetworkImage(args.v<String>(['src']) ?? '')),
       'ListView': (context, args) => ListView(
         scrollDirection: _axis(args),
         reverse: args.v<bool>(['reverse']) ?? false,
@@ -125,6 +123,26 @@ LuaWidgetLibrary coreLibrary({Map<String, IconData> icons = const {}}) {
         padding: LuaDecoders.edgeInsets(args, ['padding']),
         itemExtent: args.v<double>(['itemExtent']),
         children: args.childList(['children']),
+      ),
+      'ListView.builder': (context, args) => ListView.builder(
+        scrollDirection: _axis(args),
+        reverse: args.v<bool>(['reverse']) ?? false,
+        shrinkWrap: args.v<bool>(['shrinkWrap']) ?? false,
+        padding: LuaDecoders.edgeInsets(args, ['padding']),
+        itemExtent: args.v<double>(['itemExtent']),
+        itemCount: args.v<int>(['itemCount']),
+        itemBuilder: args.indexedBuilder(['itemBuilder']) ?? _noItem,
+      ),
+      'ListView.separated': (context, args) => ListView.separated(
+        scrollDirection: _axis(args),
+        reverse: args.v<bool>(['reverse']) ?? false,
+        shrinkWrap: args.v<bool>(['shrinkWrap']) ?? false,
+        padding: LuaDecoders.edgeInsets(args, ['padding']),
+        itemCount: args.v<int>(['itemCount']) ?? 0,
+        itemBuilder: args.indexedBuilder(['itemBuilder']) ?? _noItem,
+        separatorBuilder:
+            args.indexedBuilder(['separatorBuilder']) ??
+            (context, index) => const SizedBox.shrink(),
       ),
       'Opacity': (context, args) => Opacity(
         opacity: (args.v<double>(['opacity']) ?? 1).clamp(0, 1),
@@ -168,6 +186,10 @@ LuaWidgetLibrary coreLibrary({Map<String, IconData> icons = const {}}) {
         height: args.v<double>(['height']),
         child: args.optionalChild(['child']),
       ),
+      'SizedBox.expand': (context, args) =>
+          SizedBox.expand(child: args.optionalChild(['child'])),
+      'SizedBox.shrink': (context, args) =>
+          SizedBox.shrink(child: args.optionalChild(['child'])),
       'Spacer': (context, args) => Spacer(flex: args.v<int>(['flex']) ?? 1),
       'Stack': (context, args) => Stack(
         alignment:
@@ -179,7 +201,7 @@ LuaWidgetLibrary coreLibrary({Map<String, IconData> icons = const {}}) {
         children: args.childList(['children']),
       ),
       'Text': (context, args) => Text(
-        args.v<String>(['text']) ?? '',
+        args.v<String>(['data']) ?? '',
         style: LuaDecoders.textStyle(args, ['style']),
         textAlign: LuaDecoders.enumValue(TextAlign.values, args, ['textAlign']),
         maxLines: args.v<int>(['maxLines']),
@@ -207,6 +229,17 @@ LuaWidgetLibrary coreLibrary({Map<String, IconData> icons = const {}}) {
     },
   );
 }
+
+Widget _image(LuaWidgetArgs args, ImageProvider image) => Image(
+  image: image,
+  width: args.v<double>(['width']),
+  height: args.v<double>(['height']),
+  fit: LuaDecoders.enumValue(BoxFit.values, args, ['fit']),
+  semanticLabel: args.v<String>(['semanticLabel']),
+);
+
+Widget _noItem(BuildContext context, int index) =>
+    ErrorWidget.withDetails(message: 'ListView.builder needs an itemBuilder');
 
 MainAxisAlignment _mainAxis(LuaWidgetArgs args) =>
     LuaDecoders.enumValue(MainAxisAlignment.values, args, [
