@@ -15,6 +15,9 @@ dependencies:
   # Lua 运行时：源码内置 + Dart hooks 自动构建原生库
   flutter_lua_bridge:
     path: ../../packages/flutter_lua_bridge
+  # Lua 节点直接建 widget（lib/bench_lua_view.dart 对照 rfw）
+  flutter_lua_bridge_ui:
+    path: ../../packages/flutter_lua_bridge_ui
   material_ui: ^1.11.1
   rfw: ^2.0.0
 
