@@ -72,9 +72,10 @@ cannot attach to Lua Canvas Studio, the task "canvas: build and open
 ## Publishing
 
 [Melos](https://melos.invertase.dev) (a dev dependency of the workspace,
-configured under `melos:` in the root `pubspec.yaml`) publishes the three
+configured under `melos:` in the root `pubspec.yaml`) publishes the four
 packages in dependency order: `flutter_lua_bridge_codegen_annotation`,
-`flutter_lua_bridge`, then `flutter_lua_bridge_codegen`. The examples are
+`flutter_lua_bridge`, then `flutter_lua_bridge_codegen` and
+`flutter_lua_bridge_ui`. The examples are
 `publish_to: none` and skipped.
 
 ```sh

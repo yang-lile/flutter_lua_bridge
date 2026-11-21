@@ -1,6 +1,6 @@
 ---
 name: flutter-lua-bridge
-description: Integrate and use flutter_lua_bridge and flutter_lua_bridge_codegen in a Dart or Flutter project - typed Dart/Lua APIs described by a Dart contract, implemented in Teal or Lua, generated with build_runner. Use when adding Lua scripting to an app, writing or changing a contract with @LuaApi/@DartApi, implementing it in lua/src, calling Lua from Dart or Dart from Lua, choosing a safety level (O1/O2/O3), running Lua-side tests, or fixing build errors from these builders.
+description: Integrate and use flutter_lua_bridge and flutter_lua_bridge_codegen in a Dart or Flutter project - typed Dart/Lua APIs described by a Dart contract, implemented in Teal or Lua, generated with build_runner. Use when adding Lua scripting to an app, writing or changing a contract with @LuaApi/@DartApi, implementing it in lua/src, calling Lua from Dart or Dart from Lua, choosing a safety level (O1/O2/O3), running Lua-side tests, fixing build errors from these builders, or building Flutter widget trees from Lua with flutter_lua_bridge_ui (LuaView, ui.component, LuaStore, LuaWidgetLibrary).
 ---
 
 # flutter_lua_bridge
@@ -206,6 +206,51 @@ assert(battle.damage({ name = "a", attack = 5 }, { name = "b", attack = 2 }) == 
 
 From Dart tests: `await LuaRunner().run('lua/test/x_test.tl')` from
 `package:flutter_lua_bridge_codegen/lua_runner.dart`.
+
+## Widgets from Lua (flutter_lua_bridge_ui)
+
+`flutter pub add flutter_lua_bridge_ui`. `LuaView(runtime:, source:)` runs a
+chunk that returns `ui.app{...}` from `require("flb.ui")` and shows its
+widgets. It depends on `package:flutter/widgets.dart` only.
+
+```lua
+local ui = require("flb.ui")
+local Item = ui.component(function(props)       -- setup: once per instance
+  local s = ui.state { open = false }            -- local reactive state
+  return function(props)                         -- render
+    return ui.GestureDetector {
+      onTap = function() s.open = not s.open end,
+      child = ui.Text { props.item.title },
+    }
+  end
+end)
+return ui.app {
+  store = { items = { { title = "a" } } },       -- mirrored to LuaStore
+  methods = { add = function(store, t) table.insert(store.items, { title = t }) end },
+  view = function(store, props)
+    local children = {}
+    for i, item in ipairs(store.items) do children[i] = Item { key = i, item = item } end
+    return ui.Column { children = children }
+  end,
+}
+```
+
+- A component renders again only when reactive state it read (`ui.state`,
+  the store) changed or its props differ field by field; split lists and
+  expensive parts into components. Use `ui.pairs`/`ipairs`/`#` on proxies.
+- Widgets are `library.Widget` (`core` by default): `coreLibrary(icons:
+  {'add': Icons.add})`. Register others with `LuaWidgetLibrary(name:,
+  widgets: {'X': (context, args) => ...})` and use them in Lua through
+  `ui.library("name", {"X"})` or `ui.node("name.X", {...})`. Builders read
+  `args.v<T>(path)`, `args.child`, `args.childList`, `args.voidHandler`,
+  `args.handler`, and `LuaDecoders` for colors, insets, styles and enums.
+- Host side: `LuaViewController.call(name, args)` runs a method;
+  `LuaStore.get/set/watch` read and write the store (zero-based list
+  indices in Dart paths). `props:` reaches `view(store, props)`.
+- Material and Cupertino widgets never go into `flutter_lua_bridge_ui`;
+  they are separate libraries registered the same way.
+- Teal: add the package's `lua/types` to `include_dir`; write named fields
+  (`children = {...}`, `text = ...`) instead of positional entries.
 
 ## Raw runtime
 

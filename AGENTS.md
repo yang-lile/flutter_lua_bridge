@@ -2,7 +2,7 @@
 
 ## Architecture
 
-This repository is a Dart workspace with three packages:
+This repository is a Dart workspace with four packages:
 
 - `packages/flutter_lua_bridge`: the bundled Lua releases (5.3, 5.4, 5.5), the
   native asset hook, the `flb` C shim, its generated bindings, the `LuaRuntime`
@@ -11,6 +11,16 @@ This repository is a Dart workspace with three packages:
 - `packages/flutter_lua_bridge_codegen`: the `build_runner` builders. They
   read a Dart contract and generate its Dart part file and Teal declarations,
   and compile Teal to Lua with the bundled `tl.lua`.
+- `packages/flutter_lua_bridge_ui`: widget trees from Lua. `LuaView`, the
+  `flb.ui` Lua module (embedded in `lib/src/ui_lua.dart`, declared in
+  `lua/types/flb/ui.d.tl`), `LuaWidgetLibrary` registries and `LuaStore`.
+
+`flutter_lua_bridge_ui` is the core widget layer: it depends on the runtime
+and on `package:flutter/widgets.dart` only, never on the code generator,
+`material_ui`, `cupertino_ui` or `rfw` (`tool/ci_light.sh` checks this).
+Material and Cupertino widgets belong in separate packages that register a
+`LuaWidgetLibrary`. Keep the core widget names identical in `coreLibrary`,
+the `M.core` list of `ui_lua.dart` and `ui.d.tl` (`test/catalog_test.dart`).
 
 The runtime package must not depend on the code generator. The generator
 depends on the runtime: Teal is compiled by `tl.lua` running on `LuaRuntime`

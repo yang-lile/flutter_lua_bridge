@@ -10,6 +10,7 @@ toolchain is installed, and only Lua is shipped with the app.
 | [`flutter_lua_bridge`](packages/flutter_lua_bridge) | The runtime: `LuaRuntime`, codecs and the Lua build hook |
 | [`flutter_lua_bridge_codegen`](packages/flutter_lua_bridge_codegen) | `build_runner` builders: Dart clients, Teal declarations, Teal compiler |
 | [`flutter_lua_bridge_codegen_annotation`](packages/flutter_lua_bridge_codegen_annotation) | Contract annotations, re-exported by the runtime |
+| [`flutter_lua_bridge_ui`](packages/flutter_lua_bridge_ui) | Widget trees from Lua: `LuaView`, reactive components, widget registries |
 
 ## Quick start
 
