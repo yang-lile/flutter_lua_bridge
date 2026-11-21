@@ -1,0 +1,21 @@
+{
+  "name": "hello",
+  "version": "1.0.0",
+  "entry": "app",
+  "modules": {
+    "app": {
+      "path": "app.lua",
+      "sha256": "863e921823a4f5119e1667f33001ca2b0d69c8600e2c243fd2445d3f3187979a"
+    },
+    "greeting": {
+      "path": "greeting.lua",
+      "sha256": "a3b71625bf1b150c238c305d4246e870db1785d5d16cfd8cd7eeec9587c2c478"
+    }
+  },
+  "requires": {
+    "libraries": [
+      "core"
+    ],
+    "api": 1
+  }
+}

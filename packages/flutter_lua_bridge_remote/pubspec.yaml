@@ -1,0 +1,34 @@
+name: flutter_lua_bridge_remote
+description: "Deliver Lua bundles to a flutter_lua_bridge app: a verified, cached loader with fallback to the last good version, and a RemoteLuaView."
+version: 0.1.0
+homepage: https://github.com/yang-lile/flutter_lua_bridge
+repository: https://github.com/yang-lile/flutter_lua_bridge
+
+resolution: workspace
+
+environment:
+  sdk: ^3.14.0
+  flutter: ">=3.50.0"
+
+dependencies:
+  crypto: ^3.0.6
+  flutter:
+    sdk: flutter
+  flutter_lua_bridge: ^0.2.0
+  flutter_lua_bridge_ui: ^0.1.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+platforms:
+  android:
+  ios:
+  macos:
+  linux:
+  windows:
+
+topics:
+  - lua
+  - widget
