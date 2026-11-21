@@ -25,7 +25,7 @@ else
   dart_cmd="dart"
 fi
 
-all=(flutter_lua_bridge_codegen_annotation flutter_lua_bridge flutter_lua_bridge_codegen)
+all=(flutter_lua_bridge_codegen_annotation flutter_lua_bridge flutter_lua_bridge_codegen flutter_lua_bridge_ui)
 if (($#)); then selected=("$@"); else selected=("${all[@]}"); fi
 
 work="$(mktemp -d "${TMPDIR:-/tmp}/flb-pana.XXXXXX")"

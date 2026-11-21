@@ -2,7 +2,8 @@
 # Builds the native asset through hook/build.dart against each bundled Lua
 # release and runs on it the runtime tests, the generator's end-to-end tests
 # (which include compiling Teal with the bundled tl.lua), the example's Lua
-# entries and, when Flutter is available, the example's basic bridge test.
+# entries and, when Flutter is available, the example's basic bridge test and
+# the flutter_lua_bridge_ui tests.
 #
 #   tool/test_lua_versions.sh                 # every release under third_party/
 #   tool/test_lua_versions.sh 5.3.6 5.5.0     # selected releases
@@ -25,6 +26,7 @@ flutter_cmd=${FLUTTER_CMD:-flutter}
 example=examples/flutter_lua_bridge_example
 package=packages/flutter_lua_bridge
 codegen=packages/flutter_lua_bridge_codegen
+ui=packages/flutter_lua_bridge_ui
 pubspec=pubspec.yaml
 backup=$(mktemp)
 cp "$pubspec" "$backup"
@@ -72,6 +74,9 @@ run_with() {
     flutter_lua_bridge_codegen:run)
   if command -v "${flutter_cmd%% *}" >/dev/null 2>&1; then
     (cd "$example" && $flutter_cmd test test/bridge/basic_bridge_test.dart)
+    # The flb.ui Lua module relies on __len, __pairs and table library
+    # metamethods, which differ between releases.
+    (cd "$ui" && $flutter_cmd test)
   fi
 }
 

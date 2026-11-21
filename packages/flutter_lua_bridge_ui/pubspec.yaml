@@ -1,0 +1,34 @@
+name: flutter_lua_bridge_ui
+description: "Build Flutter widget trees from Lua: a widget registry, argument decoders and a LuaView on flutter_lua_bridge."
+version: 0.1.0
+homepage: https://github.com/yang-lile/flutter_lua_bridge
+repository: https://github.com/yang-lile/flutter_lua_bridge
+
+resolution: workspace
+
+environment:
+  sdk: ^3.14.0
+  flutter: ">=3.50.0"
+
+# Only package:flutter/widgets.dart: the Material and Cupertino registries
+# live in their own packages so that a core-only app does not pull them in.
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_lua_bridge: ^0.2.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+platforms:
+  android:
+  ios:
+  macos:
+  linux:
+  windows:
+
+topics:
+  - lua
+  - widget
