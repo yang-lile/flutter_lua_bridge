@@ -31,6 +31,29 @@ void main() {
     );
   });
 
+  test('the Lua module and Teal declare every host function', () {
+    final source = File('lua/flb/ui.lua').readAsStringSync();
+    final list = RegExp(
+      r'local CORE_FUNCTIONS = \{([^}]*)\}',
+    ).firstMatch(source)!.group(1)!;
+    final functions = coreLibrary().functions.keys.toSet();
+    expect(
+      RegExp(r'"([\w.]+)"').allMatches(list).map((m) => m[1]!).toSet(),
+      functions,
+    );
+    final navigator = RegExp(
+      r'record NavigatorType\n(.*?)\n  end',
+      dotAll: true,
+    ).firstMatch(File('lua/types/flb/ui.d.tl').readAsStringSync())!;
+    expect(
+      RegExp(r'^    (\w+): function', multiLine: true)
+          .allMatches(navigator.group(1)!)
+          .map((m) => 'Navigator.${m[1]}')
+          .toSet(),
+      functions,
+    );
+  });
+
   test('the embedded Lua modules match lua/', () {
     expect(
       uiLuaModules,

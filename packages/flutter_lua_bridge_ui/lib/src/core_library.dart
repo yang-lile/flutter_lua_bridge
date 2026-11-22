@@ -9,6 +9,14 @@ import 'library.dart';
 /// [icons] maps the names Lua may use for `Icon` to icon data, for example
 /// `{'add': Icons.add}`. Because the map holds constant [IconData], the icon
 /// font tree shaker keeps working: Lua can only show registered icons.
+///
+/// Its functions are the static `Navigator` methods without the
+/// `BuildContext`, acting on the navigator of the calling view:
+/// `Navigator.pushNamed(name, { arguments = ... })` (Lua waits for the
+/// route's result), `Navigator.pushReplacementNamed(name, { arguments = ...,
+/// result = ... })`, `Navigator.pop(result)`, `Navigator.maybePop(result)`
+/// and `Navigator.canPop()`. Call them from event handlers, not while
+/// rendering.
 LuaWidgetLibrary coreLibrary({Map<String, IconData> icons = const {}}) {
   return LuaWidgetLibrary(
     name: 'core',
@@ -227,6 +235,28 @@ LuaWidgetLibrary coreLibrary({Map<String, IconData> icons = const {}}) {
         children: args.childList(['children']),
       ),
     },
+    functions: {
+      'Navigator.pushNamed': (context, args) => Navigator.of(context)
+          .pushNamed<Object?>(
+            args[0]! as String,
+            arguments: _named(args, 1)['arguments'],
+          ),
+      'Navigator.pushReplacementNamed': (context, args) {
+        final named = _named(args, 1);
+        return Navigator.of(context).pushReplacementNamed<Object?, Object?>(
+          args[0]! as String,
+          arguments: named['arguments'],
+          result: named['result'],
+        );
+      },
+      'Navigator.pop': (context, args) {
+        Navigator.of(context).pop(args.firstOrNull);
+        return null;
+      },
+      'Navigator.maybePop': (context, args) =>
+          Navigator.of(context).maybePop(args.firstOrNull),
+      'Navigator.canPop': (context, args) => Navigator.of(context).canPop(),
+    },
   );
 }
 
@@ -260,3 +290,9 @@ MainAxisSize _mainAxisSize(LuaWidgetArgs args) =>
 Axis _axis(LuaWidgetArgs args) =>
     LuaDecoders.enumValue(Axis.values, args, ['scrollDirection']) ??
     Axis.vertical;
+
+/// The named arguments table at [index] of [args], or an empty map.
+Map<Object?, Object?> _named(List<Object?> args, int index) {
+  final value = index < args.length ? args[index] : null;
+  return value is Map<Object?, Object?> ? value : const {};
+}

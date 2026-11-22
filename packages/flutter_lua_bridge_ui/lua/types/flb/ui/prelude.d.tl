@@ -31,6 +31,8 @@ global Stack: function(args: UI.StackArgs): UI.Node
 global Text: function(args: UI.TextArgs): UI.Node
 global Wrap: function(args: UI.WrapArgs): UI.Node
 
+global Navigator: UI.NavigatorType
+
 global Color: UI.ColorType
 global EdgeInsets: UI.EdgeInsetsType
 global Radius: UI.RadiusType

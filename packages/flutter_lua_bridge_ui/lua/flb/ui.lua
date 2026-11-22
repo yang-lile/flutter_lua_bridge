@@ -1,7 +1,8 @@
 -- flb.ui: builds Flutter widget trees for flutter_lua_bridge_ui.
 --
--- This file is the source of lib/src/ui_lua.dart: after editing it, run
--- `dart run tool/embed_lua.dart` in the package.
+-- This file is the source of lib/src/lua_modules.dart: after editing it,
+-- run `dart run tool/embed_lua.dart packages/flutter_lua_bridge_ui
+-- uiLuaModules` at the repository root.
 --
 -- Widgets and value types are written the way Flutter writes them, with
 -- braces instead of parentheses:
@@ -428,6 +429,71 @@ local function flush(app)
   return result
 end
 
+---------------------------------------------------------------- host functions
+-- Dart functions registered in a LuaWidgetLibrary's `functions` are called
+-- with ui.invoke("library.Name", ...). Event handlers and methods run as
+-- tasks (coroutines): when the Dart function returns a Future, the task
+-- waits for it, so `local result = Navigator.pushNamed("/edit")` reads
+-- like `await`. Outside a task, ui.invoke returns nil for a Future.
+
+local PENDING = {}                                   -- yielded while waiting
+local task_app = setmetatable({}, { __mode = "k" })  -- coroutine -> app
+local host = nil                                     -- set by LuaView
+
+-- LuaView passes its dispatcher: host(name, n, ...) returns { v = value }
+-- or { p = token } for a Future.
+function M.set_host(fn) host = fn end
+
+function M.invoke(name, ...)
+  if host == nil then error("ui.invoke(" .. tostring(name) .. ") needs a LuaView", 2) end
+  local reply = host(name, select("#", ...), ...)
+  if reply.p == nil then return reply.v end
+  local co = coroutine.running()
+  if co == nil or task_app[co] == nil then return nil end
+  local ok, value = coroutine.yield(PENDING, reply.p)
+  if not ok then error(value, 2) end
+  return value
+end
+
+-- Functions that call the host functions `names` of library `prefix`; a
+-- dotted name nests: ui.functions("app", { "Toast.show" }).Toast.show(msg).
+function M.functions(prefix, names)
+  local lib = {}
+  for _, name in ipairs(names) do
+    local t, parts = lib, {}
+    for part in name:gmatch("[^.]+") do parts[#parts + 1] = part end
+    for i = 1, #parts - 1 do
+      t[parts[i]] = t[parts[i]] or {}
+      t = t[parts[i]]
+    end
+    local full = prefix .. "." .. name
+    t[parts[#parts]] = function(...) return M.invoke(full, ...) end
+  end
+  return lib
+end
+
+-- Continues task `co` after coroutine.resume returned `ok, ...`; returns
+-- the task's first result when it finished.
+local function step(app, co, ok, signal, token)
+  if not ok then error(signal, 0) end
+  if coroutine.status(co) == "suspended" then
+    if signal ~= PENDING then
+      error("an event handler yielded outside ui.invoke", 0)
+    end
+    app.tasks[token] = co
+    return nil
+  end
+  return signal
+end
+
+local function run_task(app, fn, ...)
+  local co = coroutine.create(fn)
+  task_app[co] = app
+  return step(app, co, coroutine.resume(co, ...))
+end
+
+---------------------------------------------------------------- apps
+
 -- Creates an app. `spec.view(store, props)` returns the root node;
 -- `spec.store` is the initial store, whose changes are mirrored to the
 -- Dart LuaStore; `spec.methods` are functions the host can call as
@@ -441,7 +507,7 @@ function M.app(spec)
   local raw_store = spec.store or {}
   local app = {
     next_id = 1, handlers = {}, builders = {}, instances = {}, dirty = {},
-    removed = {}, changes = {}, silent = false,
+    removed = {}, changes = {}, silent = false, tasks = {},
   }
   local store = reactive(raw_store, app, {})
   app.store = store
@@ -471,12 +537,24 @@ function M.app(spec)
     return flush(app)
   end
 
-  -- Runs event handler `id` with the `n` values of `args`; returns the
-  -- patches.
+  -- Runs event handler `id` with the `n` values of `args` as a task;
+  -- returns the patches.
   function api.dispatch(id, args, n)
     stack = {}
     local fn = app.handlers[id]
-    if fn ~= nil then fn(unpack(args or {}, 1, n or 0)) end
+    if fn ~= nil then run_task(app, fn, unpack(args or {}, 1, n or 0)) end
+    return flush(app)
+  end
+
+  -- Continues the task waiting for host Future `token` with `ok, value`
+  -- (the error message when not ok); returns the patches.
+  function api.resume(token, ok, value)
+    stack = {}
+    local co = app.tasks[token]
+    if co ~= nil then
+      app.tasks[token] = nil
+      step(app, co, coroutine.resume(co, ok, value))
+    end
     return flush(app)
   end
 
@@ -524,14 +602,15 @@ function M.app(spec)
     return { removed = drain_removed(app) }
   end
 
-  -- Runs `methods[name](store, args)`; returns the patches and `value`.
+  -- Runs `methods[name](store, args)` as a task; returns the patches and
+  -- `value` (nil when the method waits for a host Future).
   function api.call(name, args)
     stack = {}
     local fn = methods[name]
     if type(fn) ~= "function" then
       error("the app has no method " .. tostring(name), 2)
     end
-    local value = fn(store, args)
+    local value = run_task(app, fn, store, args)
     local result = flush(app)
     result.value = raw_of[value] or value
     return result
@@ -706,7 +785,18 @@ M.core = M.library("core", CORE, {
 })
 
 -- Everything ui.install() makes global.
+-- Host functions of the core library, written like Flutter's static
+-- Navigator methods without the BuildContext:
+-- `local result = Navigator.pushNamed("/detail", { arguments = { id = 3 } })`.
+-- Keep in step with coreLibrary() in Dart and ui.d.tl.
+local CORE_FUNCTIONS = {
+  "Navigator.pushNamed", "Navigator.pushReplacementNamed", "Navigator.pop",
+  "Navigator.maybePop", "Navigator.canPop",
+}
+M.core_functions = M.functions("core", CORE_FUNCTIONS)
+
 M.exports = { App = M.app, ui = M }
+for name, value in pairs(M.core_functions) do M.exports[name] = value end
 for name, value in pairs(values) do M.exports[name] = value end
 for name, ctor in pairs(M.core) do M.exports[name] = ctor end
 

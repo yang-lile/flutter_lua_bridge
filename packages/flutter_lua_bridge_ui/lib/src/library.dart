@@ -13,6 +13,19 @@ typedef LuaWidgetBuilder = Widget Function(
   LuaWidgetArgs args,
 );
 
+/// A Dart function that Lua calls through a [LuaWidgetLibrary].
+///
+/// [context] is the context of the [LuaView] whose render, event handler,
+/// method or builder made the call, and [arguments] are its Lua arguments as
+/// plain data (`null`, `bool`, `num`, `String`, `List`, `Map`). The result
+/// goes back to Lua the same way. A [Future] result makes the calling event
+/// handler or method wait: Lua continues with its value when it completes,
+/// or with an error when it fails.
+typedef LuaHostFunction = Object? Function(
+  BuildContext context,
+  List<Object?> arguments,
+);
+
 /// A named set of widgets that Lua can create.
 ///
 /// Lua refers to a widget as `library.Widget`, for example `core.Column`,
@@ -43,6 +56,7 @@ class LuaWidgetLibrary {
   LuaWidgetLibrary({
     required this.name,
     required this.widgets,
+    this.functions = const {},
     this.luaModules = const {},
     this.luaGlobals,
   }) : assert(!name.contains('.'), 'A library name cannot contain a dot'),
@@ -57,6 +71,12 @@ class LuaWidgetLibrary {
   /// The builders, by widget name without the library prefix. A named
   /// constructor is `Widget.name`, such as `ListView.builder`.
   final Map<String, LuaWidgetBuilder> widgets;
+
+  /// Dart functions Lua can call, by name without the library prefix, such
+  /// as `Navigator.pushNamed`. Lua calls them with
+  /// `ui.invoke("library.Name", ...)`; `ui.functions(prefix, names)` builds
+  /// the wrappers a library's Lua module usually exports as globals.
+  final Map<String, LuaHostFunction> functions;
 
   /// Lua module sources by module name, loaded with
   /// `LuaRuntime.ensureModule` before the script runs.
@@ -84,3 +104,12 @@ Map<String, LuaWidgetBuilder> mergeLibraries(List<LuaWidgetLibrary> libraries) {
   }
   return result;
 }
+
+/// Merges the [LuaWidgetLibrary.functions] of [libraries] into one lookup
+/// table keyed by `library.Name`.
+Map<String, LuaHostFunction> mergeFunctions(List<LuaWidgetLibrary> libraries) =>
+    {
+      for (final library in libraries)
+        for (final entry in library.functions.entries)
+          '${library.name}.${entry.key}': entry.value,
+    };

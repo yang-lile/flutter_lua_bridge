@@ -16,7 +16,8 @@ export 'src/args.dart'
 export 'src/controlled_text.dart' show LuaControlledText;
 export 'src/core_library.dart' show coreLibrary;
 export 'src/decoders.dart' show LuaDecoders;
-export 'src/library.dart' show LuaWidgetBuilder, LuaWidgetLibrary;
+export 'src/library.dart'
+    show LuaHostFunction, LuaWidgetBuilder, LuaWidgetLibrary;
 export 'src/lua_view.dart' show LuaView, LuaViewController, LuaViewErrorBuilder;
 export 'src/store.dart' show LuaStore;
 export 'src/tree.dart' show LuaComponentWidget, LuaNodeWidget;

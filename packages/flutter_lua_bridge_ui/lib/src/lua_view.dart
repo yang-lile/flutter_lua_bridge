@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
@@ -131,12 +133,19 @@ class _LuaViewState extends State<LuaView> {
   set _tree(LuaTree tree) => _treeOrNull = tree;
   LuaTable? _app;
   final Map<String, LuaFunction> _api = {};
+  Map<String, LuaHostFunction> _functions = const {};
   Object? _error;
 
-  static const _functions = [
+  /// Changes whenever the app is loaded or released, so that a host Future
+  /// of an earlier app does not resume into the current one.
+  int _generation = 0;
+  int _nextTask = 1;
+
+  static const _apiNames = [
     'render',
     'update',
     'dispatch',
+    'resume',
     'call',
     'set',
     'snapshot',
@@ -213,10 +222,13 @@ class _LuaViewState extends State<LuaView> {
 
   void _load() {
     _error = null;
+    _generation++;
     try {
       final runtime = widget.runtime;
       _installModules(runtime);
-      final results = runtime.run(widget.source, name: widget.name);
+      final results = _active(
+        () => runtime.run(widget.source, name: widget.name),
+      );
       final app = results.isEmpty ? null : results.first;
       if (app is! LuaTable) {
         throw LuaBridgeException(
@@ -224,7 +236,7 @@ class _LuaViewState extends State<LuaView> {
         );
       }
       _app = app;
-      for (final name in _functions) {
+      for (final name in _apiNames) {
         _api[name] = app[name] as LuaFunction;
       }
       _attachStore();
@@ -236,6 +248,7 @@ class _LuaViewState extends State<LuaView> {
   /// Loads `flb.ui` and the libraries' Lua modules, and installs their
   /// globals.
   void _installModules(LuaRuntime runtime) {
+    _functions = mergeFunctions(_libraries);
     final globals = <String>[];
     for (final modules in [
       uiLuaModules,
@@ -250,7 +263,7 @@ class _LuaViewState extends State<LuaView> {
     }
     final install = runtime.load(_install, name: '=flb.ui.install');
     try {
-      install.call(globals);
+      install.call([_HostDispatcher.of(runtime).function, ...globals]);
     } finally {
       install.release();
     }
@@ -258,8 +271,9 @@ class _LuaViewState extends State<LuaView> {
 
   static const _install = r'''
 local ui = require("flb.ui")
+ui.set_host((...))
 ui.install()
-for i = 1, select("#", ...) do ui.install((require((select(i, ...))))) end
+for i = 2, select("#", ...) do ui.install((require((select(i, ...))))) end
 ''';
 
   void _attachStore() {
@@ -273,6 +287,7 @@ for i = 1, select("#", ...) do ui.install((require((select(i, ...))))) end
       _run('set', [luaPath, value], rethrowErrors: true);
 
   void _release(LuaRuntime runtime) {
+    _generation++;
     if (!runtime.isClosed) {
       for (final ref in [..._api.values, ?_app]) {
         ref.release();
@@ -308,7 +323,9 @@ for i = 1, select("#", ...) do ui.install((require((select(i, ...))))) end
     final function = _api[name];
     if (function == null || widget.runtime.isClosed) return null;
     try {
-      final result = _plain(function.call(arguments).firstOrNull);
+      final result = _plain(
+        _active(() => function.call(arguments)).firstOrNull,
+      );
       if (result is! Map<Object?, Object?>) return null;
       widget.store?.applyChanges(result['changes']);
       try {
@@ -337,7 +354,8 @@ for i = 1, select("#", ...) do ui.install((require((select(i, ...))))) end
     if (function == null || widget.runtime.isClosed) return null;
     try {
       final result = _plain(
-        function.call([id, arguments, arguments.length]).firstOrNull,
+        _active(() => function.call([id, arguments, arguments.length]))
+            .firstOrNull,
       );
       return result is Map<Object?, Object?> ? result : null;
     } catch (error, stack) {
@@ -350,7 +368,7 @@ for i = 1, select("#", ...) do ui.install((require((select(i, ...))))) end
     final function = _api['release'];
     if (function == null || widget.runtime.isClosed) return null;
     try {
-      final result = _plain(function.call([id]).firstOrNull);
+      final result = _plain(_active(() => function.call([id])).firstOrNull);
       return result is Map<Object?, Object?> ? result : null;
     } catch (error, stack) {
       _fail(error, stack);
@@ -364,10 +382,53 @@ for i = 1, select("#", ...) do ui.install((require((select(i, ...))))) end
   }
 
   void _mountRoot() {
-    final result = _plain(_api['render']!.call([widget.props]).firstOrNull);
+    final result = _plain(
+      _active(() => _api['render']!.call([widget.props])).firstOrNull,
+    );
     if (result is! Map) throw StateError('render returned $result');
     widget.store?.applyChanges(result['changes']);
     _tree.mount(result['root']);
+  }
+
+  /// Runs [body] with this view as the one whose host functions Lua calls.
+  /// They run in the current zone: Lua calls them from a native callback,
+  /// which would otherwise be in the root zone.
+  T _active<T>(T Function() body) {
+    final active = _HostDispatcher.of(widget.runtime).active
+      ..add((this, Zone.current));
+    try {
+      return body();
+    } finally {
+      active.removeLast();
+    }
+  }
+
+  /// Calls host function [name] for Lua; see [_HostDispatcher].
+  Map<String, Object?> _invoke(String name, List<Object?> arguments) {
+    final function = _functions[name];
+    if (function == null) {
+      throw LuaBridgeException(
+        'There is no host function $name: register it in the functions of '
+        'the LuaWidgetLibrary "${name.split('.').first}"',
+      );
+    }
+    final result = function(context, arguments);
+    if (result is! Future<Object?>) return {'v': result};
+    final token = _nextTask++;
+    final generation = _generation;
+    result.then(
+      (value) => _resume(generation, token, true, value),
+      onError: (Object error, StackTrace stack) =>
+          _resume(generation, token, false, error),
+    );
+    return {'p': token};
+  }
+
+  void _resume(int generation, int token, bool ok, Object? value) {
+    if (!mounted || generation != _generation || widget.runtime.isClosed) {
+      return;
+    }
+    _run('resume', [token, ok, ok ? value : '$value']);
   }
 
   @override
@@ -394,5 +455,55 @@ Object? _plain(Object? value) {
     return value.toDart();
   } finally {
     value.release();
+  }
+}
+
+/// Routes `ui.invoke` calls of one runtime to the [LuaView] that is running
+/// Lua. Several views can share a runtime; Lua only runs inside one of
+/// their calls at a time, the innermost being the last of [active].
+class _HostDispatcher {
+  _HostDispatcher(LuaRuntime runtime) {
+    function = runtime.function(_call);
+  }
+
+  static final _dispatchers = Expando<_HostDispatcher>();
+
+  static _HostDispatcher of(LuaRuntime runtime) =>
+      _dispatchers[runtime] ??= _HostDispatcher(runtime);
+
+  late final LuaFunction function;
+  final List<(_LuaViewState, Zone)> active = [];
+
+  /// `host(name, n, ...)`, see `ui.set_host` in `flb/ui.lua`.
+  Object? _call(List<Object?> arguments) {
+    final view = active.lastOrNull;
+    final name = arguments.first;
+    final count = arguments.length > 1 ? arguments[1] : 0;
+    final values = [
+      for (var i = 2; i < arguments.length; i++) _argument(arguments[i]),
+    ];
+    if (view == null) {
+      throw LuaBridgeException(
+        'ui.invoke($name) can only be called while a LuaView runs Lua',
+      );
+    }
+    final (state, zone) = view;
+    return zone.run(
+      () => state._invoke('$name', [
+        for (var i = 0; i < (count is int ? count : 0); i++)
+          i < values.length ? values[i] : null,
+      ]),
+    );
+  }
+
+  static Object? _argument(Object? value) {
+    if (value is LuaTable) return _plain(value);
+    if (value is LuaRef) {
+      value.release();
+      throw LuaBridgeException(
+        'Host functions take data, not a ${value.runtimeType}',
+      );
+    }
+    return value;
   }
 }

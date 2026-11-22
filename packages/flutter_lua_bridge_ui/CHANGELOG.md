@@ -11,3 +11,8 @@
 - Builders (`ListView.builder { itemBuilder = ... }`) run when Flutter needs
   an item; each output is a component instance released on dispose.
 - Teal declarations with a record of arguments per widget.
+- Dart functions for Lua: `LuaWidgetLibrary.functions`, called with
+  `ui.invoke` or the wrappers of `ui.functions`. Event handlers and methods
+  run as coroutines and wait for a `Future` result. `coreLibrary` has
+  `Navigator.pushNamed`, `pushReplacementNamed`, `pop`, `maybePop` and
+  `canPop`.

@@ -112,4 +112,40 @@ local ok, message = pcall(function(): any return ui.core.Column({ Text { "x" } }
 assert(not ok and tostring(message):find("children = {", 1, true), tostring(message))
 local ok2, message2 = pcall(function(): any return (MainAxisAlignment as {string: string}).centre end)
 assert(not ok2 and tostring(message2):find("no member centre", 1, true), tostring(message2))
+-- Host functions: a fake host answers Navigator.pushNamed with a Future
+-- (token 7), which the test completes through resume.
+local calls: {string} = {}
+ui.set_host(function(name: string, n: integer): {string: any}
+  calls[#calls + 1] = name .. "/" .. tostring(n)
+  if name == "core.Navigator.pushNamed" then return { p = 7 } end
+  return { v = true }
+end)
+local record PickStore
+  picked: string
+end
+local pick_store: PickStore = { picked = "none" }
+local nav = App {
+  store = pick_store,
+  view = function(s: PickStore, _: ui.Props): ui.Node
+    return GestureDetector {
+      onTap = function()
+        if Navigator.canPop() then
+          s.picked = Navigator.pushNamed("/pick", { arguments = { from = "home" } }) as string
+        end
+      end,
+      child = Text { s.picked },
+    }
+  end,
+}
+local nav_root = ((nav.render() as {string: any}).root as {string: any}).n as ui.Node
+local nav_tap = (nav_root.a as {string: any}).onTap as {string: integer}
+local waiting = nav.dispatch(nav_tap["$h"], {}, 0) as {string: any}
+eq(#(waiting.patches as {any}), 0, "no patch while waiting")
+eq(calls[1], "core.Navigator.canPop/0", "a host call that returns at once")
+eq(calls[2], "core.Navigator.pushNamed/2", "a host call that returns a Future")
+local done = nav.resume(7, true, "red") as {string: any}
+local tree = ((done.patches as {{string: any}})[1].tree) as ui.Node
+local label = (tree.a as {string: any}).child as ui.Node
+eq((label.a as {string: any}).data, "red", "the handler continues with the result")
+
 print("flb.ui core: ok")

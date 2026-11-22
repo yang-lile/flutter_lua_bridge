@@ -545,6 +545,24 @@ local record ui
     shrink: function(args: SizedBoxshrinkArgs): Node
   end
 
+  -- Named arguments of Navigator.pushNamed.
+  record NavigatorPushArgs
+    arguments: any
+  end
+  record NavigatorReplaceArgs
+    arguments: any
+    result: any
+  end
+  -- The static Navigator methods without the BuildContext. pushNamed and
+  -- maybePop wait for their Future inside event handlers and methods.
+  record NavigatorType
+    pushNamed: function(routeName: string, args?: NavigatorPushArgs): any
+    pushReplacementNamed: function(routeName: string, args?: NavigatorReplaceArgs): any
+    pop: function(result?: any)
+    maybePop: function(result?: any): boolean
+    canPop: function(): boolean
+  end
+
   -- S is the type of the store, usually a record of the script.
   record AppSpec<S>
     -- The initial store, mirrored to the Dart LuaStore.
@@ -558,6 +576,7 @@ local record ui
     render: function(props?: Props): {string: any}
     update: function(props?: Props): {string: any}
     dispatch: function(id: integer, args?: {any}, n?: integer): {string: any}
+    resume: function(token: integer, ok: boolean, value: any): {string: any}
     build: function(id: integer, args?: {any}, n?: integer): {string: any}
     release: function(id: string): {string: any}
     call: function(name: string, args?: any): {string: any}
@@ -569,6 +588,11 @@ local record ui
   widget: function(name: string, positional?: {string}): function(args?: {any: any}): Node
   library: function(prefix: string, names: {string}, positional?: {string: {string}}): {string: function(args?: {any: any}): Node}
   component: function(setup: function(props: Props): Render): Component
+  -- Calls host function "library.Name" registered in Dart; waits for a
+  -- Future inside event handlers and methods.
+  invoke: function(name: string, ...: any): any
+  functions: function(prefix: string, names: {string}): {string: any}
+  set_host: function(host: function(name: string, n: integer, ...: any): {string: any})
   state: function<T>(initial?: T): T
   raw: function<T>(value: T): T
   pairs: function<K, V>(t: {K: V}): (function(): (K, V))
@@ -609,5 +633,9 @@ local record ui
     Wrap: function(args: WrapArgs): Node
   end
   core: Core
+  record CoreFunctions
+    Navigator: NavigatorType
+  end
+  core_functions: CoreFunctions
 end
 return ui
