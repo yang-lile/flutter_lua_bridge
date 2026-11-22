@@ -1,0 +1,43 @@
+name: lua_ui_gallery
+description: A runnable gallery of flutter_lua_bridge_ui, its Material and Cupertino widgets, Lua routes and remote bundles.
+publish_to: none
+version: 1.0.0
+
+resolution: workspace
+
+environment:
+  sdk: ^3.14.0
+  flutter: ">=3.50.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_ui: ^1.1.7
+  flutter_lua_bridge:
+    path: ../../packages/flutter_lua_bridge
+  flutter_lua_bridge_remote:
+    path: ../../packages/flutter_lua_bridge_remote
+  flutter_lua_bridge_ui:
+    path: ../../packages/flutter_lua_bridge_ui
+  flutter_lua_bridge_ui_cupertino:
+    path: ../../packages/flutter_lua_bridge_ui_cupertino
+  flutter_lua_bridge_ui_material:
+    path: ../../packages/flutter_lua_bridge_ui_material
+  material_ui: ^1.11.1
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/lua/
+    - assets/lua/routes/
+    - assets/remote/builtin/
+    - assets/remote/v1/
+    - assets/remote/v2/
+    - assets/remote/v3/

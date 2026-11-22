@@ -6,6 +6,7 @@
 // - Lua Canvas Studio: macOS only. Its pubspec asset list is synced from
 //   assets/lua/manifest.txt first. If the debug connection fails, use the
 //   task "canvas: build and open (tools/dev.sh)" instead.
+// - Lua UI gallery: macOS; screens are the scripts in assets/lua/.
 // "Lua: run current file" runs the open .tl/.lua entry without an app.
 {
   "version": "0.2.0",
@@ -26,6 +27,14 @@
       "program": "lib/main.dart",
       "flutterMode": "profile",
       "preLaunchTask": "example: generate"
+    },
+    {
+      "name": "Lua UI gallery (macOS)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples/lua_ui_gallery",
+      "program": "lib/main.dart",
+      "deviceId": "macos"
     },
     {
       "name": "Lua Canvas Studio (macOS)",

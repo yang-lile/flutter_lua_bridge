@@ -15,6 +15,7 @@ workspace:
   - packages/flutter_lua_bridge_remote
   - examples/flutter_lua_bridge_example
   - examples/lua_canvas_host
+  - examples/lua_ui_gallery
 dev_dependencies:
   melos: ^8.10.1
   yaml: ^3.1.3

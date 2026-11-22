@@ -1,0 +1,22 @@
+{
+  "name": "gallery",
+  "version": "1.0.0",
+  "entry": "app",
+  "modules": {
+    "app": {
+      "path": "app.lua",
+      "sha256": "222b3dd3e8b244774409e2d1b7c348b0923b9bcaf01d575c8fe36fe0513c635e"
+    },
+    "greeting": {
+      "path": "greeting.lua",
+      "sha256": "72cc6df8cbe9a7fcf68f1ff20d55014349544843ab8400ae3b5d3e774592b1ff"
+    }
+  },
+  "requires": {
+    "libraries": [
+      "core",
+      "material"
+    ],
+    "api": 1
+  }
+}

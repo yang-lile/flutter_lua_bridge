@@ -61,8 +61,10 @@ if command -v "${flutter_cmd%% *}" >/dev/null 2>&1; then
     flutter_lua_bridge_ui_cupertino flutter_lua_bridge_remote; do
     (cd "packages/$package" && $flutter_cmd test)
   done
+  # Every screen of the gallery, driven as widget tests.
+  (cd examples/lua_ui_gallery && $flutter_cmd test)
 else
-  printf '%s\n' 'flutter is unavailable; skipped the example game tests and the widget package tests.' >&2
+  printf '%s\n' 'flutter is unavailable; skipped the example game tests, the widget package tests and the gallery tests.' >&2
 fi
 
 printf '%s\n' 'Light CI checks passed.'
