@@ -266,6 +266,15 @@ return App {
   `args.child`, `args.childList`, `args.voidHandler`, `args.handler(key,
   (trigger) => (v) => trigger([v]))`, `args.indexedBuilder`, and
   `LuaDecoders` for colors, insets, styles and enums.
+- Dart functions for Lua: `LuaWidgetLibrary(functions: {'Api.load':
+  (context, args) => ...})` plus a Lua module `return
+  require("flb.ui").functions("app", {"Api.load"})` as `luaGlobals`; Lua
+  calls `Api.load(x)`. `context` is the calling view's. A `Future` result
+  makes the event handler or method wait (`local data = Api.load(x)`
+  reads like `await`). The core library has `Navigator.pushNamed(name, {
+  arguments = ... })` (returns the route's result), `pushReplacementNamed`,
+  `pop(result)`, `maybePop`, `canPop` without the BuildContext; give every
+  route its own `LuaRuntime` and pass `settings.arguments` as props.
 - Host side: `LuaViewController.call(name, args)` runs a method;
   `LuaStore.get/set/watch` read and write the store (zero-based list
   indices in Dart paths). `props:` reaches `view(store, props)`.

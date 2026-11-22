@@ -136,6 +136,10 @@ Other assistants can read the same file as instructions.
 
 - [`examples/flutter_lua_bridge_example`](examples/flutter_lua_bridge_example):
   a card battle game with every safety level, Lua-side tests and a benchmark.
+- [`examples/lua_ui_gallery`](examples/lua_ui_gallery): a macOS app whose
+  screens are Lua scripts: core, Material and Cupertino widgets, routes
+  between Lua instances through `Navigator`, and remote bundles served by a
+  local HTTP server.
 - [`examples/lua_canvas_host`](examples/lua_canvas_host): Lua output turned
   into `rfw` remote widgets and canvas drawings, editable live.
 

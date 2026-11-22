@@ -42,8 +42,15 @@ message on its `-- expect:` line (`tool/check_teal_ui.sh`).
 Lua view code follows Flutter: widgets and values are globals written as in
 Flutter, array entries are only Flutter positional parameters, callbacks
 receive the Flutter callback parameters, and a function argument named
-`*builder`/`*Builder` is a builder. Keep new widgets and values to that
-rule; document any unavoidable difference in the package README.
+`*builder`/`*Builder` is a builder. Dart functions exposed to Lua
+(`LuaWidgetLibrary.functions`) follow the Flutter API they wrap without
+the `BuildContext`, as `Navigator.pushNamed(name, { arguments = ... })`
+does. Keep new widgets, values and functions to that rule; document any
+unavoidable difference in the package README.
+
+`examples/lua_ui_gallery` exercises every widget package, Lua routes and
+remote bundles; extend its screens and `test/gallery_test.dart` with new
+user-visible features.
 
 The runtime package must not depend on the code generator. The generator
 depends on the runtime: Teal is compiled by `tl.lua` running on `LuaRuntime`

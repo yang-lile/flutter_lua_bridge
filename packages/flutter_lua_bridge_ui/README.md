@@ -106,6 +106,12 @@ return App {
   list indices.
 - **Methods.** `controller.call('add', 'Ship')` runs `methods.add(store, args)`
   and renders what changed.
+- **Dart functions.** Lua calls Dart through the `functions` of a library
+  (see below). Event handlers and methods run as Lua coroutines, so when a
+  Dart function returns a `Future`, the handler waits for it and continues
+  with its value: `local result = Navigator.pushNamed("/edit")` reads like
+  `await`. A failed `Future` is a Lua error at the call (catch it with
+  `pcall`). Called while rendering, a `Future` result is `nil`.
 
 Each event, method call or store write is one synchronous Lua call that
 returns only the changed components; each component instance is a
@@ -148,6 +154,58 @@ final app = LuaWidgetLibrary(
   luaGlobals: 'app.widgets', // its table becomes globals: Avatar {...}
 );
 ```
+
+A library can also give Lua Dart functions. Each receives the
+`BuildContext` of the calling `LuaView` and the Lua arguments as plain
+data; its result goes back to Lua, and a `Future` result makes the
+calling handler wait:
+
+```dart
+final api = LuaWidgetLibrary(
+  name: 'app',
+  widgets: const {},
+  functions: {
+    'Api.fetchUser': (context, args) => repository.user(args[0]! as int),
+    'Api.toast': (context, args) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${args[0]}')));
+      return null;
+    },
+  },
+  luaModules: {
+    'app.api': 'return require("flb.ui").functions("app", { "Api.fetchUser", "Api.toast" })',
+  },
+  luaGlobals: 'app.api',
+);
+```
+
+```lua
+onPressed = function()
+  store.loading = true
+  local user = Api.fetchUser(42)   -- waits for the Future
+  store.name, store.loading = user.name, false
+  Api.toast("Loaded " .. user.name)
+end,
+```
+
+`coreLibrary` has the `Navigator` functions, written like Flutter's static
+methods without the `BuildContext`: `Navigator.pushNamed(name, { arguments
+= ... })` returns the route's result, `Navigator.pushReplacementNamed(name,
+{ arguments = ..., result = ... })`, `Navigator.pop(result)`,
+`Navigator.maybePop(result)` and `Navigator.canPop()`. With
+`onGenerateRoute` building a `LuaView` per route, each in its own
+`LuaRuntime` with `settings.arguments` as props, every screen is an
+independent Lua instance and results travel through `pop`:
+
+```lua
+-- In the list screen:
+local picked = Navigator.pushNamed("/color", { arguments = { current = store.color } })
+if picked then store.color = picked end
+-- In the /color screen:
+onTap = function() Navigator.pop(Colors.red.value) end
+```
+
+`examples/lua_ui_gallery` is a runnable app with these routes, the Material
+and Cupertino widgets and remote bundles.
 
 `LuaWidgetArgs` reads arguments by key path, as `DataSource` does in
 `package:rfw`: `args.v<double>(['style', 'fontSize'])`,

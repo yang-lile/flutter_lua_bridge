@@ -58,6 +58,7 @@ Open the repository root. `.vscode/launch.json` (Run and Debug, F5) has:
 | --- | --- |
 | Example app | `examples/flutter_lua_bridge_example` on the device picked in the status bar, after regenerating its Lua with `tool/generate_example.sh` |
 | Example app (profile, for the benchmark) | The same in profile mode, for meaningful numbers on the safety level page |
+| Lua UI gallery (macOS) | `examples/lua_ui_gallery`: the widget packages, Lua routes and remote bundles |
 | Lua Canvas Studio (macOS) | `examples/lua_canvas_host`, after syncing its asset list from `assets/lua/manifest.txt` |
 | Lua Canvas Studio (macOS, flutter_driver) | The same with `lib/driver_main.dart` |
 | Lua: run current file | The open `.tl`/`.lua` entry without an app |
