@@ -140,6 +140,9 @@ Other assistants can read the same file as instructions.
   screens are Lua scripts: core, Material and Cupertino widgets, routes
   between Lua instances through `Navigator`, and remote bundles served by a
   local HTTP server.
+- [Lua Studio](https://github.com/yang-lile/lua_studio), a separate
+  repository: write Lua apps on an Android phone with these packages, run
+  them, and package them as APKs signed on the device, like AndroLua.
 - [`examples/lua_canvas_host`](examples/lua_canvas_host): Lua output turned
   into `rfw` remote widgets and canvas drawings, editable live.
 
