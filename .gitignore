@@ -34,8 +34,5 @@ build/
 !examples/flutter_lua_bridge_example/lua/build/
 !examples/flutter_lua_bridge_example/lua/build/**/*.lua
 
-# Local scratch directory.
-/playground/
-
 # FVM Version Cache
 .fvm/
