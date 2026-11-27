@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -26,6 +27,20 @@ void _rules(LuaRuntime lua) {
     if (n < 0) throw ArgumentError('negative');
     return n * 2;
   });
+}
+
+void _asyncFunctions(LuaRuntime lua) {
+  lua['later'] = lua.function(
+    (arguments) => Future<Object?>.delayed(
+      const Duration(milliseconds: 5),
+      () => (arguments.first! as int) * 2,
+    ),
+  );
+  lua['failing'] = lua.function(
+    (_) => Future<Object?>.error(ArgumentError('no network')),
+  );
+  lua['never'] = lua.function((_) => Completer<Object?>().future);
+  lua.run('function twice(n) return later(later(n)) end');
 }
 
 Future<void> _asyncSetup(LuaRuntime lua) async {
@@ -273,6 +288,95 @@ void main() {
         ),
       ),
     );
+  });
+
+  group('asynchronous Dart functions', () {
+    late LuaWorker waiter;
+    setUp(() async => waiter = await LuaWorker.spawn(setup: _asyncFunctions));
+    tearDown(() => waiter.close());
+
+    final interrupted = throwsA(
+      isA<LuaBridgeException>().having(
+        (e) => e.status,
+        'status',
+        LuaStatus.interrupted,
+      ),
+    );
+
+    test('Lua waits for them, one call at a time', () async {
+      expect(await waiter.call('twice', [3]), [12]);
+      expect(await waiter.run('return later(1) + later(2)'), [6]);
+      final results = await Future.wait([
+        for (var i = 0; i < 5; i++)
+          waiter.run('n = (n or 0) + 1 local mine = n later(0) return mine, n'),
+      ]);
+      // Nothing ran between the start and the end of a call.
+      expect(results, [
+        for (var i = 1; i <= 5; i++) [i, i],
+      ]);
+      await expectLater(
+        waiter.run('return failing()'),
+        throwsA(
+          isA<LuaBridgeException>()
+              .having((e) => e.status, 'status', LuaStatus.host)
+              .having((e) => e.cause, 'cause', contains('no network')),
+        ),
+      );
+      expect(await waiter.run('return (pcall(failing))'), [false]);
+    });
+
+    test('a timeout stops a call that waits forever', () async {
+      await expectLater(
+        waiter.run('return never()', timeout: const Duration(milliseconds: 30)),
+        throwsA(
+          isA<LuaBridgeException>()
+              .having((e) => e.status, 'status', LuaStatus.interrupted)
+              .having((e) => e.message, 'message', contains('timed out')),
+        ),
+      );
+      // Lua cannot catch it either.
+      await expectLater(
+        waiter.run(
+          'return pcall(never)',
+          timeout: const Duration(milliseconds: 30),
+        ),
+        interrupted,
+      );
+      expect(await waiter.call('twice', [1]), [4]);
+    });
+
+    test('interrupt stops a call that waits, and only that one', () async {
+      final waiting = expectLater(waiter.run('return never()'), interrupted);
+      final queued = waiter.call('twice', [2]);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      waiter.interrupt();
+      await waiting;
+      expect(await queued, [8]);
+    });
+
+    test('a late stop does not reach the next call', () async {
+      for (var i = 0; i < 50; i++) {
+        final call = waiter.run('return later($i)');
+        waiter.interrupt();
+        try {
+          expect(await call, [i * 2]);
+        } on LuaBridgeException catch (e) {
+          expect(e.status, LuaStatus.interrupted);
+        }
+        expect(await waiter.call('twice', [i]), [i * 4]);
+      }
+    });
+
+    test('close stops a call that waits forever', () async {
+      final other = await LuaWorker.spawn(setup: _asyncFunctions);
+      final waiting = expectLater(
+        other.run('return never()'),
+        throwsA(anything),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      await other.close().timeout(const Duration(seconds: 10));
+      await waiting;
+    });
   });
 
   group('without close', () {

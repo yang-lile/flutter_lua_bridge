@@ -136,6 +136,10 @@ class LuaWorker {
   /// Runs a text chunk and returns everything it returns. With [timeout] the
   /// chunk is interrupted once it has run that long, and the call fails with
   /// [LuaStatus.interrupted].
+  ///
+  /// The chunk can call the asynchronous Dart functions of the setup (those
+  /// that return a `Future`) as plain functions: it waits for them, as with
+  /// [LuaFunction.callAsync]. The time it waits counts for [timeout].
   Future<List<Object?>> run(String code, {String? name, Duration? timeout}) =>
       _submit(['run', code, name], timeout);
 
@@ -148,11 +152,13 @@ class LuaWorker {
     Duration? timeout,
   }) => _submit(['call', function, arguments], timeout);
 
-  /// Stops the Lua code of the call that is running now, if any; it fails
-  /// with [LuaStatus.interrupted]. Waiting calls are not affected.
+  /// Stops the call that is running now, if any; it fails with
+  /// [LuaStatus.interrupted]. The calls queued behind it are not affected.
   ///
   /// Lua checks for the interruption every 1000 VM instructions, so a Dart
-  /// function that Lua called is not stopped until it returns.
+  /// function that Lua called is not stopped until it returns. A call that
+  /// waits for the `Future` of a Dart function stops at once; the work behind
+  /// that future is not cancelled, only its result is dropped.
   void interrupt() {
     final running = _running;
     if (running != null && !_gone) _stop(running);
@@ -180,6 +186,9 @@ class LuaWorker {
   /// a call that was stopped early run unbounded.
   void _stop(_Request item) {
     _link.interrupt();
+    // A call that waits for a future runs no Lua code to interrupt: its
+    // isolate is free to read this instead.
+    _link.requests?.send([item.id, 'stop']);
     item.repeat ??= Timer.periodic(const Duration(milliseconds: 5), (_) {
       if (identical(_running, item)) _link.interrupt();
     });
@@ -385,6 +394,7 @@ Future<void> _workerMain(_Start start) async {
     return;
   }
   final requests = RawReceivePort(null, 'LuaWorker requests');
+  Object? current; // the id of the call in progress
   requests.handler = (Object? message) {
     final [id, operation, ...arguments] = message! as List<Object?>;
     if (operation == 'close') {
@@ -392,22 +402,29 @@ Future<void> _workerMain(_Start start) async {
       runtime.close();
       return;
     }
-    start.replies.send([id, ..._execute(runtime, operation, arguments)]);
+    if (operation == 'stop') {
+      // Arrives while the call waits for a future: running Lua is stopped
+      // by flb_interrupt, and a call that has ended is left alone.
+      if (id == current) runtime.interrupt();
+      return;
+    }
+    current = id;
+    _execute(runtime, operation, arguments).then((reply) {
+      current = null;
+      start.replies.send([id, ...reply]);
+    });
   };
   start.replies.send(['ready', requests.sendPort, handle.state, handle.token]);
 }
 
-List<Object?> _execute(
+Future<List<Object?>> _execute(
   LuaRuntime runtime,
   Object? operation,
   List<Object?> arguments,
-) {
+) async {
   try {
-    final results = switch (operation) {
-      'run' => runtime.run(
-        arguments[0]! as String,
-        name: arguments[1] as String?,
-      ),
+    final results = await switch (operation) {
+      'run' => _run(runtime, arguments[0]! as String, arguments[1] as String?),
       'call' => _call(
         runtime,
         arguments[0]! as String,
@@ -430,7 +447,24 @@ List<Object?> _execute(
   }
 }
 
-List<Object?> _call(LuaRuntime runtime, String path, List<Object?> arguments) {
+Future<List<Object?>> _run(
+  LuaRuntime runtime,
+  String code,
+  String? name,
+) async {
+  final chunk = runtime.load(code, name: name);
+  try {
+    return await chunk.callAsync();
+  } finally {
+    if (!runtime.isClosed) chunk.release();
+  }
+}
+
+Future<List<Object?>> _call(
+  LuaRuntime runtime,
+  String path,
+  List<Object?> arguments,
+) async {
   final parts = path.split('.');
   var value = runtime[parts.first];
   for (final part in parts.skip(1)) {
@@ -447,9 +481,9 @@ List<Object?> _call(LuaRuntime runtime, String path, List<Object?> arguments) {
     throw LuaBridgeException('$path is not a function');
   }
   try {
-    return value.call(arguments);
+    return await value.callAsync(arguments);
   } finally {
-    value.release();
+    if (!runtime.isClosed) value.release();
   }
 }
 
