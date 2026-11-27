@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
@@ -41,8 +42,52 @@ final class LuaValues {
 enum LuaThreadStatus { suspended, running, normal, dead }
 
 /// A Dart function callable from Lua. Return a [LuaValues] for several
-/// results; any other value is the single result.
+/// results; any other value is the single result. An asynchronous function
+/// returns a [Future]: the Lua code waits for it as for a plain call, provided
+/// Dart runs that code asynchronously, with [LuaFunction.callAsync] or a
+/// generated method that returns a `Future`.
 typedef LuaCallback = Object? Function(List<Object?> arguments);
+
+/// A future a Dart function returned to Lua, which suspended its caller.
+final class _Pending {
+  _Pending(this.future, {required this.isVoid});
+  final Future<Object?> future;
+  final bool isVoid;
+}
+
+/// An asynchronous call waiting for a [_Pending] future, until the future
+/// completes or the call is stopped, whichever comes first.
+final class _Wait {
+  final _done = Completer<void>();
+  Object? value;
+  (Object, StackTrace)? failure;
+
+  /// Set when the call was stopped: what it fails with.
+  Object? stopped;
+
+  void listen(Future<Object?> future) {
+    // Both handlers stay attached, so a future that completes after the call
+    // was stopped is dropped, error included.
+    future.then<void>(
+      (result) {
+        if (_done.isCompleted) return;
+        value = result;
+        _done.complete();
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (_done.isCompleted) return;
+        failure = (error, stackTrace);
+        _done.complete();
+      },
+    );
+  }
+
+  void stop(Object error) {
+    if (_done.isCompleted) return;
+    stopped = error;
+    _done.complete();
+  }
+}
 
 final _runtimes = <int, WeakReference<LuaRuntime>>{};
 final _hostCall = NativeCallable<flb_host_callFunction>.isolateLocal(
@@ -162,6 +207,13 @@ final class LuaRuntime implements Finalizable {
   final _moduleTables = <String, LuaTable>{};
   final _moduleIds = <String, Map<String, int>>{};
   final _loadedSources = <String, String>{};
+
+  /// One slot per resume that lets Dart functions suspend Lua, innermost
+  /// last; a Dart function returning a future fills the innermost one.
+  final _suspensions = <_Pending?>[];
+
+  /// The asynchronous calls that wait for a future now.
+  final _waiting = <_Wait>{};
   int _nextId = 1;
   int _depth = 0;
   bool _closed = false;
@@ -313,15 +365,29 @@ final class LuaRuntime implements Finalizable {
 
   /// Stops the running Lua code with a [LuaStatus.interrupted] failure that
   /// Lua cannot catch; a call whose Lua code caught it and returned fails as
-  /// well. It has no effect while no Lua code runs. Lua blocks this isolate while it runs, so call it from
-  /// a host function that Lua calls; to stop code from outside, run it in a
-  /// `LuaWorker` and use its `timeout` or `interrupt`.
+  /// well. Calls that wait for a `Future` (see [LuaFunction.callAsync]) fail
+  /// in the same way, at once. It has no effect while no Lua code runs or
+  /// waits.
+  ///
+  /// Lua blocks this isolate while it runs, so call it from a host function
+  /// that Lua calls; to stop code from outside, run it in a `LuaWorker` and
+  /// use its `timeout` or `interrupt`.
   void interrupt() {
-    if (!_closed) flb_interrupt(_state);
+    if (_closed) return;
+    flb_interrupt(_state);
+    _stopWaiting(
+      () => LuaBridgeException('interrupted', status: LuaStatus.interrupted),
+    );
+  }
+
+  void _stopWaiting(Object Function() error) {
+    for (final wait in _waiting.toList()) {
+      wait.stop(error());
+    }
   }
 
   /// Idempotent. Every handle and generated proxy fails with [StateError]
-  /// afterwards.
+  /// afterwards, and so does every call that waits for a `Future`.
   void close() {
     if (_closed) return;
     if (_depth > 0) {
@@ -340,6 +406,7 @@ final class LuaRuntime implements Finalizable {
       _moduleTables.clear();
       _moduleIds.clear();
       _loadedSources.clear();
+      _stopWaiting(() => StateError('LuaRuntime is closed'));
     }
   }
 
@@ -516,6 +583,10 @@ final class LuaRuntime implements Finalizable {
         throw StateError('Dart API has been unregistered');
       }
       final result = function.invoke(_readAll(arguments, count));
+      if (result is Future<Object?>) {
+        _suspendFor(result, isVoid: function.isVoid);
+        return;
+      }
       final values = function.isVoid
           ? const <Object?>[]
           : result is LuaValues
@@ -533,6 +604,158 @@ final class LuaRuntime implements Finalizable {
       });
     } finally {
       _depth--;
+    }
+  }
+
+  /// Suspends the Lua code that called a Dart function until [future]
+  /// completes; the resume that runs it returns, and [_drive] waits.
+  void _suspendFor(Future<Object?> future, {required bool isVoid}) {
+    final allowed = flb_can_yield(_state);
+    if (allowed != 1) {
+      future.ignore();
+      throw StateError(
+        allowed == 0
+            ? 'A Dart function returned a Future to Lua code that Dart runs '
+                  'synchronously, which cannot wait for it. Run that Lua code '
+                  'with LuaFunction.callAsync, or declare the contract method '
+                  'as returning a Future'
+            : 'A Dart function returned a Future where Lua cannot wait for '
+                  'it: in a coroutine that Lua created, in a function called '
+                  'by a C function such as table.sort or string.gsub, or in '
+                  'Lua code that a Dart function called synchronously',
+      );
+    }
+    _suspensions.last = _Pending(future, isVoid: isVoid);
+    using((arena) {
+      _ok(flb_yield(_state, _values(arena, const []), 0));
+    });
+  }
+
+  /// Runs [thread] until it returns or yields by itself, waiting for every
+  /// future of a Dart function that suspended it: Lua then receives the
+  /// value, or the error raised by the call. Throws what [interrupt] or
+  /// [close] stopped the wait with.
+  Future<List<Object?>> _drive(
+    LuaThread thread,
+    List<Object?> arguments,
+    int flags,
+  ) async {
+    var (results, pending) = _resumeOnce(thread, arguments, flags, null);
+    while (pending != null) {
+      final wait = _Wait()..listen(pending.future);
+      _waiting.add(wait);
+      try {
+        await wait._done.future;
+      } finally {
+        _waiting.remove(wait);
+      }
+      final stopped = wait.stopped;
+      if (stopped != null) throw stopped;
+      final value = wait.value;
+      final failure = wait.failure;
+      (results, pending) = _resumeOnce(
+        thread,
+        failure != null || pending.isVoid
+            ? const []
+            : value is LuaValues
+            ? value.values
+            : [value],
+        flags,
+        failure,
+      );
+    }
+    return results;
+  }
+
+  (List<Object?>, _Pending?) _resumeOnce(
+    LuaThread thread,
+    List<Object?> arguments,
+    int flags,
+    (Object, StackTrace)? failure,
+  ) => _enter((arena) {
+    _suspensions.add(null);
+    final int status;
+    final _Pending? pending;
+    try {
+      if (failure == null) {
+        status = flb_resume(
+          _state,
+          thread._use,
+          _values(arena, arguments),
+          arguments.length,
+          flags | FLB_RESUME_HOST_YIELD,
+          _out,
+          _count,
+        );
+      } else {
+        final errorId = _nextId++;
+        _hostErrors[errorId] = failure;
+        final (bytes, length) = _bytes(arena, failure.$1.toString());
+        status = flb_resume_failure(
+          _state,
+          thread._use,
+          errorId,
+          bytes,
+          length,
+          flags | FLB_RESUME_HOST_YIELD,
+          _out,
+          _count,
+        );
+      }
+    } finally {
+      pending = _suspensions.removeLast();
+    }
+    if (status != FLB_YIELD) {
+      // An interruption fails the resume although its code suspended.
+      pending?.future.ignore();
+      _ok(status);
+      return (_readAll(_out.value, _count.value), null);
+    }
+    return (_readAll(_out.value, _count.value), pending);
+  });
+
+  /// Ends the coroutine of an asynchronous call, however the call ended.
+  void _discard(LuaThread thread) {
+    if (_closed) return;
+    try {
+      if (!thread.isDead) thread.close();
+    } on LuaBridgeException {
+      // A to-be-closed variable failed; the call already has its outcome.
+    } finally {
+      thread.release();
+    }
+  }
+
+  /// Generator support: [LuaBinding.callAsync].
+  Future<Object?> _callBindingAsync(
+    LuaBinding binding,
+    String method,
+    List<Object?> arguments,
+    bool isVoid,
+  ) async {
+    final function = _moduleTable(binding._module).get(method, raw: true);
+    if (function is! LuaFunction) {
+      if (function is LuaRef) function.release();
+      throw LuaBridgeException('declared Lua method is missing: $method');
+    }
+    final thread = function.coroutine();
+    function.release();
+    try {
+      final results = await _drive(thread, arguments, FLB_CALL_BY_VALUE);
+      if (!thread.isDead) {
+        throw LuaBridgeException(
+          "method '$method' yielded instead of returning",
+        );
+      }
+      final expected = isVoid ? 0 : 1;
+      if (results.length != expected) {
+        throw LuaBridgeException(
+          "method '$method' must return exactly $expected values",
+        );
+      }
+      return isVoid ? null : results.single;
+    } finally {
+      _discard(thread);
     }
   }
 
@@ -955,6 +1178,35 @@ final class LuaFunction extends LuaRef {
     r._ok(flb_thread_new(r._state, _use, r._int64));
     return LuaThread._(r, r._int64.value);
   });
+
+  /// Calls the function asynchronously: when it calls a Dart function that
+  /// returns a [Future], it waits for the future without blocking, and gets
+  /// its value as the result of that call, or its error raised by that call.
+  /// Other calls into the runtime can run while it waits.
+  ///
+  /// Lua can wait only in the code of the function itself and of the Lua
+  /// functions it calls: not in a coroutine that Lua created, nor in a
+  /// function called by a C function such as `table.sort`. There the Dart
+  /// function raises an error instead.
+  ///
+  /// While the call waits, [LuaRuntime.interrupt] fails it with
+  /// [LuaStatus.interrupted] and [LuaRuntime.close] with a [StateError].
+  /// Throws a [StateError] if the function yields instead of returning.
+  Future<List<Object?>> callAsync([List<Object?> arguments = const []]) async {
+    final thread = coroutine();
+    try {
+      final results = await runtime._drive(thread, arguments, 0);
+      if (!thread.isDead) {
+        for (final value in results) {
+          if (value is LuaRef) value.release();
+        }
+        throw StateError('The Lua function yielded instead of returning');
+      }
+      return results;
+    } finally {
+      runtime._discard(thread);
+    }
+  }
 }
 
 final class LuaThread extends LuaRef {
@@ -972,6 +1224,7 @@ final class LuaThread extends LuaRef {
           _use,
           r._values(arena, arguments),
           arguments.length,
+          0,
           r._out,
           r._count,
         );
@@ -1011,6 +1264,13 @@ class LuaBinding {
   final String _module;
   Object? call(String method, List<Object?> arguments, {bool isVoid = false}) =>
       _runtime._callBinding(this, method, arguments, isVoid);
+
+  /// Like [call], for a method that may wait for asynchronous Dart APIs.
+  Future<Object?> callAsync(
+    String method,
+    List<Object?> arguments, {
+    bool isVoid = false,
+  }) => _runtime._callBindingAsync(this, method, arguments, isVoid);
 }
 
 /// Generator support: one Dart method callable from Lua.

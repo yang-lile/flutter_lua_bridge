@@ -1,6 +1,7 @@
 // The general-purpose side of LuaRuntime. tool/test_lua_versions.sh runs this
 // file against every bundled Lua release and sets FLB_EXPECT_LUA_VERSION so a
 // build of the wrong release cannot pass unnoticed.
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
@@ -225,6 +226,202 @@ void main() {
     expect(thread.status, LuaThreadStatus.suspended);
     expect(thread.resume([5]), [15]);
     expect(thread.isDead, isTrue);
+  });
+
+  group('asynchronous Dart functions', () {
+    LuaFunction function(String code) => lua.eval(code)! as LuaFunction;
+
+    test('read as plain calls in Lua that Dart runs asynchronously', () async {
+      final requests = <String>[];
+      lua['fetch'] = lua.function((a) {
+        final url = a.single! as String;
+        requests.add(url);
+        return Future.delayed(
+          const Duration(milliseconds: 5),
+          () => url == '/user' ? 'ana' : 42,
+        );
+      });
+      final results = await function('''return function()
+          local user = fetch("/user")
+          local ok, score = pcall(fetch, "/score/" .. user)
+          return user .. ":" .. score
+        end''').callAsync();
+      expect(results, ['ana:42']);
+      expect(requests, ['/user', '/score/ana']);
+    });
+
+    test(
+      'several values, and the runtime stays usable while it waits',
+      () async {
+        final gate = Completer<Object?>();
+        lua['pair'] = lua.function(
+          (_) => Future.value(const LuaValues([1, 2])),
+        );
+        lua['wait'] = lua.function((_) => gate.future);
+        final a = function(
+          'return function() local x, y = pair() return x + y end',
+        ).callAsync();
+        final b = function('return function() return wait() .. "!" end')
+            .callAsync();
+        await Future<void>.delayed(Duration.zero);
+        expect(lua.eval('return 6 * 7'), 42); // not blocked by the waiting call
+        gate.complete('done');
+        expect(await Future.wait([a, b]), [
+          [3],
+          ['done!'],
+        ]);
+      },
+    );
+
+    test(
+      'a failed future raises in Lua, with the Dart error as cause',
+      () async {
+        final error = StateError('offline');
+        lua['fetch'] = lua.function((_) => Future<Object?>.error(error));
+        expect(
+          await function(
+            'return function() local ok, e = pcall(fetch) return ok, e end',
+          ).callAsync(),
+          [false, error.toString()],
+        );
+        await expectLater(
+          function('return function() return fetch() end').callAsync(),
+          throwsA(
+            isA<LuaBridgeException>()
+                .having((e) => e.status, 'status', LuaStatus.host)
+                .having((e) => e.cause, 'cause', same(error)),
+          ),
+        );
+      },
+    );
+
+    test('Lua that Dart runs synchronously cannot wait', () async {
+      lua['fetch'] = lua.function((_) => Future.value(1));
+      final notAsync = isA<LuaBridgeException>().having(
+        (e) => e.message,
+        'message',
+        contains('runs synchronously'),
+      );
+      expect(() => lua.eval('return fetch()'), throwsA(notAsync));
+      final thread = function('return function() return fetch() end')
+          .coroutine();
+      expect(() => thread.resume(), throwsA(notAsync));
+      // Nor Lua reached through another Dart function, nor a coroutine that
+      // Lua resumes itself: only the code Dart runs asynchronously waits.
+      final notHere = isA<LuaBridgeException>().having(
+        (e) => e.message,
+        'message',
+        contains('where Lua cannot wait'),
+      );
+      lua['through'] = lua.function((a) => (a.single! as LuaFunction).call());
+      for (final body in [
+        'return through(function() return fetch() end)',
+        'return coroutine.wrap(function() return fetch() end)()',
+        'table.sort({ 2, 1 }, function(a, b) fetch() return a < b end)',
+        'return (("x"):gsub("x", function() return fetch() end))',
+      ]) {
+        await expectLater(
+          function('return function() $body end').callAsync(),
+          throwsA(notHere),
+          reason: body,
+        );
+      }
+      // Lua can catch the refusal and go on.
+      expect(
+        await function(
+          'return function() return pcall(table.sort, { 2, 1 }, fetch) end',
+        ).callAsync(),
+        [false, contains('where Lua cannot wait')],
+      );
+    });
+
+    test('callAsync refuses a function that yields by itself', () async {
+      await expectLater(
+        function('return function() coroutine.yield(1) end').callAsync(),
+        throwsA(isA<StateError>()),
+      );
+      expect(lua.eval('return 1'), 1);
+    });
+
+    test('other calls run while a call waits', () async {
+      final gates = <Completer<Object?>>[];
+      lua['wait'] = lua.function((_) {
+        gates.add(Completer());
+        return gates.last.future;
+      });
+      final wait = function(
+        'return function(tag) seen = (seen or "") .. tag return tag .. wait() end',
+      );
+      final first = wait.callAsync(['a']);
+      final second = wait.callAsync(['b']);
+      expect(lua.eval('return seen'), 'ab');
+      gates[1].complete('2');
+      expect(await second, ['b2']);
+      gates[0].complete('1');
+      expect(await first, ['a1']);
+    });
+
+    test('interrupt stops the calls that wait', () async {
+      final gate = Completer<Object?>();
+      lua['wait'] = lua.function((_) => gate.future);
+      final interrupted = throwsA(
+        isA<LuaBridgeException>().having(
+          (e) => e.status,
+          'status',
+          LuaStatus.interrupted,
+        ),
+      );
+      // Lua cannot catch it, and its code does not go on.
+      final calls = [
+        for (var i = 0; i < 2; i++)
+          function(
+            'return function() local ok = pcall(wait) went_on = true return ok end',
+          ).callAsync(),
+      ];
+      final expectations = [
+        for (final call in calls) expectLater(call, interrupted),
+      ];
+      await Future<void>.delayed(Duration.zero);
+      lua.interrupt();
+      await Future.wait(expectations);
+      // The future fails afterwards: nobody is left to report it to.
+      gate.completeError(StateError('late'));
+      await Future<void>.delayed(Duration.zero);
+      expect(lua.eval('return went_on'), isNull);
+      expect(lua.eval('return 1'), 1);
+    });
+
+    test('an interrupted call that ends by waiting fails', () async {
+      final gate = Completer<Object?>();
+      lua['wait'] = lua.function((_) {
+        lua.interrupt();
+        return gate.future;
+      });
+      await expectLater(
+        function('return function() return wait() end').callAsync(),
+        throwsA(
+          isA<LuaBridgeException>().having(
+            (e) => e.status,
+            'status',
+            LuaStatus.interrupted,
+          ),
+        ),
+      );
+      gate.completeError(StateError('late'));
+      await Future<void>.delayed(Duration.zero);
+      expect(lua.eval('return 1'), 1);
+    });
+
+    test('closing the runtime while a call waits', () async {
+      final gate = Completer<Object?>();
+      lua['wait'] = lua.function((_) => gate.future);
+      final call = function('return function() return wait() end').callAsync();
+      final closed = expectLater(call, throwsA(isA<StateError>()));
+      await Future<void>.delayed(Duration.zero);
+      lua.close();
+      // At once: the future never completes.
+      await closed;
+    });
   });
 
   test('sandbox, memory limit and interruption', () {
