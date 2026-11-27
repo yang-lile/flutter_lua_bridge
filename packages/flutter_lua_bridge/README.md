@@ -73,6 +73,10 @@ try {
   arrives as a `List` or `Map`. Handles cannot leave the worker.
 - `timeout` and `interrupt()` stop the running call; Lua checks every 1000
   VM instructions, so a Dart function Lua is calling finishes first.
+- Lua can call the asynchronous Dart functions of the setup (see below) and
+  waits for them; the next call starts when this one has ended. The time
+  spent waiting counts for `timeout`, and a call that waits is stopped at
+  once.
 - Errors arrive as `LuaBridgeException`; a Dart error thrown in the worker
   arrives as its `toString()` in `cause`.
 - Keep cheap calls on a plain `LuaRuntime`: a worker call costs a message
@@ -81,6 +85,42 @@ try {
   for example in `dispose`. Forgetting it is not fatal: an idle worker does
   not keep the program running, and an unreferenced one is closed when it
   is garbage collected.
+
+## Asynchronous Dart functions
+
+A Dart function given to Lua may return a `Future`. Lua calls it as an
+ordinary function and waits for the result without blocking the isolate,
+when Dart runs that Lua code asynchronously:
+
+```dart
+lua['fetch'] = lua.function((args) async {
+  await Future.delayed(const Duration(milliseconds: 10)); // a network call, say
+  return 'body of ${args.single}';
+});
+
+final length = lua.load('''
+  local body = fetch(...)            -- waits here; other Dart code keeps running
+  return #body
+''');
+
+print(await length.callAsync(['/home'])); // [13]
+```
+
+- A failed future raises a Lua error at the call, which `pcall` can catch.
+- Lua code that Dart runs synchronously (`call`, `run`, `eval`) cannot wait:
+  the Dart function raises an error that says so. With generated contracts,
+  declare the method as returning a `Future`; see
+  [Asynchronous methods](https://github.com/yang-lile/flutter_lua_bridge/blob/main/docs/codegen-guide.md#asynchronous-methods).
+- Lua waits only in the code `callAsync` runs and the Lua functions it
+  calls. A coroutine that Lua created, a function called by a C function
+  (the comparison of `table.sort`, the replacement of `string.gsub`) and
+  Lua that a Dart function called synchronously cannot wait; the Dart
+  function raises an error there too.
+- While a call waits, the runtime stays usable and other calls run in
+  between; they share the same Lua globals.
+- `lua.interrupt()` fails the calls that wait with `LuaStatus.interrupted`,
+  and `lua.close()` with a `StateError`, both at once. The work behind the
+  future is not cancelled; its result is dropped.
 
 ## Typed contracts
 

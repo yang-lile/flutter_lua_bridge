@@ -136,4 +136,6 @@ Lua 侧通过 `require("x_bridge")` 拿到 `bindXxx(impl)`（提交实现）和
 
 - 运行期在 App 内编译 Teal（把 `tl.lua` 作为资产装入 `LuaRuntime`）。可行，
   优先级不高；目前只下发编译后的 Lua。
-- 异步宿主接口（`@DartApi` 方法返回 `Future`）。目前双向调用都是同步的。
+- `Stream` 结果。异步方法（返回 `Future`）已经支持：宿主函数在 Dart 回调返回
+  之后才用 `lua_yieldk` 挂起调用它的协程，所以 yield 的 longjmp 永远不会穿过
+  Dart 栈帧；协程只能由允许宿主挂起的 `flb_resume` 运行（`FLB_RESUME_HOST_YIELD`）。

@@ -81,7 +81,8 @@ declaration):
 
 - Types: `bool`, `int`, `double`, `String`, simple enums, data classes,
   `List<T>`, `Map<String, T>`, nullable forms of these, and `void` returns.
-  Rejected: `dynamic`, `Object`, `Future`, `Stream`, function types,
+  A method result may be `Future<T>` / `Future<void>` (see below).
+  Rejected: `dynamic`, `Object`, `Stream`, `FutureOr`, function types,
   untyped collections, non-`String` map keys, and nullable elements
   (`List<int?>`, `Map<String, int?>`).
 - Data classes: one unnamed constructor whose parameters are all required
@@ -306,8 +307,23 @@ anything with a stable shape.
 `LuaWorker.spawn(setup: topLevelFn)` runs a runtime on a background isolate:
 `await worker.call('mod.fn', [args], timeout: ...)`, `run`,
 `interrupt()`, `close()`. Plain data only crosses; a timeout fails the call
-with `LuaStatus.interrupted`. Use it for heavy or untrusted Lua, and
+with `LuaStatus.interrupted`, also while Lua waits for an asynchronous
+Dart function of the setup. Use it for heavy or untrusted Lua, and
 `close()` it in `dispose` (an unreferenced worker is closed on collection).
+
+Asynchronous methods: declare `Future<T>` results. A `@DartApi` method is
+then plain `async` Dart; Lua calls it as an ordinary function and waits
+without blocking the isolate. A `@LuaApi` method that may wait for one must
+itself return `Future<T>` (the client returns `Future<LuaCallResult<T>>` at
+O1/O2); a synchronous one that calls an async Dart method fails with "runs
+synchronously". Raw runtime: a `lua.function` may return a `Future` when the
+Lua is run with `luaFunction.callAsync(args)` (`lua.load(code).callAsync()`
+for a chunk). Lua cannot wait inside a coroutine it created or inside a
+`table.sort` / `string.gsub` callback ("where Lua cannot wait"): call the
+async function outside. `lua.interrupt()` and `lua.close()` fail the calls
+that wait. In a `LuaView`, event handlers are Lua coroutines: reach
+asynchronous Dart through the library's `functions` (`ui.invoke`), not a
+core `lua.function` that returns a `Future`.
 
 ## Troubleshooting
 

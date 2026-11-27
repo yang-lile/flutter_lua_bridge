@@ -111,7 +111,9 @@ return App {
   Dart function returns a `Future`, the handler waits for it and continues
   with its value: `local result = Navigator.pushNamed("/edit")` reads like
   `await`. A failed `Future` is a Lua error at the call (catch it with
-  `pcall`). Called while rendering, a `Future` result is `nil`.
+  `pcall`). Called while rendering, a `Future` result is `nil`. Only the
+  `functions` of a library wait this way: a `lua.function` of the core
+  runtime that returns a `Future` raises an error in a handler.
 
 Each event, method call or store write is one synchronous Lua call that
 returns only the changed components; each component instance is a

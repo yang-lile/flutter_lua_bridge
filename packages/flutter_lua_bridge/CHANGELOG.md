@@ -1,5 +1,15 @@
 ## Unreleased
 
+- A Dart function called from Lua may return a `Future`. Lua run with the
+  new `LuaFunction.callAsync` waits for it as for a plain call, without
+  blocking the isolate; a failed future raises a Lua error at the call. Lua
+  that Dart runs synchronously, a coroutine that Lua created and a function
+  called by a C function such as `table.sort` cannot wait: the Dart function
+  raises an error that says which.
+- `LuaRuntime.interrupt()` and `close()` also stop the calls that wait for a
+  `Future`, at once.
+- Lua in a `LuaWorker` can wait for the asynchronous Dart functions of its
+  setup; `timeout`, `interrupt()` and `close()` stop a call that waits.
 - `LuaWorker`: a `LuaRuntime` on a background isolate with asynchronous
   `run` and `call`, a per-call `timeout` and `interrupt()` that stop
   runaway Lua from the calling isolate. An idle worker does not keep the

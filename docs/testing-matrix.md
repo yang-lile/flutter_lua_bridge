@@ -47,15 +47,18 @@ Implemented in `packages/flutter_lua_bridge_codegen_annotation/test/annotations_
 - Success, typed failure, malformed, and missing result envelopes classify
   errors correctly.
 - `LuaRuntime` covers execution, values and handles, errors with tracebacks,
-  host functions, modules, memory limit and interrupt.
+  host functions, modules, memory limit and interrupt, and asynchronous
+  Dart functions: waiting, failed futures, the places where Lua cannot
+  wait, and interrupt or close while a call waits.
 - Native sanitizer coverage validates the shim on every bundled Lua release.
 - The build hook selects the bundled release, a local tree or a verified
   archive URL, and builds the native library.
 
 Fast codec checks are in `packages/flutter_lua_bridge/test/codecs_test.dart`,
 the runtime checks in `test/lua_runtime_test.dart`, `LuaWorker` (plain
-data both ways, errors, timeout and interrupt of endless loops, ordering,
-close, memory limit, setup, program exit and collection without close) in
+data both ways, errors, timeout and interrupt of endless loops and of
+calls that wait for a future, ordering, close, memory limit, setup, program
+exit and collection without close) in
 `test/worker_test.dart`, the hook's source
 selection in `test/lua_source_test.dart` and the hook build in
 `test/hook_build_test.dart`. The multi-version and sanitizer checks remain in

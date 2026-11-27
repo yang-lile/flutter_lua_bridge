@@ -189,17 +189,20 @@ transfer, not the server.
 
 ## Runaway scripts
 
-Calls are synchronous: Dart waits on the calling isolate until Lua returns.
-The bridge has no time limit of its own. What exists:
+While Lua runs, Dart waits on the calling isolate until it returns or, in
+an asynchronous method, reaches a `Future` to wait for. The bridge has no
+time limit of its own. What exists:
 
 - `LuaRuntime.interrupt()` stops the running Lua code with an error that
   Lua cannot catch. The runtime checks for it every 1000 VM instructions,
   but it has to be called while Lua runs, so from Dart code that Lua calls
-  (a `@DartApi` method or a `lua.function` callback).
+  (a `@DartApi` method or a `lua.function` callback). It also fails the
+  asynchronous calls that wait for a `Future`, from any Dart code.
 - A script you cannot fully trust or test can run in a `LuaWorker`, on a
   background isolate, so a hang does not freeze the UI. Give the call a
   `timeout` (or call `interrupt()`): the worker's runtime is interrupted from
-  the calling isolate and the call fails with `LuaStatus.interrupted`.
+  the calling isolate and the call fails with `LuaStatus.interrupted`. The
+  same stops a call that waits for a `Future` that never completes.
   `examples/lua_canvas_host` predates it and has its own worker
   (`lib/lua_worker.dart`) with a Lua-side time budget.
 
