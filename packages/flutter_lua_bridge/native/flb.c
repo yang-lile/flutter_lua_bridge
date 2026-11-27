@@ -218,6 +218,15 @@ static void set_message(flb_state *S, const char *bytes, size_t length) {
   S->message_length = S->message ? length : 0;
 }
 
+/*
+ * Lua code that catches the interruption (pcall, coroutine.resume) and
+ * returns at once runs no further instruction, so the hook never raises it
+ * again: the operations that run Lua code check once more before returning.
+ */
+static void check_interrupted(lua_State *L) {
+  if (state_of(L)->interrupted) luaL_error(L, "interrupted");
+}
+
 /* Applies interruption, which only ever replaces a failure at the top level. */
 static int finish(flb_state *S, int status) {
   if (S->depth == 0 && S->interrupted) {
@@ -731,6 +740,8 @@ static frame *enter(flb_state *S) {
   if (!S || !S->L) return NULL;
   f = S->frames[S->depth];
   if (S->depth == 0) {
+    /* An interruption only stops code that is running when it arrives. */
+    S->interrupted = 0;
     drain_pending(S);
     free(S->host_failure);
     S->host_failure = NULL;
@@ -1242,6 +1253,7 @@ static int body_run(lua_State *L) {
   op *o = begin(L);
   load_chunk(L, o, "t");
   lua_call(L, 0, LUA_MULTRET);
+  check_interrupted(L);
   return emit(L, o->target, lua_gettop(L));
 }
 
@@ -1326,6 +1338,7 @@ static int body_call(lua_State *L) {
   push_ref(L, o->ref);
   push_values(L, o->a, o->n);
   lua_call(L, (int)o->n, LUA_MULTRET);
+  check_interrupted(L);
   return emit_results(L, o);
 }
 
@@ -1359,6 +1372,7 @@ static int body_call_method(lua_State *L) {
     push_values(L, o->a, o->n);
     lua_call(L, (int)o->n + 1, LUA_MULTRET);
   }
+  check_interrupted(L);
   return emit_results(L, o);
 }
 
@@ -2032,6 +2046,10 @@ int32_t flb_resume(flb_state *state, flb_ref thread_ref,
   produced = lua_gettop(thread);
 #endif
   if (code != LUA_OK && code != LUA_YIELD) return capture_thread_error(&o, thread, code);
+  if (state->interrupted) {
+    lua_pop(thread, produced);
+    return finish(state, fail(state, FLB_ERROR_RUNTIME, "interrupted"));
+  }
   status = run_with(&o, body_emit_arguments, thread, produced);
   if (status != FLB_OK) return status;
   status = finish(state, code == LUA_YIELD ? FLB_YIELD : FLB_OK);

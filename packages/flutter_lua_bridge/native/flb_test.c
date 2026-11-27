@@ -834,7 +834,23 @@ static void test_interrupt(void) {
          "while true do pcall(co) end";
   CHECK(flb_run(S, code, strlen(code), NULL, NULL, NULL) == FLB_ERROR_INTERRUPTED);
 
+  /* Nor by returning right after catching it: a tail-called pcall runs no
+   * further instruction of the caller, so no hook fires. */
+  code = "interrupt() return pcall(function() while true do end end)";
+  CHECK(flb_run(S, code, strlen(code), NULL, NULL, NULL) == FLB_ERROR_INTERRUPTED);
+  code = "interrupt()\n"
+         "local ok = coroutine.resume(coroutine.create(function() while true do end end))\n"
+         "return ok";
+  CHECK(flb_run(S, code, strlen(code), NULL, NULL, NULL) == FLB_ERROR_INTERRUPTED);
+
   /* The interruption is consumed: the state runs normally again. */
+  CHECK(eval(S, "local n = 0 for i = 1, 100000 do n = n + i end return n")->i ==
+        5000050000LL);
+
+  /* An interruption while no Lua code runs stops nothing, short or long. */
+  flb_interrupt(S);
+  CHECK(eval(S, "return 1")->i == 1);
+  flb_interrupt(S);
   CHECK(eval(S, "local n = 0 for i = 1, 100000 do n = n + i end return n")->i ==
         5000050000LL);
   flb_state_release(S);

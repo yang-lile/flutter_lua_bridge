@@ -274,6 +274,79 @@ void main() {
     expect(lua.eval('return 2'), 2);
   });
 
+  group('an interruption cannot be swallowed', () {
+    late LuaFunction stop;
+    setUp(() {
+      stop = lua.function((_) {
+        lua.interrupt();
+        return null;
+      });
+      lua['stop'] = stop;
+    });
+
+    Matcher interrupted() => throwsA(
+      isA<LuaBridgeException>().having(
+        (e) => e.status,
+        'status',
+        LuaStatus.interrupted,
+      ),
+    );
+
+    test('by returning a caught interruption at once', () {
+      expect(
+        () => lua.run('stop() return pcall(function() while true do end end)'),
+        interrupted(),
+      );
+      expect(
+        () => lua.run(
+          'stop() local ok = coroutine.resume(coroutine.create('
+          'function() while true do end end)) return ok',
+        ),
+        interrupted(),
+      );
+      final function = lua.eval(
+        'return function() stop() return pcall(function() while true do end end) end',
+      ) as LuaFunction;
+      expect(() => function.call(), interrupted());
+      function.release();
+      expect(lua.eval('return 1'), 1);
+    });
+
+    test('by a coroutine that catches it and yields', () {
+      final body = lua.eval(
+        'return function() stop() '
+        'coroutine.yield(pcall(function() while true do end end)) end',
+      ) as LuaFunction;
+      final thread = body.coroutine();
+      expect(() => thread.resume(), interrupted());
+      body.release();
+      thread.release();
+      final returning = lua.eval(
+        'return function() stop() '
+        'return pcall(function() while true do end end) end',
+      ) as LuaFunction;
+      final other = returning.coroutine();
+      expect(() => other.resume(), interrupted());
+      returning.release();
+      other.release();
+      expect(lua.eval('return 2'), 2);
+    });
+
+    test('but stops nothing when no Lua code runs', () {
+      lua.interrupt();
+      expect(lua.eval('return 1'), 1);
+      lua.interrupt();
+      expect(
+        lua.eval('local n = 0 for i = 1, 100000 do n = n + i end return n'),
+        5000050000,
+      );
+      final table = lua.table({'a': 1});
+      lua.interrupt();
+      expect(table['a'], 1);
+      table.release();
+    });
+  });
+
   test('closing invalidates the runtime and its handles', () {
     final other = LuaRuntime.create();
     final table = other.table({'a': 1});

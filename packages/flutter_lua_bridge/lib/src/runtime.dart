@@ -312,7 +312,8 @@ final class LuaRuntime implements Finalizable {
   });
 
   /// Stops the running Lua code with a [LuaStatus.interrupted] failure that
-  /// Lua cannot catch. Lua blocks this isolate while it runs, so call it from
+  /// Lua cannot catch; a call whose Lua code caught it and returned fails as
+  /// well. It has no effect while no Lua code runs. Lua blocks this isolate while it runs, so call it from
   /// a host function that Lua calls; to stop code from outside, run it in a
   /// `LuaWorker` and use its `timeout` or `interrupt`.
   void interrupt() {

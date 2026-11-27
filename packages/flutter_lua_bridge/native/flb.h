@@ -221,8 +221,10 @@ FLB_API int32_t flb_gc(flb_state *state, int32_t what);
 
 /*
  * Makes running Lua code fail with FLB_ERROR_INTERRUPTED. Thread safe. Lua
- * code cannot catch the interruption. It is cleared when the outermost call
- * returns to the host. Interruption is checked every
+ * code cannot catch the interruption: a call whose Lua code caught it and
+ * returned fails as well. It is cleared when the outermost call starts and
+ * when it returns to the host, so an interruption while no Lua code runs has
+ * no effect. Interruption is checked every
  * `flb_set_interrupt_interval` VM instructions (default 1000, 0 disables).
  */
 FLB_API void flb_interrupt(flb_state *state);

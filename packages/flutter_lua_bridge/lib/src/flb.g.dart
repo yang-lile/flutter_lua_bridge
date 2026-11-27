@@ -291,8 +291,10 @@ external int flb_globals(
 );
 
 /// Makes running Lua code fail with FLB_ERROR_INTERRUPTED. Thread safe. Lua
-/// code cannot catch the interruption. It is cleared when the outermost call
-/// returns to the host. Interruption is checked every
+/// code cannot catch the interruption: a call whose Lua code caught it and
+/// returned fails as well. It is cleared when the outermost call starts and
+/// when it returns to the host, so an interruption while no Lua code runs has
+/// no effect. Interruption is checked every
 /// `flb_set_interrupt_interval` VM instructions (default 1000, 0 disables).
 @ffi.Native<ffi.Void Function(ffi.Pointer<flb_state>)>()
 external void flb_interrupt(ffi.Pointer<flb_state> state);

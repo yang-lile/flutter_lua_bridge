@@ -161,9 +161,9 @@ class LuaWorker {
     if (!_tokenReleased) flb_interrupt(Pointer.fromAddress(_state));
   }
 
-  /// Interrupts [item] and repeats it until its reply arrives: the worker
-  /// clears an interruption that lands before it starts a call, which would
-  /// otherwise let a call that was stopped early run unbounded.
+  /// Interrupts [item] and repeats it until its reply arrives: a call clears
+  /// an interruption that lands before it starts, which would otherwise let
+  /// a call that was stopped early run unbounded.
   void _stop(_Request item) {
     _interrupt();
     item.repeat ??= Timer.periodic(const Duration(milliseconds: 5), (_) {
@@ -330,7 +330,6 @@ List<Object?> _execute(
   Object? operation,
   List<Object?> arguments,
 ) {
-  _clearInterrupt(runtime);
   try {
     final results = switch (operation) {
       'run' => runtime.run(
@@ -356,16 +355,6 @@ List<Object?> _execute(
     ];
   } catch (error) {
     return [false, '$error', LuaStatus.bridge.index, '', null, null];
-  }
-}
-
-/// An interruption that arrived after the previous call returned is still
-/// pending; any outermost call clears it.
-void _clearInterrupt(LuaRuntime runtime) {
-  try {
-    runtime.run('', name: '=LuaWorker');
-  } on LuaBridgeException {
-    // Interrupted at its first instruction: cleared as well.
   }
 }
 

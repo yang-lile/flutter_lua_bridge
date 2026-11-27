@@ -3,6 +3,10 @@
 - `LuaWorker`: a `LuaRuntime` on a background isolate with asynchronous
   `run` and `call`, a per-call `timeout` and `interrupt()` that stop
   runaway Lua from the calling isolate.
+- An interruption can no longer be swallowed by Lua code that catches it
+  (`pcall`, `coroutine.resume`) and returns at once: the call fails with
+  `LuaStatus.interrupted`. An interruption while no Lua code runs no longer
+  stops a later call.
 
 ## 0.2.0
 
