@@ -77,6 +77,10 @@ try {
   arrives as its `toString()` in `cause`.
 - Keep cheap calls on a plain `LuaRuntime`: a worker call costs a message
   round trip.
+- `close()` frees the isolate and its Lua state; call it when you are done,
+  for example in `dispose`. Forgetting it is not fatal: an idle worker does
+  not keep the program running, and an unreferenced one is closed when it
+  is garbage collected.
 
 ## Typed contracts
 

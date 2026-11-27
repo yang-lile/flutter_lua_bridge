@@ -24,6 +24,11 @@ typedef LuaWorkerSetup = FutureOr<void> Function(LuaRuntime runtime);
 /// A failure arrives as the [LuaBridgeException] the call threw in the worker.
 /// Its [LuaBridgeException.cause] is then the `toString()` of the Dart error.
 ///
+/// Call [close] when you are done, as with [LuaRuntime.close]. An idle worker
+/// does not keep the program running, and one that is no longer referenced
+/// is closed when it is garbage collected, but only [close] frees the
+/// isolate and its Lua state at a known time.
+///
 /// ```dart
 /// final worker = await LuaWorker.spawn(setup: loadRules);
 /// try {
@@ -39,7 +44,10 @@ typedef LuaWorkerSetup = FutureOr<void> Function(LuaRuntime runtime);
 /// }
 /// ```
 class LuaWorker {
-  LuaWorker._(this._requests, this._state, this._token, this._ports);
+  LuaWorker._(this._link) {
+    _finalizer.attach(this, _link, detach: this);
+    _sync();
+  }
 
   /// Starts an isolate with a new runtime and runs [setup] on it there.
   /// [libraries] and [memoryLimit] are as in [LuaRuntime.create]. Fails with
@@ -50,62 +58,71 @@ class LuaWorker {
     int memoryLimit = 0,
     String debugName = 'LuaWorker',
   }) async {
-    final ports = _Ports();
-    final ready = Completer<LuaWorker>();
-    LuaWorker? worker;
-    ports.replies.handler = (Object? message) {
-      final current = worker;
-      if (current != null) {
-        current._reply(message! as List<Object?>);
+    final link = _Link();
+    final result = Completer<LuaWorker>();
+    // The port handlers outlive the worker, so they must not keep it alive:
+    // they reach it through a weak reference, and drop the completer, which
+    // holds the worker once completed.
+    Completer<LuaWorker>? ready = result;
+    WeakReference<LuaWorker>? worker;
+    link.replies.handler = (Object? message) {
+      if (worker != null) {
+        worker?.target?._reply(message! as List<Object?>);
       } else if (message case [
         'ready',
         final SendPort requests,
         final int state,
         final int token,
       ]) {
-        final created = worker = LuaWorker._(requests, state, token, ports);
-        ready.complete(created);
+        link
+          ..requests = requests
+          ..state = state
+          ..token = token;
+        _openWorkers++;
+        final created = LuaWorker._(link);
+        worker = WeakReference(created);
+        ready?.complete(created);
+        ready = null;
       } else if (message case [
         'failed',
         final String error,
         final String stack,
       ]) {
-        ports.close();
-        ready.completeError(
+        link.closePorts();
+        ready?.completeError(
           LuaBridgeException('LuaWorker setup failed: $error'),
           StackTrace.fromString(stack),
         );
+        ready = null;
       }
     };
-    ports.exit.handler = (_) {
-      final current = worker;
+    link.exit.handler = (_) {
+      final current = worker?.target;
       if (current != null) {
         current._exited();
-      } else if (!ready.isCompleted) {
-        ports.close();
-        ready.completeError(
+      } else if (ready != null) {
+        link.closePorts();
+        ready?.completeError(
           LuaBridgeException('LuaWorker exited during setup'),
         );
+        ready = null;
       }
     };
     try {
       await Isolate.spawn(
         _workerMain,
-        _Start(ports.replies.sendPort, setup, libraries, memoryLimit),
-        onExit: ports.exit.sendPort,
+        _Start(link.replies.sendPort, setup, libraries, memoryLimit),
+        onExit: link.exit.sendPort,
         debugName: debugName,
       );
     } catch (_) {
-      ports.close();
+      link.closePorts();
       rethrow;
     }
-    return ready.future;
+    return result.future;
   }
 
-  final SendPort _requests;
-  final int _state;
-  final int _token;
-  final _Ports _ports;
+  final _Link _link;
   final _queue = Queue<_Request>();
   _Request? _running;
   int _nextId = 0;
@@ -152,31 +169,33 @@ class LuaWorker {
       while (_queue.isNotEmpty) {
         _queue.removeFirst().completer.completeError(error);
       }
-      _requests.send(const [0, 'close']);
+      _link.sendClose();
+      _sync();
     }
     return _exit.future;
-  }
-
-  void _interrupt() {
-    if (!_tokenReleased) flb_interrupt(Pointer.fromAddress(_state));
   }
 
   /// Interrupts [item] and repeats it until its reply arrives: a call clears
   /// an interruption that lands before it starts, which would otherwise let
   /// a call that was stopped early run unbounded.
   void _stop(_Request item) {
-    _interrupt();
+    _link.interrupt();
     item.repeat ??= Timer.periodic(const Duration(milliseconds: 5), (_) {
-      if (identical(_running, item)) _interrupt();
+      if (identical(_running, item)) _link.interrupt();
     });
   }
 
-  bool _tokenReleased = false;
-
-  void _releaseToken() {
-    if (_tokenReleased) return;
-    _tokenReleased = true;
-    flb_token_release(Pointer.fromAddress(_token));
+  /// A worker with calls in flight, or closing, keeps the program running
+  /// and stays referenced, so that it completes them. An idle one does
+  /// neither.
+  void _sync() {
+    final busy = !_gone && (_running != null || _queue.isNotEmpty || _closing);
+    _link.keepAlive = busy;
+    if (busy) {
+      _busyWorkers.add(this);
+    } else {
+      _busyWorkers.remove(this);
+    }
   }
 
   Future<List<Object?>> _submit(List<Object?> request, Duration? timeout) {
@@ -186,13 +205,14 @@ class LuaWorker {
     final item = _Request(++_nextId, request, timeout);
     _queue.add(item);
     _next();
+    _sync();
     return item.completer.future;
   }
 
   void _next() {
     if (_running != null || _queue.isEmpty || isClosed) return;
     final item = _running = _queue.removeFirst();
-    _requests.send([item.id, ...item.message]);
+    _link.requests!.send([item.id, ...item.message]);
     final timeout = item.timeout;
     if (timeout != null) {
       item.timer = Timer(timeout, () {
@@ -236,12 +256,13 @@ class LuaWorker {
       );
     }
     _next();
+    _sync();
   }
 
   void _exited() {
     _gone = true;
-    _releaseToken();
-    _ports.close();
+    _finalizer.detach(this);
+    _link.finish();
     final error = _closing
         ? StateError('The LuaWorker is closed')
         : LuaBridgeException('The LuaWorker isolate exited');
@@ -252,17 +273,68 @@ class LuaWorker {
     while (_queue.isNotEmpty) {
       _queue.removeFirst().completer.completeError(error);
     }
+    _sync();
     if (!_exit.isCompleted) _exit.complete();
   }
 }
 
-class _Ports {
+/// Workers with calls in flight or closing, kept from being collected.
+final _busyWorkers = <LuaWorker>{};
+
+/// Closes a worker that was collected without [LuaWorker.close].
+final _finalizer = Finalizer<_Link>((link) => link.abandon());
+
+int _openWorkers = 0;
+
+/// Workers that started and have neither ended nor been collected. Internal
+/// to the package, for tests; not exported.
+int get debugOpenLuaWorkers => _openWorkers;
+
+/// The ports and native handles of a worker, without the worker itself, so
+/// that the finalizer can close a collected worker.
+class _Link {
   final replies = RawReceivePort(null, 'LuaWorker replies');
   final exit = RawReceivePort(null, 'LuaWorker exit');
+  SendPort? requests;
+  int state = 0;
+  int token = 0;
+  bool _closeSent = false;
+  bool _finished = false;
 
-  void close() {
+  set keepAlive(bool value) {
+    replies.keepIsolateAlive = value;
+    exit.keepIsolateAlive = value;
+  }
+
+  void interrupt() {
+    if (!_finished) flb_interrupt(Pointer.fromAddress(state));
+  }
+
+  void sendClose() {
+    if (_closeSent) return;
+    _closeSent = true;
+    requests?.send(const [0, 'close']);
+  }
+
+  void closePorts() {
     replies.close();
     exit.close();
+  }
+
+  /// The worker isolate ended, or the worker was collected: the calling
+  /// isolate no longer interrupts it, so its hold on the state goes.
+  void finish() {
+    if (_finished) return;
+    _finished = true;
+    _openWorkers--;
+    flb_token_release(Pointer.fromAddress(token));
+    closePorts();
+  }
+
+  /// The worker was collected without being closed: ends its isolate.
+  void abandon() {
+    sendClose();
+    finish();
   }
 }
 

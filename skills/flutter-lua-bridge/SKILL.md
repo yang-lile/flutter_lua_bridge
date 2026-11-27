@@ -306,7 +306,8 @@ anything with a stable shape.
 `LuaWorker.spawn(setup: topLevelFn)` runs a runtime on a background isolate:
 `await worker.call('mod.fn', [args], timeout: ...)`, `run`,
 `interrupt()`, `close()`. Plain data only crosses; a timeout fails the call
-with `LuaStatus.interrupted`. Use it for heavy or untrusted Lua.
+with `LuaStatus.interrupted`. Use it for heavy or untrusted Lua, and
+`close()` it in `dispose` (an unreferenced worker is closed on collection).
 
 ## Troubleshooting
 

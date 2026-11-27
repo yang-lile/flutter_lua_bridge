@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_lua_bridge/flutter_lua_bridge.dart';
+// ignore: implementation_imports
+import 'package:flutter_lua_bridge/src/worker.dart' show debugOpenLuaWorkers;
 import 'package:test/test.dart';
 
 void _rules(LuaRuntime lua) {
@@ -31,6 +34,26 @@ Future<void> _asyncSetup(LuaRuntime lua) async {
 }
 
 void _failingSetup(LuaRuntime lua) => lua.run('error("no rules")');
+
+/// Allocates until the collector has run the finalizers that [done] waits
+/// for, or fails after a while.
+Future<void> _collectUntil(bool Function() done) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 30));
+  while (!done()) {
+    if (DateTime.now().isAfter(deadline)) fail('not collected');
+    var garbage = <List<int>>[];
+    for (var i = 0; i < 200; i++) {
+      garbage.add(List<int>.filled(100000, i));
+    }
+    garbage = [];
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+}
+
+Future<void> _spawnAndDrop() async {
+  final worker = await LuaWorker.spawn();
+  expect(await worker.run('return 1'), [1]);
+}
 
 void main() {
   late LuaWorker worker;
@@ -250,5 +273,58 @@ void main() {
         ),
       ),
     );
+  });
+
+  group('without close', () {
+    for (final (mode, output) in [
+      ('idle', '[1]'),
+      ('pending', '[4500001500000]'),
+      ('close', 'closed'),
+    ]) {
+      test('the program exits ($mode)', () async {
+        final result = await Process.run(Platform.resolvedExecutable, [
+          'run',
+          'test/fixtures/worker_exit.dart',
+          mode,
+        ]).timeout(const Duration(seconds: 90));
+        expect(result.exitCode, 0, reason: '${result.stderr}');
+        expect(result.stdout, contains(output));
+      }, timeout: const Timeout(Duration(minutes: 2)));
+    }
+
+    test('a worker nobody references is closed when collected', () async {
+      final before = debugOpenLuaWorkers;
+      await _spawnAndDrop();
+      expect(debugOpenLuaWorkers, before + 1);
+      await _collectUntil(() => debugOpenLuaWorkers == before);
+    });
+
+    test('a worker with a call in flight is not collected', () async {
+      final before = debugOpenLuaWorkers;
+      Future<List<Object?>> start() async {
+        final worker = await LuaWorker.spawn(setup: _rules);
+        return worker.call(
+          'rules.spin',
+          [],
+          timeout: const Duration(milliseconds: 300),
+        );
+      }
+
+      final call = start();
+      // Collect while the call runs; it must still complete.
+      final collecting = _collectUntil(() => debugOpenLuaWorkers == before);
+      await expectLater(
+        call,
+        throwsA(
+          isA<LuaBridgeException>().having(
+            (e) => e.status,
+            'status',
+            LuaStatus.interrupted,
+          ),
+        ),
+      );
+      // Idle afterwards, so collected after all.
+      await collecting;
+    });
   });
 }
