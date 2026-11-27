@@ -146,6 +146,22 @@ void main() {
     );
   });
 
+  test('a timeout that fires before the call starts still stops it', () async {
+    for (var i = 0; i < 50; i++) {
+      await expectLater(
+        worker.call('rules.spin', [], timeout: Duration.zero),
+        throwsA(
+          isA<LuaBridgeException>().having(
+            (e) => e.status,
+            'status',
+            LuaStatus.interrupted,
+          ),
+        ),
+      );
+    }
+    expect(await worker.run('return 3'), [3]);
+  });
+
   test('interrupt stops the running call only', () async {
     final spinning = worker.call('rules.spin', []);
     final waiting = worker.run('return "after"');

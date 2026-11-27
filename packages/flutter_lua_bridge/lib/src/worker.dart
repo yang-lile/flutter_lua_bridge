@@ -137,7 +137,8 @@ class LuaWorker {
   /// Lua checks for the interruption every 1000 VM instructions, so a Dart
   /// function that Lua called is not stopped until it returns.
   void interrupt() {
-    if (_running != null && !_gone) _interrupt();
+    final running = _running;
+    if (running != null && !_gone) _stop(running);
   }
 
   /// Interrupts the running call, fails the waiting ones with a
@@ -145,7 +146,8 @@ class LuaWorker {
   Future<void> close() {
     if (!_closing && !_gone) {
       _closing = true;
-      _interrupt();
+      final running = _running;
+      if (running != null) _stop(running);
       final error = StateError('The LuaWorker is closed');
       while (_queue.isNotEmpty) {
         _queue.removeFirst().completer.completeError(error);
@@ -157,6 +159,16 @@ class LuaWorker {
 
   void _interrupt() {
     if (!_tokenReleased) flb_interrupt(Pointer.fromAddress(_state));
+  }
+
+  /// Interrupts [item] and repeats it until its reply arrives: the worker
+  /// clears an interruption that lands before it starts a call, which would
+  /// otherwise let a call that was stopped early run unbounded.
+  void _stop(_Request item) {
+    _interrupt();
+    item.repeat ??= Timer.periodic(const Duration(milliseconds: 5), (_) {
+      if (identical(_running, item)) _interrupt();
+    });
   }
 
   bool _tokenReleased = false;
@@ -186,7 +198,7 @@ class LuaWorker {
       item.timer = Timer(timeout, () {
         if (identical(_running, item)) {
           item.timedOut = true;
-          _interrupt();
+          _stop(item);
         }
       });
     }
@@ -196,7 +208,7 @@ class LuaWorker {
     final item = _running;
     if (item == null || message[0] != item.id) return;
     _running = null;
-    item.timer?.cancel();
+    item.cancelTimers();
     if (message case [_, true, final List<Object?> values]) {
       item.completer.complete(values);
     } else if (message case [
@@ -235,7 +247,7 @@ class LuaWorker {
         : LuaBridgeException('The LuaWorker isolate exited');
     final running = _running;
     _running = null;
-    running?.timer?.cancel();
+    running?.cancelTimers();
     if (running != null) running.completer.completeError(error);
     while (_queue.isNotEmpty) {
       _queue.removeFirst().completer.completeError(error);
@@ -261,7 +273,13 @@ class _Request {
   final Duration? timeout;
   final completer = Completer<List<Object?>>();
   Timer? timer;
+  Timer? repeat;
   bool timedOut = false;
+
+  void cancelTimers() {
+    timer?.cancel();
+    repeat?.cancel();
+  }
 }
 
 class _Start {
