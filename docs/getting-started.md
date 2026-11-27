@@ -80,6 +80,7 @@ prints the layout, and lists what it could not do for you:
 ...
 Left for you:
 - For a Flutter app, ship the compiled Lua by adding it to pubspec.yaml:
+
   flutter:
     assets:
       - assets/lua/

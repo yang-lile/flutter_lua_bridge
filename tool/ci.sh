@@ -4,12 +4,13 @@
 #   ./tool/ci.sh                  # every stage, in order
 #   ./tool/ci.sh native versions  # selected stages
 #
-#   light     analyzer, builders with drift check, generator and runtime tests
-#             on the default Lua release, example unit test (= ci_light.sh)
+#   light     ci_light.sh (analyzer, builders with drift check, generator,
+#             example Lua and widget package tests), plus the runtime tests,
+#             on the default Lua release
 #   native    C tests of the flb shim with ASan/UBSan on every bundled Lua
 #             (needs clang and python3, not Dart)
-#   versions  runtime, generator and example Lua tests on the other bundled
-#             Lua releases
+#   versions  runtime, generator, example Lua, widget and remote package
+#             tests on the other bundled Lua releases
 #   example   Flutter tests of the example app
 #
 # Teal is compiled by the bundled tl.lua, so no Lua toolchain is required.

@@ -124,14 +124,17 @@ Run the lightweight local gate before opening a pull request:
 ```
 
 It covers analyzer, the builders with generated artifact drift, generator
-tests and a small example unit test. The full release gate is:
+tests, the example's Lua entries and game tests, the widget packages' Teal
+samples and layering, the widget and remote package tests and the gallery
+tests. The full release gate is:
 
 ```sh
 ./tool/ci.sh
 ```
 
-It additionally covers native bridge tests, every bundled Lua release and
-Flutter integration tests. The full gate runs from the release-only Ubuntu workflow.
+It additionally covers the runtime tests, native bridge tests, every bundled
+Lua release and the example's Flutter tests. The full gate runs from the
+release-only workflow, which adds macOS and Windows smoke tests.
 
 For focused work, run the smallest relevant checks as well:
 

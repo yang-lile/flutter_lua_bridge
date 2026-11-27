@@ -41,10 +41,11 @@ return json.encode(c:build())
 Dart 侧的流程：
 
 ```
-doString(prelude)                      预置 host/canvas/json 全局
-doString('local f = load(chunk)...')   加载成函数，取到 __studio_fn
-doString('__studio_fn = canvas.wrap(...)')  装执行保护（可选）
-getGlobal('__studio_fn') + _call()     调用，读返回值
+lua.run(sandboxBootstrap)              package.path、print 收集
+lua.run(studioPrelude)                 预置 host/canvas/json 全局
+lua.run('local f = load(chunk)...')    加载成函数，存进 __studio_fn
+lua.run(studioGuardSetup)              装执行保护（可选，canvas.wrap）
+lua['__studio_fn'].call()              调用，读返回值
 ```
 
 每次执行都重建 `LuaRuntime`、执行完立即销毁。理由是复用会导致全局变量泄漏，
@@ -81,14 +82,10 @@ worker 重启。这是编辑器场景的正确语义——丢弃过时结果而�
 
 ```lua
 function Canvas:build()
-  return {
-    version = 1,
-    width = self.w, height = self.h,
-    background = self.bg,
-    ops = self.ops,
-    op_count = #self.ops,
-    fingerprint = self:hash(),   -- 必须有，宿主靠它判断重绘
-  }
+  local content = self:content()   -- version/width/height/background/ops/op_count
+  -- 必须有，宿主靠它判断重绘；指纹只覆盖内容，不覆盖它自己
+  content.fingerprint = perf.get("fingerprint")(content)
+  return content
 end
 ```
 
@@ -96,7 +93,7 @@ end
 `null != null` 为 false，画布永远停在第一次绘制，而界面看起来完全正常。
 曾因此 bug 很久——因为测试替身手动补了这个字段，把问题掩盖了。
 
-**协作式中断** `canvas_guard(fn, ms)` / `canvas_wrap(fn, ms)`：
+**协作式中断** `canvas.guard(fn, ms)` / `canvas.wrap(fn, ms)`（实现在 `assets/lua/guard.lua`，ui 共用）：
 
 ```lua
 local function wrap(fn, ms)  -- 返回包装函数，不执行
@@ -120,10 +117,13 @@ Lua 自己从内部抛错跳出。
 
 ### 4. `lib/display_list.dart` — 契约数据模型
 
-纯数据，无任何 Flutter 类型。这让两侧测试都能脱离引擎运行。
+纯数据，不 import Flutter；但 `DrawOp` 用了 `dart:ui` 的 `Color` / `Offset`，
+纯 Dart VM 加载不了。所以它的解析由 `verify_contract.py` 从契约层面覆盖，
+变化检测比较的是剥掉 `fingerprint` 的原始 JSON（`raw`）。
 
-`sameAs` 用**保守策略**：只有双方都有指纹且相等时才判定为未变化。
-任一方缺指纹一律判定为变化——宁可多渲染一帧，也不能漏掉更新。
+`sameAs` 两段式：双方都有指纹且相等 → 未变化（快路径）；
+否则对原始 JSON 做结构比较（`deepEquals`）。指纹是哈希、会碰撞，
+只靠它会静默漏更新。
 
 ### 5. `lib/display_list_renderer.dart` — 批量渲染
 
@@ -174,7 +174,7 @@ Lua 自己从内部抛错跳出。
 唯一接触 Flutter 渲染 API 的 UI 文件。
 注册三个本地库（widgets / material / studio）与 `RemoteWidget`。
 
-**指纹相同就不 update**：`Runtime.update` 会 notifyListeners，
+**指纹相同、或结构相同（`uiTreeEquals`）就不 update**：`Runtime.update` 会 notifyListeners，
 而 RemoteWidget 收到通知就整个重建 subtree。
 
 ### 10. `lib/driver_main.dart` — 带 driver 扩展的入口
@@ -530,7 +530,7 @@ remote server"，所以它提供 `widget Button { down: false }` + `set state.do
 但 rfw 的文档早就说过文本格式比二进制慢十倍，`parseLibraryFile`
 在客户端被明确不推荐。所以这条路**不能为性能走**。
 
-`tools/verify_proto_text.dart` 验证了它**能跑通**（13 个用例）：
+`tools/verify_proto_text.dart` 验证了它**能跑通**（14 个用例）：
 Lua 生成的文本，rfw 自己的 `parseLibraryFile` 解析、`encodeLibraryBlob`
 编码，全都过。
 
@@ -639,8 +639,9 @@ ui:set("on", not s.on)    -- 瞬时 UI 状态：rfw set state，当场生效不�
 
 - `flutter run` 时好时坏（VM service 的本地 socket）。debug 模式
   **构建**是好的，`open` 产物即可运行，只是没有热重载
-- 换入口点（`-t lib/driver_main.dart`）后要 `hot_restart` 才生效，
-  否则启动的还是旧 kernel
+- 换入口点（`-t lib/driver_main.dart`）曾经不生效、要 `hot_restart`：
+  `Runner.xcodeproj` 缺 `Debug.xcconfig` / `Release.xcconfig` 的引用。已补上，
+  `-t` 现在直接生效
 - 用 flutter_driver 做真实点击时，**窗口必须在最前**，否则指针注入一直超时
 - `flutter test` 不可用（flutter_tester 需要本地 WebSocket）。
   用 `make test` 那组纯 Dart / Lua 脚本替代

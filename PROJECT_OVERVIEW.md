@@ -1,8 +1,11 @@
 # 项目架构
 
-仓库使用 Dart workspace 管理运行时、注解和生成器三个独立包。应用在运行期只
-依赖运行时；注解由运行时再导出；生成器和 `build_runner` 是开发期依赖。运行
-时不依赖生成器，生成器依赖运行时（用它来运行 Teal 编译器）。
+仓库使用 Dart workspace 管理七个包：运行时、注解和生成器三个桥接包，以及
+`flutter_lua_bridge_ui`、`flutter_lua_bridge_ui_material`、
+`flutter_lua_bridge_ui_cupertino`、`flutter_lua_bridge_remote` 四个从 Lua 构建
+widget 的包。应用在运行期只依赖运行时（用 Lua 写界面时再加 UI 包）；注解由运行时
+再导出；生成器和 `build_runner` 是开发期依赖。运行时不依赖生成器，生成器依赖
+运行时（用它来运行 Teal 编译器）。UI 包的分层规则见 [`AGENTS.md`](AGENTS.md)。
 
 ```mermaid
 flowchart LR
@@ -35,7 +38,7 @@ examples/flutter_lua_bridge_example/
 │   ├── src/cards.tl             # 手写 Teal / Lua
 │   ├── test/*_test.tl           # 手写：脱离 App 运行的 Lua 侧入口
 │   └── types/battle_bridge.d.tl # 生成：Teal 声明
-└── assets/lua/battle.lua        # 生成：编译产物，作为 Flutter asset
+└── assets/lua/cards.lua         # 生成：编译产物，作为 Flutter asset
 ```
 
 `dart run build_runner build` 一条命令完成全部生成。运行时只接收编译后的 Lua

@@ -42,11 +42,11 @@ abstract class FormulasO3Api implements BattleFormulas {}
 ```
 
 The O3 client then also implements `BattleFormulas`. Interfaces must be
-abstract, without type arguments, annotations or members other than abstract
-instance methods; `extends` and mixins are rejected.
+abstract, without type arguments, `@LuaApi`/`@DartApi` annotations or members
+other than abstract instance methods; `extends` and mixins are rejected.
 
 Binding wraps the functions of the Lua table in place, so a table can be bound
-to one API only. Binding it again to an API of another level fails with
+to one API only. Binding it again to another API fails with
 "already bound as ..."; give each binding its own table, for example
 `bridge.bindFormulasO1Api({ physicalDamage = formulas.physicalDamage })`.
 

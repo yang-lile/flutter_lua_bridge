@@ -115,7 +115,7 @@ Lua 侧通过 `require("x_bridge")` 拿到 `bindXxx(impl)`（提交实现）和
 - **Lua 的交付方式**：生成器只产出 `assets/lua/`。作为 Flutter 资产打包、
   远程下载还是放进其他制品，由应用决定；`LuaRuntime` 只加载最终的 Lua 源码。
 - **独立的生成器命令行**：生成只走 `build_runner`。`init` 命令仅用于初始化
-  目录和 `build.yaml`。
+  目录、`build.yaml`、`tlconfig.lua` 和 `lua/test/main.tl`。
 
 ## 实现要点
 

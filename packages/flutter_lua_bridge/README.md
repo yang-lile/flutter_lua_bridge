@@ -28,8 +28,9 @@ try {
 ```
 
 - **Values** cross the boundary as `null`, `bool`, `int`, `double`, `String`,
-  `Uint8List`, or a handle (`LuaTable`, `LuaFunction`, `LuaThread`,
-  `LuaUserdata`); Dart `Map` and `List` arguments are copied into new tables.
+  or a handle (`LuaTable`, `LuaFunction`, `LuaThread`, `LuaUserdata`); a Dart
+  `Uint8List` argument becomes a Lua string, and Dart `Map` and `List`
+  arguments are copied into new tables.
 - **Errors** never crash the process: every operation runs protected, and a
   failure is a `LuaBridgeException` with `status`, `message` and `traceback`.
 - **Sandboxing**: the default `LuaLibrary.safe` leaves out `io`, `os`, `debug`

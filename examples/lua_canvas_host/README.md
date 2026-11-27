@@ -37,7 +37,7 @@
 ├──────────────────────────────────────────────┤
 │ host/init.lua    能力契约层                     │
 ├──────────────────────────────────────────────┤
-│ display_list.dart  显示列表模型                │  ← Dart，无 Flutter 类型
+│ display_list.dart  显示列表模型                │  ← Dart，不 import Flutter（DrawOp 用 dart:ui 的 Color/Offset）
 │ ui_tree.dart       widget 树模型               │
 │ ui_rfw_ast.dart    树 -> rfw RemoteWidgetLibrary│  ← 只 import rfw/formats
 ├──────────────────────────────────────────────┤
@@ -50,8 +50,10 @@
 └──────────────────────────────────────────────┘
 ```
 
-「模型层不含 Flutter 类型」这条规矩让两侧测试都能脱离引擎运行——
+「模型层不 import Flutter」这条规矩让两侧测试都能脱离引擎运行——
 `flutter test` 在受限环境里不可用，全部验证都是纯 Dart / Lua 入口。
+`display_list.dart` 用到 `dart:ui`，纯 Dart VM 加载不了，它的解析由
+`verify_contract.py` 从契约层面覆盖，变化检测比较的是原始 JSON。
 
 ## 跑起来
 
@@ -147,7 +149,7 @@ flutter drive -t lib/driver_main.dart --driver test_driver/studio_test.dart -d m
 工具栏左上角切换**画布 / 组件**两个模式，示例与产出都跟着换。
 
 - **画布**：六个预设 —— 基础图元、折线图、柱状图、带参数的函数、会报错的样子、print 调试
-- **组件**：四个预设 —— 计数器、列表与事件参数、自定义组件与滑条、会报错的样子
+- **组件**：五个预设 —— 计数器、列表与事件参数、自定义组件与滑条、本地状态（不回 Lua）、会报错的样子
 
 ## 组件模式：用 Lua 描述 widget
 
@@ -230,8 +232,6 @@ padding / min / max…）全部被丢弃。
 `rootBundle` 读取（见 `lua_loader.dart`）。不要手工往
 `Contents/Resources` 里拷文件。
 
-> `native/` 目录是早期手写 FFI 时代的遗留，**已不再使用**，保留仅为参考。
-
 ## Lua 模块清单机制
 
 Flutter assets 不会递归列目录，所以模块索引靠
@@ -286,16 +286,18 @@ Lua 侧产出一个信封：
 ```lua
 return json.encode(app:build())
 -- { version=1, widget="root", title=..., state={...}, events={...},
---   tree={ ["$widget"]="Column", ["$args"]={...} }, node_count=19,
---   fingerprint="97fb25fe00000000" }
+--   declarations={...}, tree={ ["$widget"]="Column", ["$args"]={...} },
+--   node_count=19, event_count=..., fingerprint="97fb25fe00000000" }
 ```
 
-树里只有三种值：
+树里的值有这几种：
 
 | Lua 产出 | 契约 | rfw |
 |---|---|---|
 | `{ ["$widget"]=..., ["$args"]=... }` | `UiNode` | `ConstructorCall` |
 | `{ ["$event"]=..., ["$arg"]=... }` | `UiEvent` | `EventHandler` |
+| `{ ["$setstate"]=..., ["$value"]=... }`（`b:set_state`） | `UiSetState` | `SetStateHandler` |
+| `{ ["$state"]=... }`（`b:sref`） | `UiStateRef` | `StateReference` |
 | 数字 / 字符串 / 布尔 / 数组 | 原样 | 参数值 |
 
 用 `$` 前缀区分保留语义，普通数据 map 里就算有 `name` 之类的键也不会被误认成节点。
@@ -325,7 +327,7 @@ c:circle(70, 70, 40, { fill = "#4a9eff" })
 return json.encode(c:build())
 ```
 
-Dart 侧的流程：`load` 成函数 → `getGlobal` 取到 → `call` 调用 → 读返回值。
+Dart 侧的流程：`load` 成函数 → `lua['__studio_fn']` 取到 → `call()` 调用 → 读返回值。
 用 Lua 原生的返回值语义，没有魔法全局变量。
 
 也支持显式返回函数（能带参数、便于拆分复用）：
@@ -532,26 +534,31 @@ dart run tools/bench_pipeline.dart --update   # 换机器 / 环境变了就更�
 
 ## 验证
 
-`make test` 汇总所有检查。
+`make test` 汇总下面这些检查：
 
 ```bash
 lua  assets/lua/spec/canvas_spec.lua    # 画布 Lua 侧 46 个用例
-lua  assets/lua/spec/ui_spec.lua        # 组件 Lua 侧 72 个用例
-lua  assets/lua/spec/perf_spec.lua      # 热点策略注册表 49 个用例
+lua  assets/lua/spec/ui_spec.lua        # 组件 Lua 侧 85 个用例
 python3 tools/verify_contract.py       # 跨语言契约 15 项（含重绘决策）
-dart run tools/verify_return.dart      # return 语义 20 个用例
-dart run tools/verify_worker.dart      # worker isolate 29 个用例
+dart run tools/verify_worker.dart      # worker isolate 28 个用例
 dart run tools/verify_guard.dart       # 执行预算 10 个用例
 dart run tools/verify_snippets.dart    # 画布预设示例 17 个用例
-dart run tools/verify_ui_snippets.dart # 组件预设示例 25 个用例
+dart run tools/verify_ui_snippets.dart # 组件预设示例 31 个用例
 dart run tools/verify_ui_ast.dart      # UI 契约 -> rfw blob 54 个用例
 dart run tools/verify_bytecode.dart    # 字节码预编译 15 个用例
 dart run tools/verify_change_detect.dart # 内容变化检测 71 个用例
-flutter analyze                        # 静态检查
+dart run tools/verify_proto_text.dart  # Lua 直出 rfw 文本 14 个用例
+dart run tools/verify_ui_native_state.dart # 本地状态 vs 业务事件 15 个用例
 ```
 
-`make test` 把它们串起来（**354 个用例**），也可以按 `make test-ui` /
-`make test-bytecode` 单独跑某一部分。
+`make test` 把它们串起来（**401 个用例**），也可以按 `make test-ui` /
+`make test-bytecode` 单独跑某一部分。`make check` 再加上 `flutter analyze`。
+下面两个不在 `make test` 里，需要单独跑：
+
+```bash
+lua  assets/lua/spec/perf_spec.lua      # 热点策略注册表 49 个用例
+dart run tools/verify_return.dart      # return 语义 20 个用例
+```
 
 `verify_bytecode.dart` 的验证手法值得一提：它把 `.lua` 源码**全部改名**，
 只留 `.luac` 再跑一遍 —— 能跑通就说明执行时确实走了字节码。
@@ -634,7 +641,7 @@ rfw 把「格式层」拆成了**不依赖 `dart:ui`** 的 `package:rfw/formats.
 - 字体由系统提供，跨平台渲染有细微差异；需要像素级一致得内嵌字体
 - `flutter_lua_bridge` 内置的是 **Lua 5.4**，
   `debug.sethook` 与 `os.clock` 都可用
-- 死循环靠 Lua 侧的 `canvas_guard` 中断，**不能靠 `isolate.kill`**——
+- 死循环靠 Lua 侧的 `guard.lua`（canvas / ui 共用）中断，**不能靠 `isolate.kill`**——
   实测 kill 打断不了正在执行的 FFI 调用，被 kill 的 isolate 永不退出
 - 诊断时 Flutter 会警告 `flutter_lua_bridge` 的 code asset 在不同架构下
   framework 命名不一致，这是上游包的 build hook 问题，不影响运行

@@ -20,13 +20,11 @@ version: 1.0.0+1
 
 resolution: workspace
 
-hooks:
-  user_defines:
-    # Default Lua source for the example app's native asset.
-    flutter_lua_bridge:
-      lua_source: https://www.lua.org/ftp/lua-5.4.9.tar.gz
-      lua_version: 5.4.9
-      lua_sha256: 2335b6c582a52654f94612bf10d2f4672805d05329aa6568b1d8cd9e5c6fb8e6
+# The Lua source is chosen with `hooks: user_defines: flutter_lua_bridge:` in
+# the workspace root pubspec.yaml, the only one the build hook reads (see
+# docs/lua-source.md). This app is a member of the repository's workspace and
+# uses the default bundled Lua 5.4; a standalone app puts the setting in its
+# own pubspec.yaml.
 
 environment:
   sdk: ^3.14.0

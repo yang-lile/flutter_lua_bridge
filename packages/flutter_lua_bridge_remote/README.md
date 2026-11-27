@@ -52,7 +52,7 @@ version to `cacheDirectory/versions/<version>/` only once it is complete.
 It uses the first of these that works:
 
 1. the version the source offers now;
-2. the newest version marked good in the cache;
+2. the versions marked good in the cache, newest first;
 3. the `fallback` source, usually a copy in the app's assets.
 
 A version is skipped when it cannot be downloaded or verified, needs a

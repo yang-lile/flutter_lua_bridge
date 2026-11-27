@@ -23,10 +23,13 @@ dart pub get
 
 `ci_light.sh` runs the analyzer, the builders with a drift check on every
 generated file, the generator tests, the example's Lua entries and its game
-tests. `ci.sh` adds the native shim tests with ASan/UBSan on every bundled Lua
-(`python3 packages/flutter_lua_bridge/tool/test_native.py`), the runtime and
-generator tests on every bundled Lua release, and the example's Flutter
-tests. Both scripts honour `DART_CMD` and `FLUTTER_CMD`, for example
+tests, the widget packages' Teal samples (`tool/check_teal_ui.sh`) and
+layering check, the widget and remote package tests and the gallery tests.
+`ci.sh` adds the runtime tests, the native shim tests with ASan/UBSan on
+every bundled Lua (`python3 packages/flutter_lua_bridge/tool/test_native.py`),
+the runtime, generator, widget and remote package tests on every bundled Lua
+release, and the example's Flutter tests. Both scripts honour `DART_CMD` and
+`FLUTTER_CMD`, for example
 `DART_CMD="fvm dart" FLUTTER_CMD="fvm flutter"`.
 
 The generator's Teal worker tests run in a process of their own,

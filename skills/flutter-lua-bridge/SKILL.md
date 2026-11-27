@@ -117,8 +117,8 @@ return bridge.bindBattleApi(implementation)
 ```
 
 - The module must return `bridge.bindXxx(table)`. Binding wraps the table's
-  functions in place, so one table binds one API; binding it again fails
-  with "already bound as ...". Use a fresh table per binding.
+  functions in place, so one table binds one API; binding it as another API
+  fails with "already bound as ...". Use a fresh table per binding.
 - Teal types: `int` → `integer`, `double` → `number`, `List<T>` → `{T}`,
   `Map<String, T>` → `{string: T}`, data classes → `bridge.<Class>` records,
   enums → `bridge.<Enum>` string enums.
@@ -298,9 +298,10 @@ the built-in one. SHA-256 is not a signature: use HTTPS and `verify`.
 
 For untyped use: `lua.eval('return 1 + 1')`, `lua.run(source)`,
 `lua['name'] = value`, `lua.function((args) => ...)`, `LuaTable.toDart()`.
-Values are `null`, `bool`, `int`, `double`, `String`, `Uint8List` or handles
-(`LuaTable`, `LuaFunction`, ...); Dart `Map`/`List` are copied into tables.
-Prefer the generated APIs for anything with a stable shape.
+Values are `null`, `bool`, `int`, `double`, `String` or handles
+(`LuaTable`, `LuaFunction`, ...); a Dart `Uint8List` becomes a Lua string and
+Dart `Map`/`List` are copied into tables. Prefer the generated APIs for
+anything with a stable shape.
 
 ## Troubleshooting
 

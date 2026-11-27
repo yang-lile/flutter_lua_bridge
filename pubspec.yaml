@@ -20,7 +20,7 @@ dev_dependencies:
   melos: ^8.10.1
   yaml: ^3.1.3
 
-# Melos reads the packages from `workspace:` above. Only the four packages
+# Melos reads the packages from `workspace:` above. Only the seven packages
 # under packages/ are published; the examples have `publish_to: none`.
 #
 #   dart run melos publish                      # dry run of every package
@@ -30,7 +30,7 @@ melos:
 
   scripts:
     ci:light:
-      description: The pull request gate (analyzer, builders, generator and example tests).
+      description: The pull request gate (analyzer, builders, generator, runtime, widget package and example tests).
       run: ./tool/ci_light.sh
     ci:
       description: The release gate (light, native, every Lua release, Flutter tests).
