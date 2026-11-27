@@ -1,7 +1,8 @@
 /// Dart / Lua interoperability on Lua 5.3, 5.4 or 5.5.
 ///
 /// [LuaRuntime] is the single entry point: it runs Lua code, exchanges values
-/// and functions with it, and hosts the generated typed bindings.
+/// and functions with it, and hosts the generated typed bindings. [LuaWorker]
+/// runs one on a background isolate.
 library;
 
 export 'package:flutter_lua_bridge_codegen_annotation/flutter_lua_bridge_codegen_annotation.dart';
@@ -25,3 +26,4 @@ export 'src/runtime.dart'
         LuaThreadStatus,
         LuaUserdata,
         LuaValues;
+export 'src/worker.dart' show LuaWorker, LuaWorkerSetup;

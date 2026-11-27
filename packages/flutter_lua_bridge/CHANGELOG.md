@@ -1,3 +1,9 @@
+## Unreleased
+
+- `LuaWorker`: a `LuaRuntime` on a background isolate with asynchronous
+  `run` and `call`, a per-call `timeout` and `interrupt()` that stop
+  runaway Lua from the calling isolate.
+
 ## 0.2.0
 
 - Require Dart 3.14 (Flutter 3.50) and the current majors of the build hook

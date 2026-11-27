@@ -53,7 +53,9 @@ Implemented in `packages/flutter_lua_bridge_codegen_annotation/test/annotations_
   archive URL, and builds the native library.
 
 Fast codec checks are in `packages/flutter_lua_bridge/test/codecs_test.dart`,
-the runtime checks in `test/lua_runtime_test.dart`, the hook's source
+the runtime checks in `test/lua_runtime_test.dart`, `LuaWorker` (plain
+data both ways, errors, timeout and interrupt of endless loops, ordering,
+close, memory limit, setup) in `test/worker_test.dart`, the hook's source
 selection in `test/lua_source_test.dart` and the hook build in
 `test/hook_build_test.dart`. The multi-version and sanitizer checks remain in
 the release gate.

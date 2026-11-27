@@ -303,6 +303,11 @@ Values are `null`, `bool`, `int`, `double`, `String` or handles
 Dart `Map`/`List` are copied into tables. Prefer the generated APIs for
 anything with a stable shape.
 
+`LuaWorker.spawn(setup: topLevelFn)` runs a runtime on a background isolate:
+`await worker.call('mod.fn', [args], timeout: ...)`, `run`,
+`interrupt()`, `close()`. Plain data only crosses; a timeout fails the call
+with `LuaStatus.interrupted`. Use it for heavy or untrusted Lua.
+
 ## Troubleshooting
 
 - `require("x_bridge")` reported missing in the editor: `tlconfig.lua` must

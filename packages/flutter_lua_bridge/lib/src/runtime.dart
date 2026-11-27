@@ -312,7 +312,9 @@ final class LuaRuntime implements Finalizable {
   });
 
   /// Stops the running Lua code with a [LuaStatus.interrupted] failure that
-  /// Lua cannot catch. Usually called from a host function or a timer.
+  /// Lua cannot catch. Lua blocks this isolate while it runs, so call it from
+  /// a host function that Lua calls; to stop code from outside, run it in a
+  /// `LuaWorker` and use its `timeout` or `interrupt`.
   void interrupt() {
     if (!_closed) flb_interrupt(_state);
   }
@@ -1025,4 +1027,25 @@ void _moduleName(String name) {
       'must be a nonempty name without NUL',
     );
   }
+}
+
+/// The native state of [runtime] and a reference token that keeps the state
+/// allocated after the runtime closes, as addresses that can cross isolates.
+/// Internal to the package (`LuaWorker`); not exported.
+///
+/// `flb_interrupt` and `flb_token_release` are thread safe, so another isolate
+/// may interrupt the runtime through `state` until it releases `token`.
+({int state, int token}) luaInterruptHandle(LuaRuntime runtime) {
+  final table = runtime.table();
+  final token = table._token;
+  if (token == nullptr) {
+    throw LuaBridgeException(
+      'Could not create an interrupt handle',
+      status: LuaStatus.memory,
+    );
+  }
+  // The caller owns the token from now on.
+  _tokenFinalizer.detach(table);
+  table._released = true;
+  return (state: runtime._state.address, token: token.address);
 }

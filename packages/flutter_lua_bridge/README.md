@@ -37,7 +37,46 @@ try {
   and native module loading; other `LuaLibrary` flags add them. Memory limits
   and interrupts are available on the runtime.
 - **Threading**: calls are synchronous and confined to the isolate that
-  created the runtime.
+  created the runtime. `LuaWorker` runs a runtime on a background isolate
+  instead (see below).
+
+## Background isolate
+
+Heavy or untrusted Lua blocks the isolate it runs on. A `LuaWorker` owns a
+runtime on its own isolate; calls return Futures, run one at a time in
+order, and can be stopped from outside:
+
+```dart
+// Runs in the worker isolate: a top-level or static function.
+void loadRules(LuaRuntime lua) {
+  lua.loadModule('rules', source: rulesSource);
+  lua.run('rules = require("rules")');
+}
+
+final worker = await LuaWorker.spawn(setup: loadRules, memoryLimit: 32 << 20);
+try {
+  final results = await worker.call(
+    'rules.score',
+    [board],
+    timeout: const Duration(milliseconds: 200),
+  );
+  print(results.first);
+} on LuaBridgeException catch (e) {
+  // LuaStatus.interrupted when the timeout stopped it.
+} finally {
+  await worker.close();
+}
+```
+
+- `run` and `call` take and return plain data (`null`, `bool`,
+  `int`, `double`, `String`, `Uint8List`, `List`, `Map`); a returned table
+  arrives as a `List` or `Map`. Handles cannot leave the worker.
+- `timeout` and `interrupt()` stop the running call; Lua checks every 1000
+  VM instructions, so a Dart function Lua is calling finishes first.
+- Errors arrive as `LuaBridgeException`; a Dart error thrown in the worker
+  arrives as its `toString()` in `cause`.
+- Keep cheap calls on a plain `LuaRuntime`: a worker call costs a message
+  round trip.
 
 ## Typed contracts
 

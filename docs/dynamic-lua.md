@@ -38,7 +38,7 @@ is what the app sees otherwise.
 | 7 | It uses only the **standard libraries the runtime opened** (`LuaLibrary.safe` by default: no `io`, `os`, `debug` or native modules) | The sandbox is what makes running delivered code acceptable | Loading or calling fails, for example "attempt to index a nil value (global 'io')" |
 | 8 | Every module it `require`s is **loaded by the app first** | In the app, `require` finds only modules the host provides; there is no file search path | Loading throws "module 'formulas' not found" |
 | 9 | It calls only `@DartApi` methods **this app version registers** | The Dart side is compiled into the app | The call fails at runtime (a `LuaFailure` with `kind: runtime` at `O1`/`O2`) |
-| 10 | It stays within the **memory limit** you set and **returns promptly** | Calls are synchronous on the calling isolate | Over the limit: `LuaFailure` "not enough memory". A script that never returns blocks the isolate; see [Runaway scripts](#runaway-scripts) |
+| 10 | It stays within the **memory limit** you set and **returns promptly** | Calls are synchronous on the calling isolate | Over the limit: `LuaFailure` "not enough memory". A script that never returns blocks the isolate, unless it runs in a `LuaWorker`; see [Runaway scripts](#runaway-scripts) |
 
 Conditions 4, 5 and 8 are checked by the bridge; the others are yours to
 guarantee, mostly by building and testing the script with the same project
@@ -196,9 +196,12 @@ The bridge has no time limit of its own. What exists:
   Lua cannot catch. The runtime checks for it every 1000 VM instructions,
   but it has to be called while Lua runs, so from Dart code that Lua calls
   (a `@DartApi` method or a `lua.function` callback).
-- A script you cannot fully trust or test can run on a background isolate,
-  so a hang does not freeze the UI. `examples/lua_canvas_host` does this
-  (`lib/lua_worker.dart`), with a Lua-side time budget.
+- A script you cannot fully trust or test can run in a `LuaWorker`, on a
+  background isolate, so a hang does not freeze the UI. Give the call a
+  `timeout` (or call `interrupt()`): the worker's runtime is interrupted from
+  the calling isolate and the call fails with `LuaStatus.interrupted`.
+  `examples/lua_canvas_host` predates it and has its own worker
+  (`lib/lua_worker.dart`) with a Lua-side time budget.
 
 The practical rule for delivered business logic: test it with the same
 project before publishing (conditions 2 and 6), keep loops bounded by the
